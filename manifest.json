@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+
+  "name": "Messenger Crypt",
+  "description": "Adds transparent GPG to Facebook Messenger",
+  "version": "0.1",
+
+  "content_scripts": [
+	  {
+		  "matches": ["*://*.messenger.com/*"],
+		  "js": ["inject.js"]
+	  }
+  ],
+
+  "permissions": [
+	  "*://*.messenger.com/*",
+      "http://localhost/*"
+  ]
+}
