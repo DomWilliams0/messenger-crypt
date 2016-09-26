@@ -47,18 +47,33 @@ function getAllMessages(messageBox) {
 };
 
 window.addEventListener("load", function(e) {
-	var messageBox = document.querySelector('[aria-label="Messages"]');
-	if (!messageBox) {
-		// TODO poll, or wait for message box to appear instead of failing
-		console.log("Failed to find message box");
-		return;
-	}
 
-	var messages = getAllMessages(messageBox);
+	const pollTime = 250;
 
-	// debug print
-	for (var i = 0; i < messages.length; i++) {
-		console.log(messages[i]);
-	}
+	function waitForMessageBox(callback) {
+		var messageBox = document.querySelector('[aria-label="Messages"]');
+
+		// wait until next poll
+		if(!messageBox) {
+			setTimeout(function() {
+				waitForMessageBox(callback);
+			}, pollTime);
+			return;
+		}
+
+		// messagebox was found
+		callback(messageBox);
+	};
+
+	function debugPrintMessages(messageBox) {
+		var messages = getAllMessages(messageBox);
+
+		// debug print
+		for (var i = 0; i < messages.length; i++) {
+			console.log(messages[i]);
+		}
+	};
+
+	waitForMessageBox(debugPrintMessages);
 
 }, false);
