@@ -39,11 +39,16 @@ function getAllMessages(messageBox) {
 		// add to returned array
 		messageList.push({
 			sender:  sender,
-			message: messageText
+			message: messageText,
+			element: m
 		});
 	}
 
 	return messageList;
+};
+
+function transmitForDecryption(msg, decryptionCallback) {
+	// TODO
 };
 
 window.addEventListener("load", function(e) {
@@ -65,15 +70,41 @@ window.addEventListener("load", function(e) {
 		callback(messageBox);
 	};
 
-	function debugPrintMessages(messageBox) {
+	function messageBoxCallback(messageBox) {
 		var messages = getAllMessages(messageBox);
-
-		// debug print
-		for (var i = 0; i < messages.length; i++) {
-			console.log(messages[i]);
+		if (!messages || messages.length == 0) {
+			console.log("No messages found");
+			return;
 		}
-	};
 
-	waitForMessageBox(debugPrintMessages);
+		// find encrypted messages
+		for (var i = 0; i < messages.length; i++) {
+			var msg = messages[i];
+
+			if (msg.message.startsWith("-----BEGIN PGP MESSAGE-----")) {
+				// send to local server to try to decrypt
+				// response contains:
+				//	success
+				//	recipient(s)
+				//	signed
+				//	valid signature
+
+				// mark element with id
+				var msgID = messageBoxCallback.lastMessageID;
+				messageBoxCallback.lastMessageID += 1;
+
+				msg["id"] = msgID;
+				msg.element.id = "pgp-msg-" + msgID;
+
+				transmitForDecryption(msg);
+			}
+		}
+
+
+	};
+	// "static"
+	messageBoxCallback.lastMessageID = 0;
+
+	waitForMessageBox(messageBoxCallback);
 
 }, false);
