@@ -48,7 +48,21 @@ function getAllMessages(messageBox) {
 };
 
 function transmitForDecryption(msg, decryptionCallback) {
-	// TODO
+	var http = new XMLHttpRequest();
+	var url = "https://localhost:50456";
+
+	http.open("POST", url, true);
+	http.setRequestHeader("Content-Type", "application/json");
+	http.onreadystatechange = function() {
+		if (http.readyState == 4 && http.status == 200) {
+			console.log("Got response: " + http.responseText);
+		}
+	};
+
+	console.log("Sending " + msg.id + " for decryption");
+
+	delete msg.element;
+	http.send(JSON.stringify(msg));
 };
 
 window.addEventListener("load", function(e) {
@@ -81,18 +95,20 @@ window.addEventListener("load", function(e) {
 		for (var i = 0; i < messages.length; i++) {
 			var msg = messages[i];
 
-			if (msg.message.startsWith("-----BEGIN PGP MESSAGE-----")) {
-				// send to local server to try to decrypt
-				// response contains:
-				//	success
-				//	recipient(s)
-				//	signed
-				//	valid signature
+			// ensure this message hasn't already been processed
+			if (msg.id && msg.id.startsWith('pgp-msg-')) {
+				continue;
+			}
 
-				// mark element with id
+			// pgp message found
+			if (msg.message.startsWith("-----BEGIN PGP MESSAGE-----")) {
+				// generate unique id
 				var msgID = messageBoxCallback.lastMessageID;
 				messageBoxCallback.lastMessageID += 1;
 
+				console.log("Found PGP message " + msgID);
+
+				// mark element with id
 				msg["id"] = msgID;
 				msg.element.id = "pgp-msg-" + msgID;
 
@@ -100,11 +116,11 @@ window.addEventListener("load", function(e) {
 			}
 		}
 
-
 	};
 	// "static"
 	messageBoxCallback.lastMessageID = 0;
 
+	// off we go
 	waitForMessageBox(messageBoxCallback);
 
 }, false);
