@@ -49,7 +49,7 @@ function getAllMessages(messageBox) {
 
 function transmitForDecryption(msg, decryptionCallback) {
 	var http = new XMLHttpRequest();
-	var url = "https://localhost:50456";
+	var url = "https://localhost:50456/decrypt";
 
 	http.open("POST", url, true);
 	http.setRequestHeader("Content-Type", "application/json");

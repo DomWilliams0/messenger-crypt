@@ -15,14 +15,32 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         msg = self.rfile.read(int(self.headers.getheader("content-length")))
-        print "Received POST: %s" % msg
 
-        response = {"success": True};
+        # find corresponding handler
+        handler = globals().get(self.path.lstrip("/"), None)
+
+        # not found
+        if handler is None:
+            self.send_response(404)
+            return
+
+        response = handler(msg)
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.end_headers();
+
         self.wfile.write(json.dumps(response));
+
+
+def decrypt(msg):
+    resp = {"success": True, "message": "decrypted message"}
+
+    return resp
+
+
+def encrypt(msg):
+    return {"error": "not implemented"}
 
 
 def main():
