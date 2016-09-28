@@ -3,6 +3,11 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import json
 import ssl
+import sys
+
+import config
+
+CONFIG = None
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -43,15 +48,32 @@ def encrypt(msg):
     return {"error": "not implemented"}
 
 
-def main():
-    addr = ("127.0.0.1", 50456)
+def start_server(port, certfile, keyfile):
+    addr = ("127.0.0.1", port)
     httpd = HTTPServer(addr, RequestHandler)
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile="../certs/cert.pem", keyfile="../certs/key.pem", server_side=True)
+    httpd.socket = ssl.wrap_socket(httpd.socket, certfile=certfile, keyfile=keyfile, server_side=True)
 
     print "Listening on %s:%d..." % addr
     httpd.serve_forever();
 
+def main():
+    config_path = "settings.json"
+    # TODO set in config
+
+    # load config
+    global CONFIG
+    CONFIG = config.load_config(config_path)
+    if not CONFIG:
+        return 1
+
+    # start listening
+    port     = CONFIG['port']
+    certfile = CONFIG['tls-cert']
+    keyfile  = CONFIG['tls-key']
+    start_server(port, certfile, keyfile)
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
