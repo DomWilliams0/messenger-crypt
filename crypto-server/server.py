@@ -7,8 +7,6 @@ import sys
 
 import config
 
-CONFIG = None
-
 class RequestHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
@@ -56,20 +54,27 @@ def start_server(port, certfile, keyfile):
     print "Listening on %s:%d..." % addr
     httpd.serve_forever();
 
+def load_config(config_path):
+    # load config and replace module with dictionary-like clone
+    if not config.load_config(config_path):
+        return False
+
+    # reload global import
+    global config
+    import config
+
+    return True
+
 def main():
     config_path = "settings.json"
-    # TODO set in config
 
-    # load config
-    global CONFIG
-    CONFIG = config.load_config(config_path)
-    if not CONFIG:
+    if not load_config(config_path):
         return 1
 
     # start listening
-    port     = CONFIG['port']
-    certfile = CONFIG['tls-cert']
-    keyfile  = CONFIG['tls-key']
+    port     = config['port']
+    certfile = config['tls-cert']
+    keyfile  = config['tls-key']
     start_server(port, certfile, keyfile)
 
     return 0

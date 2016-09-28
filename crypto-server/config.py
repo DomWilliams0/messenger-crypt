@@ -1,6 +1,8 @@
 import json
 import os
 
+_INSTANCE = None
+
 class Config(object):
     def __init__(self):
         self.dict = {}
@@ -26,5 +28,17 @@ class Config(object):
 
 
 def load_config(path):
-    c = Config()
-    return c if c.load(path) else None
+    global _INSTANCE
+    _INSTANCE = Config()
+
+    import sys
+    sys.modules[__name__] = _ConfigModule(globals())
+
+    return _INSTANCE.load(path)
+
+class _ConfigModule(object):
+    def __init__(self, namespace):
+        self.__dict__.update(namespace)
+
+    def __getitem__(self, name):
+        return self._INSTANCE.__getitem__(name)
