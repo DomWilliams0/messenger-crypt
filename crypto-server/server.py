@@ -6,6 +6,7 @@ import ssl
 import sys
 
 import config
+import encryption
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -17,7 +18,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        msg = self.rfile.read(int(self.headers.getheader("content-length")))
+        msg_raw = self.rfile.read(int(self.headers.getheader("content-length")))
+        msg     = encryption.Message(json.loads(msg_raw))
 
         # find corresponding handler
         handler = globals().get(self.path.lstrip("/"), None)
@@ -37,9 +39,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 def decrypt(msg):
-    resp = {"success": True, "message": "decrypted message"}
-
-    return resp
+    encryption.decrypt_message(msg)
+    return msg.serialise()
 
 
 def encrypt(msg):
