@@ -19,12 +19,17 @@ class Config(object):
             return False
 
     def __getitem__(self, key):
-        if key not in self.dict:
-            print "Missing config key: '%s'" % key
-            return None
+        split = key.split(".")
 
-        return self.dict.__getitem__(key)
+        current_node = self.dict
+        for key in split:
+            current_node = current_node.get(key, None)
 
+            # not found
+            if not key:
+                return None
+
+        return current_node
 
 
 def load_config(path):
@@ -35,6 +40,7 @@ def load_config(path):
     sys.modules[__name__] = _ConfigModule(globals())
 
     return _INSTANCE.load(path)
+
 
 class _ConfigModule(object):
     def __init__(self, namespace):
