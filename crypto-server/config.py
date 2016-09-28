@@ -1,7 +1,6 @@
 import json
 import os
-
-_INSTANCE = None
+import sys
 
 class Config(object):
     def __init__(self):
@@ -31,20 +30,18 @@ class Config(object):
 
         return current_node
 
-
 def load_config(path):
-    global _INSTANCE
-    _INSTANCE = Config()
-
-    import sys
-    sys.modules[__name__] = _ConfigModule(globals())
-
-    return _INSTANCE.load(path)
-
+    return _MODULE_OVERRIDE.instance.load(path)
 
 class _ConfigModule(object):
     def __init__(self, namespace):
         self.__dict__.update(namespace)
+        self.instance = Config()
 
     def __getitem__(self, name):
-        return self._INSTANCE.__getitem__(name)
+        return self.instance.__getitem__(name)
+
+import config as _config
+_MODULE_OVERRIDE = _ConfigModule(_config.__dict__)
+sys.modules[__name__] = _MODULE_OVERRIDE
+del _config
