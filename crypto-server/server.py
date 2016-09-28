@@ -55,12 +55,14 @@ def start_server(port, certfile, keyfile):
     httpd.serve_forever();
 
 def load_config(config_path):
+    global config
+    import config
+
     # load config and replace module with dictionary-like clone
     if not config.load_config(config_path):
         return False
 
     # reload global import
-    global config
     import config
 
     return True
