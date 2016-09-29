@@ -54,74 +54,94 @@ function getAllMessages() {
 };
 
 function getConversationParticipants() {
-	function getInfoPanel() {
-		var h3s = document.getElementsByTagName("h3")
-		for (var i = 0; i < h3s.length; i++) {
-			if (h3s[i].innerText == "Conversation information") {
-				return h3s[i].parentNode;
-			}
-		}
-	}
-
-	function getHugeJSON() {
-
-		function findScript() {
+	function findScript() {
 		var scripts = document.body.children;
-			for (var i = 0; i < scripts.length; i++) {
-				var s = scripts[i];
-				if (s.innerHTML.startsWith("require(\"TimeSlice\").guard(function() {require(\"ServerJSDefine\").handleDefines(")) {
-					return s.innerHTML;
-				}
+		for (var i = 0; i < scripts.length; i++) {
+			var s = scripts[i];
+			if (s.innerHTML.startsWith("require(\"TimeSlice\").guard(function() {require(\"ServerJSDefine\").handleDefines(")) {
+				return s.innerHTML;
 			}
-		};
-
-		function findNthFromEnd(s, n, search) {
-			var index = undefined;
-			for (var i = 0; i < n; i++) {
-				index = s.lastIndexOf(search, index - 1);;
-			}
-			return index;
-		};
-
-		function extractJSONFromYugeString(scriptText) {
-			// find start and end of desired JSON
-			var startIndex = scriptText.indexOf("\"mercuryPayload");
-			var endIndex = findNthFromEnd(scriptText, 4, "}");
-
-			if (startIndex < 0 || endIndex < 0) {
-				console.error("Failed to find substring between " + startIndex + " and " + endIndex);
-				return null;
-			}
-
-			var subscript = scriptText.substring(startIndex, endIndex)
-			return JSON.parse("{" + subscript + "}");
 		}
+	};
 
-		var script = findScript();
-		if (!script) {
-			console.error("Failed to find massive script");
-			return null;
+	function findNthFromEnd(s, n, search) {
+		var index = undefined;
+		for (var i = 0; i < n; i++) {
+			index = s.lastIndexOf(search, index - 1);;
 		}
-		var json = extractJSONFromYugeString(script);
-		if (!json) {
-			console.error("Failed to extract valid JSON from yuuuge string");
+		return index;
+	};
+
+	function extractJSONFromYugeString(scriptText) {
+		// find start and end of desired JSON
+		var startIndex = scriptText.indexOf("\"mercuryPayload");
+		var endIndex = findNthFromEnd(scriptText, 4, "}");
+
+		if (startIndex < 0 || endIndex < 0) {
+			console.error("Failed to find substring between " + startIndex + " and " + endIndex);
 			return null;
 		}
 
-		var threads = json['mercuryPayload']['threads'];
-		var participants = json['mercuryPayload']['participants'];
-		if (!threads || !participants) {
-			console.error("Failed to extract threads or participants");
-			return;
+		var subscript = scriptText.substring(startIndex, endIndex)
+		return JSON.parse("{" + subscript + "}");
+	};
+
+	function findParticipantFromVanity(participants, vanity) {
+		for (var i = 0; i < participants.length; i++) {
+			var p = participants[i];
+			if (p['vanity'] == vanity) {
+				return p['id'];
+			}
+		}
+	};
+
+	function findPartipantsFromThreadID(threads, id) {
+		for (var i = 0; i < threads.length; i++) {
+			var t = threads[i];
+			if (t['thread_fbid'] == id) {
+				return t['participants'];
+			}
+		}
+	};
+
+	function getCurrentParticipants(threads, participants) {
+		// get current conversation ID
+		// remove /t/ from path
+		var path = document.location.pathname.slice(3);
+
+		console.log(threads);
+		console.log(participants);
+
+		// non-group chat with single person
+		var singleParticipant = findParticipantFromVanity(participants, path);
+		if (singleParticipant) {
+			return [singleParticipant];
 		}
 
-		console.log("threads: " + threads);
-		console.log("participants: " + participants);
+		// group chat with multiple participants
+		var groupParticipants = findPartipantsFromThreadID(threads, path);
+		return groupParticipants;
 	}
 
-	var participants = []
+	var script = findScript();
+	if (!script) {
+		console.error("Failed to find massive script");
+		return null;
+	}
+	var json = extractJSONFromYugeString(script);
+	if (!json) {
+		console.error("Failed to extract valid JSON from yuuuge string");
+		return null;
+	}
 
-	var yuge = getHugeJSON();
+	var threads      = json['mercuryPayload']['threads'];
+	var participants = json['mercuryPayload']['participants'];
+	if (!threads || !participants) {
+		console.error("Failed to extract threads or participants");
+		return;
+	}
 
-	return participants;
-}
+	var x = getCurrentParticipants(threads, participants);
+	console.log(x);
+	return x;
+};
