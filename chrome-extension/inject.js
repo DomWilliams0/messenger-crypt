@@ -109,19 +109,26 @@ window.addEventListener("load", function(e) {
 	function waitForMessageBox(callback) {
 		var messageBox = document.querySelector("[aria-label=\"Messages\"]");
 
-		// wait until next poll
-		if(!messageBox) {
-			setTimeout(function() {
-				waitForMessageBox(callback);
-			}, pollTime);
-			return;
-		}
+		// poll poll poll
+		var running = false;
+		setInterval(function() {
+			// last call is still running
+			if (running) {
+				return;
+			}
 
-		// messagebox was found
-		callback(messageBox);
+			var messageBox = document.querySelector("[aria-label=\"Messages\"]");
+			if (messageBox) {
+				running = true;
+				callback(messageBox);
+				running = false;
+			}
+		}, pollTime);
+
+		// callback(messageBox);
 	};
 
-	function messageBoxCallback(messageBox) {
+	function decryptMessages(messageBox) {
 		var messages = getAllMessages(messageBox);
 		if (!messages || messages.length == 0) {
 			console.log("No messages found");
@@ -156,6 +163,6 @@ window.addEventListener("load", function(e) {
 	};
 
 	// off we go
-	waitForMessageBox(messageBoxCallback);
+	waitForMessageBox(decryptMessages);
 
 }, false);
