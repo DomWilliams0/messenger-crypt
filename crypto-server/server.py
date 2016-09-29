@@ -19,34 +19,33 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         msg_raw = self.rfile.read(int(self.headers.getheader("content-length")))
-        msg     = encryption.Message(json.loads(msg_raw))
 
         # find corresponding handler
-        handler = globals().get(self.path.lstrip("/"), None)
+        handler = getattr(self, "%s_handler" % self.path.lstrip("/"), None)
 
         # not found
         if handler is None:
             self.send_response(404)
             return
 
-        response = handler(msg)
+        handler(msg_raw)
 
+    def decrypt_handler(self, msg_raw):
+        msg = encryption.Message(json.loads(msg_raw))
+        encryption.decrypt_message(msg)
+
+        if msg.error:
+            print "ERROR: %s" % msg.error # TODO use some actual logging, you savage
+
+        response = json.dumps(msg.serialise())
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
-        self.end_headers();
+        self.end_headers()
 
-        self.wfile.write(json.dumps(response));
+        self.wfile.write(response)
 
-
-def decrypt(msg):
-    encryption.decrypt_message(msg)
-    if msg.error:
-        print "ERROR: %s" % msg.error # TODO use some actual logging, you savage
-    return msg.serialise()
-
-
-def encrypt(msg):
-    return {"error": "not implemented"}
+    def encrypt_handler(self, msg_raw):
+        self.send_response(418)
 
 
 def start_server(port, certfile, keyfile):
