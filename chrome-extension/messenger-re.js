@@ -55,13 +55,13 @@ function getAllMessages() {
 
 function getConversationParticipants() {
 	function findScript() {
-		var scripts = document.body.children;
-		for (var i = 0; i < scripts.length; i++) {
-			var s = scripts[i];
-			if (s.innerHTML.startsWith("require(\"TimeSlice\").guard(function() {require(\"ServerJSDefine\").handleDefines(")) {
-				return s.innerHTML;
-			}
-		}
+		s = Array.from(document.body.children).find(function(x, i, a) {
+			return x.innerHTML.startsWith(
+				"require(\"TimeSlice\").guard(function() {require(\"ServerJSDefine\").handleDefines("
+			);
+		});
+
+		return s ? s.innerHTML : null;
 	};
 
 	function findNthFromEnd(s, n, search) {
@@ -87,21 +87,19 @@ function getConversationParticipants() {
 	};
 
 	function findParticipantFromVanity(participants, vanity) {
-		for (var i = 0; i < participants.length; i++) {
-			var p = participants[i];
-			if (p['vanity'] == vanity) {
-				return p['id'];
-			}
-		}
+		var p = participants.find(function(x, i, a) {
+			return x['vanity'] == vanity;
+		});
+
+		return p ? p['id'] : null;
 	};
 
 	function findPartipantsFromThreadID(threads, id) {
-		for (var i = 0; i < threads.length; i++) {
-			var t = threads[i];
-			if (t['thread_fbid'] == id) {
-				return t['participants'];
-			}
-		}
+		var t = threads.find(function(x, i, a) {
+			return x['thread_fbid'] == id;
+		});
+
+		return t ? t['participants'] : null;
 	};
 
 	function getCurrentParticipants(threads, participants) {
