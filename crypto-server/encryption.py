@@ -25,7 +25,7 @@ class Message(object):
     def __init__(self, js_dict):
         self.sender    = js_dict['sender']
         self.message   = js_dict['message']
-        self.msg_id    = js_dict['id']
+        self.id        = js_dict['id']
 
         self.decrypted = False
         self.signed_by = None
@@ -60,6 +60,7 @@ def decrypt_message(msg):
         msg.decrypted = True
     except gpgme.GpgmeError as e:
         msg.error = "Failed to decrypt: %s" % e.message.lower()
+        msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
         return
 
     # /how/ many signatures?

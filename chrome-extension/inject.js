@@ -47,6 +47,38 @@ function getAllMessages(messageBox) {
 	return messageList;
 };
 
+function formatElementID(id) {
+	return "pgp-msg-" + id;
+}
+
+function onRecvDecryptedMessage(msg) {
+	// find message element
+	var element = document.getElementById(formatElementID(msg['id']))
+
+	// no longer visible, oh well
+	if (!element) {
+		return;
+	}
+
+	var success = msg['decrypted'] === true;
+
+	// create temporarily incredibly ugly status header
+	var statusElement = "<div>";
+
+	// decryption status
+	statusElement += "<b>";
+	if (!success) {
+		statusElement += msg["error"];
+	}
+	else {
+		statusElement += "Successfully decrypted message";
+	}
+	statusElement += "</b></div>";
+
+	// update message content
+	element.innerHTML = statusElement + msg.message;
+}
+
 function transmitForDecryption(msg, decryptionCallback) {
 	var http = new XMLHttpRequest();
 	var url = "https://localhost:50456/decrypt";
@@ -55,7 +87,9 @@ function transmitForDecryption(msg, decryptionCallback) {
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
 		if (http.readyState == 4 && http.status == 200) {
-			console.log("Got response: " + http.responseText);
+			var resp = http.responseText;
+			var respJSON = JSON.parse(resp);
+			decryptionCallback(respJSON);
 		}
 	};
 
@@ -110,9 +144,9 @@ window.addEventListener("load", function(e) {
 
 				// mark element with id
 				msg["id"] = msgID;
-				msg.element.id = "pgp-msg-" + msgID;
+				msg.element.id = formatElementID(msgID);
 
-				transmitForDecryption(msg);
+				transmitForDecryption(msg, onRecvDecryptedMessage);
 			}
 		}
 
