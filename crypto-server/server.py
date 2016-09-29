@@ -4,6 +4,7 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import json
 import ssl
 import sys
+import urlparse
 
 import config
 import encryption
@@ -45,7 +46,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def encrypt_handler(self, msg_raw):
-        self.send_response(418)
+        req = urlparse.parse_qs(msg_raw)
+        message = req['body'][0]
+        print "Message to encrypt: '%s'" % message
 
 
 def start_server(port, certfile, keyfile):
