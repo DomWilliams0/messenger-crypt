@@ -73,7 +73,8 @@ def decrypt_message(msg):
     # ensure correctly signed if actually signed
     if signing_sigs:
         sig = signing_sigs[0]
-        msg.signed_by = sig.fpr
+        msg.signed_by = sig.fpr[-8:]
+        # TODO also get identity and master key if possible
 
         # invalid signature
         if sig.status is not None:

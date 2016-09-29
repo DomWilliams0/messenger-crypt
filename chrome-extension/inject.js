@@ -74,7 +74,26 @@ function onRecvDecryptedMessage(msg) {
 		statusElement += msg["error"];
 	}
 	else {
-		statusElement += "Successfully decrypted message";
+		// signing
+		var signer = msg['signed_by'];
+
+		if (signer) {
+
+			// well signed
+			if( msg['valid_sig']) {
+				statusElement += "Decrypted message with good signature from " + signer;
+			}
+
+			// badly signed
+			else {
+				statusElement += "Decrypted message with BAD signature from " + signer;
+			}
+		}
+
+		// unsigned
+		else {
+			statusElement += "Decrypted unsigned message";
+		}
 	}
 	statusElement += "</b></div>";
 
