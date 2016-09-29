@@ -63,6 +63,8 @@ def decrypt_message(msg):
         msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
         return
 
+    print "Decrypted message #%d: %s" % (msg.id, msg.message)
+
     # /how/ many signatures?
     if len(signing_sigs) > 1:
         msg.error = "Multiple signatures? Surely you jest!"

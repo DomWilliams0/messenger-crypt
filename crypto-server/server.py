@@ -40,6 +40,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 def decrypt(msg):
     encryption.decrypt_message(msg)
+    if msg.error:
+        print "ERROR: %s" % msg.error # TODO use some actual logging, you savage
     return msg.serialise()
 
 
