@@ -1,3 +1,6 @@
+var LAST_MESSAGE_ID = 0;
+
+
 // returns: [ {sender: xxx, message: xxx}, ... ]
 //             ^^^^^^
 //          null for self
@@ -137,8 +140,8 @@ window.addEventListener("load", function(e) {
 			// pgp message found
 			if (msg.message.startsWith("-----BEGIN PGP MESSAGE-----")) {
 				// generate unique id
-				var msgID = messageBoxCallback.lastMessageID;
-				messageBoxCallback.lastMessageID += 1;
+				var msgID = LAST_MESSAGE_ID;
+				LAST_MESSAGE_ID += 1;
 
 				console.log("Found PGP message " + msgID);
 
@@ -151,8 +154,6 @@ window.addEventListener("load", function(e) {
 		}
 
 	};
-	// "static"
-	messageBoxCallback.lastMessageID = 0;
 
 	// off we go
 	waitForMessageBox(messageBoxCallback);
