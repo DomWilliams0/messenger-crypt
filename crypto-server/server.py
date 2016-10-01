@@ -6,6 +6,7 @@ import ssl
 import sys
 import urlparse
 
+import constants
 import config
 import encryption
 
@@ -84,9 +85,7 @@ def load_config(config_path):
     return True
 
 def main():
-    config_path = "settings.json"
-
-    if not load_config(config_path):
+    if not load_config(constants.CONFIG_PATH):
         return 1
 
     # start listening
