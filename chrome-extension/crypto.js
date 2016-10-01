@@ -64,3 +64,8 @@ function transmitForDecryption(msg) {
 	delete msg.element;
 	http.send(JSON.stringify(msg));
 };
+
+function transmitForEncryption(msg, responseCallback) {
+	// TODO actually send to server and encrypt
+	responseCallback("encryption(" + msg + ");");
+};
