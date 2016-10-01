@@ -88,9 +88,9 @@ def get_single_key(keyid, secret=False):
     error = None
     keys  = list(GPGContext.INSTANCE.keylist(keyid, secret))
     if not keys:
-        error = "Secret key '%s' not found" % keyid
+        error = "Key '%s' not found" % keyid
     elif len(keys) != 1:
-        error = "Multiple secret keys found with id '%s', be more specific" % keyid
+        error = "Multiple keys found with id '%s', be more specific" % keyid
     else:
         ret = keys[0];
 
