@@ -11,9 +11,9 @@ def link_handler(args):
     keyid = args['pubkey']
 
     # validate
-    if fbid.startswith("fbid:"):
-        fbid = fbid[5:]
-    if not fbid.isdigit():
+    if not fbid.startswith("fbid:"):
+        fbid = "fbid:" + fbid
+    if not fbid[5:].isdigit():
         return "fbid must be numeric"
 
     # find valid public key if given
