@@ -59,6 +59,25 @@ def link_handler(args):
 
     print "%s '%s' %s %s (%s)" % (verb, user["key"], direction, user["name"], fbid)
 
+def self_handler(args):
+    key = args.pop("seckey")
+
+    # find secret key
+    seckey, error = encryption.get_single_key(key, True)
+    if error:
+        return error
+
+    subkey = seckey.subkeys[0]  # TODO need to specify subkey?
+    keyid  = subkey.fpr
+
+    if not subkey.can_sign:
+        return "Secret key '%s' cannot be used to sign" % keyid
+
+    # save
+    config["self"] = keyid
+    config.save()
+
+    print "Registered '%s' as self" % keyid
 
 def parse_args():
     class Parser(argparse.ArgumentParser):
@@ -71,9 +90,14 @@ def parse_args():
     subparsers = parser.add_subparsers(dest="subcommand")
 
     parser_link = subparsers.add_parser("link")
-    parser_link.add_argument("fbid", help="The numerical Facebook user ID, optionally with fbid: prefix")
+    parser_link.add_argument("fbid",
+            help="The numerical Facebook user ID, optionally with the prefix 'fbid:'.")
     parser_link.add_argument("pubkey", nargs="?",
             help="Any valid key selector (i.e. fingerprint, email, name etc.). If left blank, the fbid is unlinked from any existing key.")
+
+    parser_self = subparsers.add_parser("self")
+    parser_self.add_argument("seckey",
+            help="The new secret key which will be used to decrypt and sign messages.")
 
     parsed = vars(parser.parse_args())
     cmd = parsed.pop("subcommand", None);

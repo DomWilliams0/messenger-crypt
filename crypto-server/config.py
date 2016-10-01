@@ -25,6 +25,9 @@ class Config(object):
     def __getitem__(self, key):
         return self.conf[key]
 
+    def __setitem__(self, key, value):
+        self.conf[key] = value
+
     def get_section(self, *path):
         current = self.conf
         for p in path:
@@ -46,6 +49,9 @@ class _ConfigModule(object):
 
     def __getitem__(self, name):
         return self.instance.__getitem__(name)
+
+    def __setitem__(self, key, value):
+        self.instance.__setitem__(key, value)
 
     def __getattr__(self, attr):
         return getattr(self.instance, attr)
