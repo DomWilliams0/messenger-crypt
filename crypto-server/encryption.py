@@ -3,6 +3,7 @@ import gpgme
 import io
 
 import config
+from constants import join_list
 
 class GPGContext(object):
     INSTANCE = None
@@ -21,28 +22,45 @@ if GPGContext.INSTANCE is None:
     GPGContext.INSTANCE = GPGContext()
 
 
-class Message(object):
+class DecryptedMessage(object):
     def __init__(self, js_dict):
-        self.sender    = js_dict['sender']
-        self.message   = js_dict['message']
-        self.id        = js_dict['id']
+        self.sender     = js_dict['sender']
+        self.message    = js_dict['message']
+        self.id         = js_dict['id']
 
-        self.decrypted = False
-        self.signed_by = None
-        self.valid_sig = False
+        self.decrypted  = False
+        self.signed_by  = None
+        self.valid_sig  = False
 
-        self.error     = None
+        self.error      = None
 
     def serialise(self):
         return self.__dict__
 
-def decrypt_message(msg):
-    decrypt_key_id = config.get_item("keys.self")
+class EncryptedMessage(object):
+    def __init__(self, js_dict):
+        self.message    = js_dict['message']
+        self.recipients = js_dict['recipients']
 
+        self.encrypted  = False
+        self.signed     = None
+
+        self.error      = None
+
+    def serialise(self):
+        return self.__dict__
+
+def _get_secret_key():
+    seckey_id = config.get_item("keys.self")
+    return get_single_key(seckey_id, True)
+
+
+def decrypt_message(msg):
     # find decryption key
-    decrypt_key, error = get_single_key(decrypt_key_id, True)
+    decrypt_key, error = _get_secret_key()
     if error:
-        return error
+        msg.error = error
+        return
 
     # attempt decryption
     in_buf  = io.BytesIO(msg.message.encode("utf8"))
@@ -76,6 +94,65 @@ def decrypt_message(msg):
             return
 
         msg.valid_sig = True
+
+
+def encrypt_message(msg):
+    # ensure all recipients have corresponding keys
+    enc_key_ids  = []
+    missing_keys = []
+    contacts     = config.get_item("keys.contacts")
+    for r in msg.recipients:
+        try:
+            user = contacts[r]
+            enc_key_ids.append(user['key'])
+        except KeyError:
+            missing_keys.append(r)
+
+    # validate
+    if missing_keys:
+        # TODO send names back with keys, so can address them by name here
+        msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (len(missing_keys), join_list(missing_keys))
+        return
+
+    if not enc_key_ids:
+        msg.error = "There are no keys to encrypt for, something went horribly wrong"
+        return
+
+    # gather keys
+    enc_keys     = []
+    invalid_keys = []
+    for kid in enc_key_ids:
+        key, _ = get_single_key(kid)
+        if key is not None:
+            enc_keys.append(key)
+        else:
+            invalid_keys.append(kid)
+
+    if invalid_keys:
+        msg.error = "Missing public key(s) for %s" % join_list(invalid_keys)
+        return
+
+    # get signing key
+    sign_key, error = _get_secret_key()
+    if error:
+        msg.error = error
+        return
+    GPGContext.INSTANCE.signers = [sign_key]
+
+    # attempt encryption
+    in_buf  = io.BytesIO(msg.message.encode("utf8"))
+    out_buf = io.BytesIO()
+
+    try:
+        signing_sigs  = GPGContext.INSTANCE.encrypt_sign(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
+        msg.message   = out_buf.getvalue().decode("utf8").rstrip('\n')
+        msg.encrypted = True
+        msg.signed    = len(signing_sigs) == 1
+    except gpgme.GpgmeError as e:
+        msg.error = "Failed to encrypt: %s" % e.message.lower()
+        return
+
+
 
 def get_single_key(keyid, secret=False):
     ret   = None

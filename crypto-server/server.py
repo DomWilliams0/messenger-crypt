@@ -20,7 +20,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        msg_raw = self.rfile.read(int(self.headers.getheader("content-length")))
+        msg_raw  = self.rfile.read(int(self.headers.getheader("content-length")))
+        msg_json = json.loads(msg_raw)
 
         # find corresponding handler
         handler = getattr(self, "%s_handler" % self.path.lstrip("/"), None)
@@ -30,10 +31,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             return
 
-        handler(msg_raw)
+        handler(msg_json)
 
-    def decrypt_handler(self, msg_raw):
-        msg = encryption.Message(json.loads(msg_raw))
+    def decrypt_handler(self, msg_json):
+        msg = encryption.DecryptedMessage(msg_json)
         encryption.decrypt_message(msg)
 
         if msg.error:
@@ -46,13 +47,14 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(response)
 
-    def encrypt_handler(self, msg_raw):
-        msg = json.loads(msg_raw)
-        print "Message to encrypt: ", msg['message']
+    def encrypt_handler(self, msg_json):
+        msg = encryption.EncryptedMessage(msg_json)
+        encryption.encrypt_message(msg)
 
-        msg['message'] = "encryption(%s);" % msg['message'];
+        if msg.error:
+            print "ERROR: %s" % msg.error
 
-        response = json.dumps(msg)
+        response = json.dumps(msg.serialise())
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
