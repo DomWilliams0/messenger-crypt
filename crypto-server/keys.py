@@ -2,8 +2,36 @@
 import argparse
 import sys
 
+import encryption
+
 def link_handler(args):
-    pass
+    fbid  = args['fbid']
+    keyid = args['pubkey']
+
+    # validate
+    if fbid.startswith("fbid:"):
+        fbid = fbid[5:]
+    if not fbid.isdigit():
+        return "fbid must be numeric"
+
+    # find valid public key
+    pubkey, error = encryption.get_single_key(keyid)
+    if error:
+        return error
+
+    if not pubkey.subkeys:
+        return "There are no subkeys associated with this key"
+
+    primkey = pubkey.subkeys[0]
+    uid = pubkey.uids[0]
+    user = {
+            "fbid": fbid,
+            "key": primkey.fpr,
+            "name": uid.name
+            }
+
+    # TODO save to config
+
 
 def parse_args():
     class Parser(argparse.ArgumentParser):
@@ -33,8 +61,12 @@ def main():
     if not handler:
         raise NotImplementedError("Command '%s' has not yet been implemented" % cmd)
 
-    handler(args)
+    err = handler(args)
+    if err:
+        sys.stderr.write("ERROR: %s\n" % err)
+        sys.exit(1)
 
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

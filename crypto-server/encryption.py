@@ -82,3 +82,16 @@ def decrypt_message(msg):
             return
 
         msg.valid_sig = True
+
+def get_single_key(keyid, secret=False):
+    ret   = None
+    error = None
+    keys  = list(GPGContext.INSTANCE.keylist(keyid, secret))
+    if not keys:
+        error = "Secret key '%s' not found" % keyid
+    elif len(keys) != 1:
+        error = "Multiple secret keys found with id '%s', be more specific" % keyid
+    else:
+        ret = keys[0];
+
+    return ret, error
