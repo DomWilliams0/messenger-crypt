@@ -5,6 +5,7 @@ import sys
 import encryption
 import config
 
+
 def link_handler(args):
     fbid  = args['fbid']
     keyid = args['pubkey']
@@ -15,27 +16,49 @@ def link_handler(args):
     if not fbid.isdigit():
         return "fbid must be numeric"
 
-    # find valid public key
-    pubkey, error = encryption.get_single_key(keyid)
-    if error:
-        return error
+    # find valid public key if given
+    if keyid is not None:
+        pubkey, error = encryption.get_single_key(keyid)
+        if error:
+            return error
 
-    if not pubkey.subkeys:
-        return "There are no subkeys associated with this key"
+        if not pubkey.subkeys:
+            return "There are no subkeys associated with this key"
 
-    primkey = pubkey.subkeys[0]
-    uid = pubkey.uids[0]
-    user =  {
-            "key": primkey.fpr,
-            "name": uid.name
-            }
+        primkey = pubkey.subkeys[0]
+        uid = pubkey.uids[0]
+        user = {
+                "key": primkey.fpr,
+                "name": uid.name
+                }
 
-    # add to contacts
+    # update contacts
     contacts = config.get_section("keys", "contacts")
-    contacts[fbid] = user
 
-    print "Registered '%s' to %s (%s)" % (user["key"], user["name"], fbid)
+    # linking
+    if keyid:
+        contacts[fbid] = user
+
+    # unlinking
+    else:
+        try:
+            user = contacts[fbid]
+            del contacts[fbid]
+        except KeyError:
+            return "Cannot unlink non-existant fbid '%s'" % fbid
+
     config.save()
+
+    # beautiful elegance
+    if keyid:
+        verb = "Registered"
+        direction = "to"
+    else:
+        verb = "Unregistered"
+        direction = "from"
+
+    print "%s '%s' %s %s (%s)" % (verb, user["key"], direction, user["name"], fbid)
+
 
 def parse_args():
     class Parser(argparse.ArgumentParser):
@@ -49,7 +72,8 @@ def parse_args():
 
     parser_link = subparsers.add_parser("link")
     parser_link.add_argument("fbid", help="The numerical Facebook user ID, optionally with fbid: prefix")
-    parser_link.add_argument("pubkey", help="Any valid key selector (i.e. fingerprint, email, name etc.)")
+    parser_link.add_argument("pubkey", nargs="?",
+            help="Any valid key selector (i.e. fingerprint, email, name etc.). If left blank, the fbid is unlinked from any existing key.")
 
     parsed = vars(parser.parse_args())
     cmd = parsed.pop("subcommand", None);
@@ -72,6 +96,6 @@ def main():
 
     sys.exit(0)
 
+
 if __name__ == "__main__":
     main()
-
