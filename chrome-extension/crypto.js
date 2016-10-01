@@ -47,7 +47,7 @@ function onRecvDecryptedMessage(msg) {
 
 function transmitForDecryption(msg) {
 	var http = new XMLHttpRequest();
-	var url = "https://localhost:50456/decrypt";
+	var url  = "https://localhost:50456/decrypt";
 
 	http.open("POST", url, true);
 	http.setRequestHeader("Content-Type", "application/json");
@@ -66,6 +66,17 @@ function transmitForDecryption(msg) {
 };
 
 function transmitForEncryption(msg, responseCallback) {
-	// TODO actually send to server and encrypt
-	responseCallback("encryption(" + msg + ");");
+	var http = new XMLHttpRequest();
+	var url  = "https://localhost:50456/encrypt";
+
+	http.open("POST", url, true);
+	http.setRequestHeader("Content-Type", "application/json");
+	http.onreadystatechange = function() {
+		if (http.readyState == 4 && http.status == 200) {
+			var resp = JSON.parse(http.responseText);
+			responseCallback(resp);
+		}
+	};
+
+	http.send(JSON.stringify(msg));
 };

@@ -82,8 +82,15 @@ function patchRequestSending() {
 				var request = this;
 				var args    = arguments;
 
-				transmitForEncryption(json['body'], function(newMessage) {
-					json['body'] = newMessage;
+				var msg = {
+					message: json['body'],
+					recipients: getConversationParticipants()
+				};
+
+				console.log(msg);
+
+				transmitForEncryption(msg, function(response) {
+					json['body'] = response['message'];
 					var newArgs = Object.keys(json).map(k => k + '=' + json[k]).join('&')
 					return orig.apply(request, [newArgs]);
 				});
@@ -108,6 +115,7 @@ function patchRequestSending() {
 	};
 
 	addFunc(transmitForEncryption, false);
+	addFunc(getConversationParticipants, false);
 	addFunc(overloadOpen, true);
 	addFunc(overloadSend, true);
 };

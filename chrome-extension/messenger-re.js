@@ -139,7 +139,5 @@ function getConversationParticipants() {
 		return;
 	}
 
-	var x = getCurrentParticipants(threads, participants);
-	console.log(x);
-	return x;
+	return getCurrentParticipants(threads, participants);
 };

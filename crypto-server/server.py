@@ -46,9 +46,20 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def encrypt_handler(self, msg_raw):
-        req = urlparse.parse_qs(msg_raw)
-        message = req['body'][0]
-        print "Message to encrypt: '%s'" % message
+        msg = json.loads(msg_raw)
+        print "Message to encrypt: ", msg['message']
+
+        msg['message'] = "encryption(%s);" % msg['message'];
+
+        response = json.dumps(msg)
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+
+        self.wfile.write(response)
 
 
 def start_server(port, certfile, keyfile):
