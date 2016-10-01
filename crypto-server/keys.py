@@ -74,7 +74,8 @@ def self_handler(args):
         return "Secret key '%s' cannot be used to sign" % keyid
 
     # save
-    config["self"] = keyid
+    section = config.get_section("keys")
+    section["self"] = keyid
     config.save()
 
     print "Registered '%s' as self" % keyid
