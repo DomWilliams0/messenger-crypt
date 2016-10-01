@@ -71,23 +71,8 @@ def start_server(port, certfile, keyfile):
     print "Listening on %s:%d..." % addr
     httpd.serve_forever();
 
-def load_config(config_path):
-    global config
-    import config
-
-    # load config and replace module with dictionary-like clone
-    if not config.load_config(config_path):
-        return False
-
-    # reload global import
-    import config
-
-    return True
 
 def main():
-    if not load_config(constants.CONFIG_PATH):
-        return 1
-
     # start listening
     port     = config['port']
     certfile = config['tls-cert']

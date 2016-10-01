@@ -1,1 +1,1 @@
-CONFIG_PATH = "settings.json"
+CONFIG_PATH = "settings.conf"

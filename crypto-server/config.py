@@ -1,47 +1,58 @@
-import json
 import os
 import sys
+from configobj import ConfigObj
+
+import constants
+
 
 class Config(object):
-    def __init__(self):
-        self.dict = {}
+    DEFAULT_VALUES = [
+            ("port", 50456),
+            ("tls-cert", "../../certs/cert.pem"),
+            ("tls-key", "../../certs/key.pem")
+            ]
 
-    def load(self, path):
-        try:
-            with open(path) as f:
-                self.dict = json.load(f)
-                print "Loaded config from '%s'" % path
-                return True
+    def __init__(self, path):
+        self.conf = ConfigObj(path)
 
-        except (IOError, ValueError) as e:
-            print "Failed to load config '%s': %s" % (path, e.message)
-            return False
+        if not os.path.exists(path):
+            print "Config not found at '%s', writing default settings" % path
+            for (k, v) in self.DEFAULT_VALUES:
+                self.conf[k] = v
+            self.conf.write()
+
 
     def __getitem__(self, key):
-        split = key.split(".")
+        return self.conf[key]
 
-        current_node = self.dict
-        for key in split:
-            current_node = current_node.get(key, None)
+    def get_section(self, *path):
+        current = self.conf
+        for p in path:
+            try:
+                current = current[p]
+            except KeyError:
+                current[p] = {}
+                current = current[p]
+        return current
 
-            # not found
-            if not key:
-                return None
+    def save(self):
+        self.conf.write()
 
-        return current_node
-
-def load_config(path):
-    return _MODULE_OVERRIDE.instance.load(path)
 
 class _ConfigModule(object):
     def __init__(self, namespace):
         self.__dict__.update(namespace)
-        self.instance = Config()
+        self.instance = Config(constants.CONFIG_PATH)
 
     def __getitem__(self, name):
         return self.instance.__getitem__(name)
 
+    def __getattr__(self, attr):
+        return getattr(self.instance, attr)
+
+
 import config as _config
+
 _MODULE_OVERRIDE = _ConfigModule(_config.__dict__)
 sys.modules[__name__] = _MODULE_OVERRIDE
 del _config

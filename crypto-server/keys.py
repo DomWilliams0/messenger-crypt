@@ -3,6 +3,7 @@ import argparse
 import sys
 
 import encryption
+import config
 
 def link_handler(args):
     fbid  = args['fbid']
@@ -24,14 +25,17 @@ def link_handler(args):
 
     primkey = pubkey.subkeys[0]
     uid = pubkey.uids[0]
-    user = {
-            "fbid": fbid,
+    user =  {
             "key": primkey.fpr,
             "name": uid.name
             }
 
-    # TODO save to config
+    # add to contacts
+    contacts = config.get_section("keys", "contacts")
+    contacts[fbid] = user
 
+    print "Registered '%s' to %s (%s)" % (user["key"], user["name"], fbid)
+    config.save()
 
 def parse_args():
     class Parser(argparse.ArgumentParser):
