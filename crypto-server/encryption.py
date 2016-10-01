@@ -37,8 +37,7 @@ class Message(object):
         return self.__dict__
 
 def decrypt_message(msg):
-    section = config.get_section("keys")
-    decrypt_key_id = section['self']
+    decrypt_key_id = config.get_item("keys.self")
 
     # find decryption key
     decrypt_key, error = get_single_key(decrypt_key_id, True)

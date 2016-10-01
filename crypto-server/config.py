@@ -28,9 +28,20 @@ class Config(object):
     def __setitem__(self, key, value):
         self.conf[key] = value
 
-    def get_section(self, *path):
+    def get_item(self, path):
+        split = path.split(".")
+        section = self.get_section(".".join(split[:-1]))
+        return section[split[-1]]
+
+    def set_item(self, path, value):
+        split = path.split(".")
+        section = self.get_section(".".join(split[:-1]))
+        section[split[-1]] = value
+
+    def get_section(self, path):
+        split = path.split(".")
         current = self.conf
-        for p in path:
+        for p in split:
             try:
                 current = current[p]
             except KeyError:

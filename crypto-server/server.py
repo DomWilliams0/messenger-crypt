@@ -74,7 +74,7 @@ def start_server(port, certfile, keyfile):
 
 def main():
     # start listening
-    port     = config['port']
+    port     = int(config['port'])
     certfile = config['tls-cert']
     keyfile  = config['tls-key']
     start_server(port, certfile, keyfile)

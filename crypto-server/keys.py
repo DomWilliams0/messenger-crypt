@@ -33,7 +33,7 @@ def link_handler(args):
                 }
 
     # update contacts
-    contacts = config.get_section("keys", "contacts")
+    contacts = config.get_section("keys.contacts")
 
     # linking
     if keyid:
@@ -74,8 +74,7 @@ def self_handler(args):
         return "Secret key '%s' cannot be used to sign" % keyid
 
     # save
-    section = config.get_section("keys")
-    section["self"] = keyid
+    config.set_item("keys.self", keyid)
     config.save()
 
     print "Registered '%s' as self" % keyid
