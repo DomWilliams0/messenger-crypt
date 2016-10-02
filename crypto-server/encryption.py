@@ -1,7 +1,7 @@
 import os
 import gpgme
 import io
-from urllib import quote_plus
+from urllib import quote_plus, unquote
 from threading import Lock
 
 import config
@@ -80,8 +80,6 @@ def decrypt_message(msg):
             msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
             return
 
-    print "Decrypted message #%d: %s" % (msg.id, msg.message)
-
     # /how/ many signatures?
     if len(signing_sigs) > 1:
         msg.error = "Multiple signatures? Surely you jest!"
@@ -146,7 +144,7 @@ def encrypt_message(msg):
         GPGContext.INSTANCE.signers = [sign_key]
 
         # attempt encryption
-        in_buf  = io.BytesIO(msg.message.encode("utf8"))
+        in_buf  = io.BytesIO(unquote(msg.message.encode("utf8")))
         out_buf = io.BytesIO()
 
         try:

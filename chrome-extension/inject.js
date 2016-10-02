@@ -77,16 +77,14 @@ function patchRequestSending() {
 
 			if (this.interceptMe) {
 
-				var json    = JSON.parse('{"' + decodeURI(params).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+				var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
 				var request = this;
 				var args    = arguments;
 
 				var msg = {
-					message: json['body'],
+					message:    decodeURI(json['body']) + "\n",
 					recipients: getConversationParticipants()
 				};
-
-				console.log(msg);
 
 				transmitForEncryption(msg, function(response) {
 					json['body'] = response['message'];

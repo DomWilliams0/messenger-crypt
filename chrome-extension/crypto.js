@@ -52,7 +52,7 @@ function transmitForDecryption(msg) {
 	http.open("POST", url, true);
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
-		if (http.readyState == 4 && http.status == 200) {
+		if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
 			var resp = http.responseText;
 			var respJSON = JSON.parse(resp);
 			onRecvDecryptedMessage(respJSON);
@@ -69,10 +69,12 @@ function transmitForEncryption(msg, responseCallback) {
 	var http = new XMLHttpRequest();
 	var url  = "https://localhost:50456/encrypt";
 
+	console.log("Sending message for encryption");
+
 	http.open("POST", url, true);
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
-		if (http.readyState == 4 && http.status == 200) {
+		if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
 			var resp = JSON.parse(http.responseText);
 			responseCallback(resp);
 		}
