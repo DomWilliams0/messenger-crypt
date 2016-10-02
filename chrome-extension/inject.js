@@ -7,7 +7,6 @@ function formatElementID(id) {
 function decryptMessages() {
 	var messages = getAllMessages();
 	if (!messages || messages.length == 0) {
-		console.log("No messages found");
 		return;
 	}
 
@@ -16,7 +15,7 @@ function decryptMessages() {
 		var msg = messages[i];
 
 		// ensure this message hasn't already been processed
-		if (msg.id && msg.id.startsWith("pgp-msg-")) {
+		if (msg.element.id && msg.element.id.startsWith("pgp-msg-")) {
 			continue;
 		}
 
