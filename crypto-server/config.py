@@ -21,6 +21,8 @@ class Config(object):
                 self.conf[k] = v
             self.conf.write()
 
+    def __getattr__(self, attr):
+        return getattr(self.conf, attr);
 
     def __getitem__(self, key):
         return self.conf[key]

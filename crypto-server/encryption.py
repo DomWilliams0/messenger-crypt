@@ -60,6 +60,7 @@ def _get_secret_key():
 
 def decrypt_message(msg):
     with GPGContext.LOCK:
+        config.reload()
 
         # find decryption key
         decrypt_key, error = _get_secret_key()
@@ -103,6 +104,7 @@ def encrypt_message(msg):
     # ensure all recipients have corresponding keys
     enc_key_ids  = []
     missing_keys = []
+    config.reload()
     contacts     = config.get_item("keys.contacts")
     for r in msg.recipients:
         try:
