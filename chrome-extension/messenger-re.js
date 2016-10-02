@@ -107,9 +107,6 @@ function getConversationParticipants() {
 		// remove /t/ from path
 		var path = document.location.pathname.slice(3);
 
-		console.log(threads);
-		console.log(participants);
-
 		// non-group chat with single person
 		var singleParticipant = findParticipantFromVanity(participants, path);
 		if (singleParticipant) {
