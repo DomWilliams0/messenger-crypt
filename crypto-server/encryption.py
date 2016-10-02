@@ -2,12 +2,14 @@ import os
 import gpgme
 import io
 from urllib import quote_plus
+from threading import Lock
 
 import config
 from constants import join_list
 
 class GPGContext(object):
     INSTANCE = None
+    LOCK     = Lock()
 
     def __init__(self):
         # create context
@@ -57,24 +59,26 @@ def _get_secret_key():
 
 
 def decrypt_message(msg):
-    # find decryption key
-    decrypt_key, error = _get_secret_key()
-    if error:
-        msg.error = error
-        return
+    with GPGContext.LOCK:
 
-    # attempt decryption
-    in_buf  = io.BytesIO(msg.message.encode("utf8"))
-    out_buf = io.BytesIO()
+        # find decryption key
+        decrypt_key, error = _get_secret_key()
+        if error:
+            msg.error = error
+            return
 
-    try:
-        signing_sigs  = GPGContext.INSTANCE.decrypt_verify(in_buf, out_buf)
-        msg.message   = out_buf.getvalue().decode("utf8").rstrip('\n')
-        msg.decrypted = True
-    except gpgme.GpgmeError as e:
-        msg.error = "Failed to decrypt: %s" % e.message.lower()
-        msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
-        return
+        # attempt decryption
+        in_buf  = io.BytesIO(msg.message.encode("utf8"))
+        out_buf = io.BytesIO()
+
+        try:
+            signing_sigs  = GPGContext.INSTANCE.decrypt_verify(in_buf, out_buf)
+            msg.message   = out_buf.getvalue().decode("utf8").rstrip('\n')
+            msg.decrypted = True
+        except gpgme.GpgmeError as e:
+            msg.error = "Failed to decrypt: %s" % e.message.lower()
+            msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
+            return
 
     print "Decrypted message #%d: %s" % (msg.id, msg.message)
 
@@ -119,39 +123,40 @@ def encrypt_message(msg):
         msg.error = "There are no keys to encrypt for, something went horribly wrong"
         return
 
-    # gather keys
-    enc_keys     = []
-    invalid_keys = []
-    for kid in enc_key_ids:
-        key, _ = get_single_key(kid)
-        if key is not None:
-            enc_keys.append(key)
-        else:
-            invalid_keys.append(kid)
+    with GPGContext.LOCK:
+        # gather keys
+        enc_keys     = []
+        invalid_keys = []
+        for kid in enc_key_ids:
+            key, _ = get_single_key(kid)
+            if key is not None:
+                enc_keys.append(key)
+            else:
+                invalid_keys.append(kid)
 
-    if invalid_keys:
-        msg.error = "Missing public key(s) for %s" % join_list(invalid_keys)
-        return
+        if invalid_keys:
+            msg.error = "Missing public key(s) for %s" % join_list(invalid_keys)
+            return
 
-    # get signing key
-    sign_key, error = _get_secret_key()
-    if error:
-        msg.error = error
-        return
-    GPGContext.INSTANCE.signers = [sign_key]
+        # get signing key
+        sign_key, error = _get_secret_key()
+        if error:
+            msg.error = error
+            return
+        GPGContext.INSTANCE.signers = [sign_key]
 
-    # attempt encryption
-    in_buf  = io.BytesIO(msg.message.encode("utf8"))
-    out_buf = io.BytesIO()
+        # attempt encryption
+        in_buf  = io.BytesIO(msg.message.encode("utf8"))
+        out_buf = io.BytesIO()
 
-    try:
-        signing_sigs  = GPGContext.INSTANCE.encrypt_sign(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
-        msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
-        msg.encrypted = True
-        msg.signed    = len(signing_sigs) == 1
-    except gpgme.GpgmeError as e:
-        msg.error = "Failed to encrypt: %s" % e.message.lower()
-        return
+        try:
+            signing_sigs  = GPGContext.INSTANCE.encrypt_sign(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
+            msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
+            msg.encrypted = True
+            msg.signed    = len(signing_sigs) == 1
+        except gpgme.GpgmeError as e:
+            msg.error = "Failed to encrypt: %s" % e.message.lower()
+            return
 
 
 def get_single_key(keyid, secret=False):

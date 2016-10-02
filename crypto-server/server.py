@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from SocketServer import ThreadingMixIn
 import json
 import ssl
 import sys
@@ -64,6 +65,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(response)
 
+class HTTPServer(ThreadingMixIn, HTTPServer):
+    pass
 
 def start_server(port, certfile, keyfile):
     addr = ("127.0.0.1", port)
