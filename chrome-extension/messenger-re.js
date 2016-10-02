@@ -116,7 +116,24 @@ function getConversationParticipants() {
 		// group chat with multiple participants
 		var groupParticipants = findPartipantsFromThreadID(threads, path);
 		return groupParticipants;
-	}
+	};
+
+	function objectifyParticipants(participants, ids) {
+		for (var i = 0; i < ids.length; i++) {
+			var pid = ids[i];
+			var fullParticpant = participants.find(function(x, i, a) {
+				return x['id'] == pid;
+			});
+
+			ids[i] = {
+				"name":    fullParticpant['name'],
+				"fbid":    fullParticpant['id'],
+				"profile": fullParticpant['href']
+			}
+		}
+
+		return ids;
+	};
 
 	var script = findScript();
 	if (!script) {
@@ -129,6 +146,7 @@ function getConversationParticipants() {
 		return null;
 	}
 
+	// TODO do these ever change? can we cache them instead of reprocessing everytime?
 	var threads      = json['mercuryPayload']['threads'];
 	var participants = json['mercuryPayload']['participants'];
 	if (!threads || !participants) {
@@ -136,5 +154,6 @@ function getConversationParticipants() {
 		return;
 	}
 
-	return getCurrentParticipants(threads, participants);
+	var participantIDs = getCurrentParticipants(threads, participants);
+	return objectifyParticipants(participants, participantIDs);
 };

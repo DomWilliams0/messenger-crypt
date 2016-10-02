@@ -106,15 +106,15 @@ def encrypt_message(msg):
     contacts     = config.get_item("keys.contacts")
     for r in msg.recipients:
         try:
-            user = contacts[r]
+            user = contacts[r['fbid']]
             enc_key_ids.append(user['key'])
         except KeyError:
             missing_keys.append(r)
 
     # validate
     if missing_keys:
-        # TODO send names back with keys, so can address them by name here
-        msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (len(missing_keys), join_list(missing_keys))
+        names = map(lambda r: "%s (%s)" % (r['name'], r['fbid']), missing_keys)
+        msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (len(names), join_list(names))
         return
 
     if not enc_key_ids:

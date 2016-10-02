@@ -88,12 +88,18 @@ function patchRequestSending() {
 					return orig.apply(this, arguments);
 				}
 
+				var participants = getConversationParticipants();
 				var msg = {
 					message:    decodeURI(json['body']) + "\n",
-					recipients: getConversationParticipants()
+					recipients: participants
 				};
 
 				transmitForEncryption(msg, function(response) {
+					if (response['error']) {
+						console.error(response['error']);
+						return orig.apply(request, null);
+					}
+
 					json['body'] = response['message'];
 					var newArgs = Object.keys(json).map(k => k + '=' + json[k]).join('&')
 					return orig.apply(request, [newArgs]);
