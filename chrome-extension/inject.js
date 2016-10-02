@@ -81,6 +81,13 @@ function patchRequestSending() {
 				var request = this;
 				var args    = arguments;
 
+				// attachment
+				if (!json['body'] || json['has_attachment'] == "true") {
+					// TODO allow blocking in config, and make sure to block upload to upload.messenger.com
+					console.log("Attachments (and stickers) are not currently supported");
+					return orig.apply(this, arguments);
+				}
+
 				var msg = {
 					message:    decodeURI(json['body']) + "\n",
 					recipients: getConversationParticipants()
