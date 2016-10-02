@@ -1,6 +1,7 @@
 import os
 import gpgme
 import io
+from urllib import quote_plus
 
 import config
 from constants import join_list
@@ -145,13 +146,12 @@ def encrypt_message(msg):
 
     try:
         signing_sigs  = GPGContext.INSTANCE.encrypt_sign(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
-        msg.message   = out_buf.getvalue().decode("utf8").rstrip('\n')
+        msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
         msg.encrypted = True
         msg.signed    = len(signing_sigs) == 1
     except gpgme.GpgmeError as e:
         msg.error = "Failed to encrypt: %s" % e.message.lower()
         return
-
 
 
 def get_single_key(keyid, secret=False):
