@@ -29,7 +29,7 @@ function decryptMessages() {
 			msg["id"] = msgID;
 			msg.element.id = formatElementID(msgID);
 
-			transmitForDecryption(msg, onRecvDecryptedMessage);
+			transmitForDecryption(msg);
 		}
 	}
 };
@@ -94,17 +94,12 @@ function patchRequestSending() {
 					recipients: participants
 				};
 
-				transmitForEncryption(msg, function(response) {
-					if (response['error']) {
-						console.error(response['error']);
-						return orig.apply(request, null);
-					}
-
-					json['body'] = response['message'];
-					var newArgs = Object.keys(json).map(k => k + '=' + json[k]).join('&')
-					return orig.apply(request, [newArgs]);
-				});
-
+				var requestContext = {
+					origSend:     orig,
+					request:      request,
+					formDataJson: json
+				};
+				transmitForEncryption(msg, requestContext);
 			}
 			else
 				return orig.apply(this, arguments);
@@ -117,7 +112,7 @@ function patchRequestSending() {
 			script.textContent = "(" + func + ")();";
 		}
 		else {
-			script.textContent = "" + func;
+			script.textContent = func.toString();
 		}
 
 		(document.head||document.documentElement).appendChild(script);
