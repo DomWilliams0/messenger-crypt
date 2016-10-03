@@ -1,3 +1,27 @@
+function transmit(path, msg, responseCallback, preSend) {
+
+	var http = new XMLHttpRequest();
+	var url  = "https://localhost:50456/" + path;
+
+	console.log(url);
+
+	http.open("POST", url, true);
+	http.setRequestHeader("Content-Type", "application/json");
+	http.onreadystatechange = function() {
+		if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
+			var resp = JSON.parse(http.responseText);
+			responseCallback(resp);
+		}
+	};
+
+	if (preSend) {
+		preSend(msg);
+	}
+
+	console.log("Posting to /" + path);
+	http.send(JSON.stringify(msg));
+};
+
 function transmitForDecryption(msg) {
 	function onRecvDecryptedMessage(msg) {
 		// find message element
@@ -46,32 +70,21 @@ function transmitForDecryption(msg) {
 		element.innerHTML = statusElement + msg.message;
 	};
 
-	var http = new XMLHttpRequest();
-	var url  = "https://localhost:50456/decrypt";
-
-	http.open("POST", url, true);
-	http.setRequestHeader("Content-Type", "application/json");
-	http.onreadystatechange = function() {
-		if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
-			var resp = http.responseText;
-			var respJSON = JSON.parse(resp);
-			onRecvDecryptedMessage(respJSON);
+	transmit("decrypt", msg, onRecvDecryptedMessage,
+		function(msg) {
+			delete msg.element;
 		}
-	};
-
-	console.log("Sending " + msg.id + " for decryption");
-
-	delete msg.element;
-	http.send(JSON.stringify(msg));
+	);
 };
 
 function transmitForEncryption(msg, origRequestContext) {
-
 	function onRecvEncryptedMessage(response, origRequestContext) {
 		var sendFunc = origRequestContext['origSend'];
 		var request  = origRequestContext['request'];
 		var json     = origRequestContext['formDataJson'];
 		var sendArgs = null;
+
+		console.log(json);
 
 		// handle error
 		if (response['error']) {
@@ -88,19 +101,9 @@ function transmitForEncryption(msg, origRequestContext) {
 		sendFunc.apply(request, sendArgs);
 	};
 
-	var http = new XMLHttpRequest();
-	var url  = "https://localhost:50456/encrypt";
-
-	console.log("Sending message for encryption");
-
-	http.open("POST", url, true);
-	http.setRequestHeader("Content-Type", "application/json");
-	http.onreadystatechange = function() {
-		if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
-			var resp = JSON.parse(http.responseText);
+	transmit("encrypt", msg,
+		function(resp) {
 			onRecvEncryptedMessage(resp, origRequestContext);
 		}
-	};
-
-	http.send(JSON.stringify(msg));
+	);
 };

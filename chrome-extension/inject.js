@@ -119,6 +119,7 @@ function patchRequestSending() {
 		script.remove();
 	};
 
+	addFunc(transmit, false);
 	addFunc(transmitForEncryption, false);
 	addFunc(getConversationParticipants, false);
 	addFunc(overloadOpen, true);
