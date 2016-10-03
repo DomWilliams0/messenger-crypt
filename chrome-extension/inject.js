@@ -126,10 +126,44 @@ function patchRequestSending() {
 	addFunc(overloadSend, true);
 };
 
+function startStatePolling(pollTime) {
+	function getPath() {
+		return window.location.pathname;
+	};
+
+	var oldPath = getPath();
+
+	function hasPathChanged() {
+		var newPath = getPath();
+		if (newPath != oldPath) {
+			oldPath = newPath;
+			return true;
+		}
+
+		return false;
+	};
+
+	function intervalCallback() {
+		if (hasPathChanged()) {
+			updateCachedState();
+		};
+	};
+
+
+	// initalisation
+	updateCachedState();
+	setInterval(intervalCallback, pollTime);
+};
+
 window.addEventListener("load", function(e) {
+	// message decrypting
 	startPolling(250);
 
+	// sent message interception and encryption
 	patchRequestSending();
+
+	// state polling
+	startStatePolling(50);
 
 }, false);
 

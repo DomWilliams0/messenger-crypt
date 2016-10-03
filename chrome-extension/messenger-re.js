@@ -53,7 +53,9 @@ function getAllMessages() {
 	return messageList;
 };
 
-function getConversationParticipants() {
+var YUGE_JSON = null;
+function updateCachedState() {
+
 	function findScript() {
 		s = Array.from(document.body.children).find(function(x, i, a) {
 			return x.innerHTML.startsWith(
@@ -86,6 +88,21 @@ function getConversationParticipants() {
 		return JSON.parse("{" + subscript + "}");
 	};
 
+	var script = findScript();
+	if (!script) {
+		console.error("Failed to find massive script");
+		return null;
+	}
+	var json = extractJSONFromYugeString(script);
+	if (!json) {
+		console.error("Failed to extract valid JSON from yuuuge string");
+		return null;
+	}
+
+	YUGE_JSON = json;
+};
+
+function getConversationParticipants() {
 	function findParticipantFromVanity(participants, vanity) {
 		var p = participants.find(function(x, i, a) {
 			return x['vanity'] == vanity;
@@ -135,20 +152,9 @@ function getConversationParticipants() {
 		return ids;
 	};
 
-	var script = findScript();
-	if (!script) {
-		console.error("Failed to find massive script");
-		return null;
-	}
-	var json = extractJSONFromYugeString(script);
-	if (!json) {
-		console.error("Failed to extract valid JSON from yuuuge string");
-		return null;
-	}
-
 	// TODO do these ever change? can we cache them instead of reprocessing everytime?
-	var threads      = json['mercuryPayload']['threads'];
-	var participants = json['mercuryPayload']['participants'];
+	var threads      = YUGE_JSON['mercuryPayload']['threads'];
+	var participants = YUGE_JSON['mercuryPayload']['participants'];
 	if (!threads || !participants) {
 		console.error("Failed to extract threads or participants");
 		return;
