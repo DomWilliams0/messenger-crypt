@@ -8,9 +8,17 @@ function transmit(path, msg, responseCallback, preSend) {
 	http.open("POST", url, true);
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
-		if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
-			var resp = JSON.parse(http.responseText);
-			responseCallback(resp);
+		if (http.readyState == XMLHttpRequest.DONE) {
+			if (http.status == 200) {
+				var resp = JSON.parse(http.responseText);
+				responseCallback(resp);
+			}
+			else {
+				var resp = {
+					net_error: "Failed to connect to " + url
+				};
+				responseCallback(resp);
+			}
 		}
 	};
 
@@ -24,6 +32,14 @@ function transmit(path, msg, responseCallback, preSend) {
 
 function transmitForDecryption(msg) {
 	function onRecvDecryptedMessage(msg) {
+		var netError = msg['net_error'];
+
+		// unrelated error
+		if (netError) {
+			console.error(netError);
+			return;
+		}
+
 		// find message element
 		var element = document.getElementById(formatElementID(msg['id']))
 
@@ -84,12 +100,11 @@ function transmitForEncryption(msg, origRequestContext) {
 		var json     = origRequestContext['formDataJson'];
 		var sendArgs = null;
 
-		console.log(json);
-
 		// handle error
-		if (response['error']) {
+		var err = response['net_error'] || response['error'];
+		if (err) {
 			// TODO show error
-			console.error(response['error']);
+			console.error(err);
 			sendArgs = null; // block request
 		}
 		else {
