@@ -1,3 +1,18 @@
+function updateButton(b) {
+	var encrypting = b.id.startsWith("encrypt");
+
+	if (b.classList.contains("buttonOff")) {
+		b.classList.remove("buttonOff");
+		b.classList.add("buttonOn");
+	}
+	else {
+		b.classList.remove("buttonOn");
+		b.classList.add("buttonOff");
+	}
+
+	console.log(b);
+};
+
 function buttonPress(e) {
 	if (!(e && e.target && e.target.id)) {
 		return;
@@ -7,26 +22,19 @@ function buttonPress(e) {
 		return;
 	};
 
+	var button = e.target;
+	var action = button.id.slice(0, index);
+
 	// toggle button
-	if (e.target.classList.contains("buttonOff")) {
-		e.target.classList.remove("buttonOff");
-		e.target.classList.add("buttonOn");
-	}
-	else {
-		e.target.classList.remove("buttonOn");
-		e.target.classList.add("buttonOff");
-	}
-
-	var action = e.target.id.slice(0, index);
-	console.log(action);
-
+	updateButton(button, action == "encrypt");
 };
 
 function initPopup() {
 	var buttons = document.getElementsByTagName("input");
 	for (var i = 0; i < buttons.length; i++) {
 		var b = buttons[i];
-		b.classList.add("button", "buttonOff");
+		b.classList.add("button");
+		updateButton(b);
 		b.addEventListener("click", buttonPress);
 	};
 };
