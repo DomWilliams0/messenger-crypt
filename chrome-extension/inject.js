@@ -152,8 +152,7 @@ function startStatePolling(pollTime) {
 
 window.addEventListener("load", function(e) {
 	// message decrypting
-	// TODO fix
-	// startPolling(250);
+	startPolling(250);
 
 	// sent message interception and encryption
 	// TODO fix global state access
