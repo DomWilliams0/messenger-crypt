@@ -20,7 +20,7 @@
 	],
 
 	"background": {
-		"scripts": ["background.js"]
+		"page": "background.html"
 	},
 
 	"browser_action": {

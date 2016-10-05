@@ -146,7 +146,8 @@ function startStatePolling(pollTime) {
 
 	function intervalCallback() {
 		if (hasPathChanged()) {
-			transmit("POST", "state", regenerateState());
+			var newState = regenerateState();
+			chrome.runtime.sendMessage({action: "set_state", data: newState}, function(resp) {});
 		};
 	};
 

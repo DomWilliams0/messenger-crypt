@@ -41,4 +41,12 @@ function initPopup() {
 
 document.addEventListener('DOMContentLoaded', function() {
 	initPopup();
+
+	chrome.runtime.sendMessage({action: "get_state"}, function(resp) {
+		// update fields
+		// TODO get conversation state, not global
+		// TODO read encryption/signing toggles from config for this convo too
+
+		// TODO remove loading overlay to reveal the jewels
+	});
 });

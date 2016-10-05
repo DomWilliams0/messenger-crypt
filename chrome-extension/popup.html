@@ -41,15 +41,30 @@
 				margin-left: 2px;
 			}
 
+			#page-cover {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				text-align: center;
+				background: #fff;
+				color: #445;
+			}
+
+
 		</style>
 		<script src="popup.js"></script>
 	</head>
 	<body>
 		<div>
-			<div class="header" id="conversation"><h2>Dom Williams</h2></div>
+			<div class="header"><h2 id="conversation">Dom Williams</h2></div>
 			<div class="buttons">
 				<input type="button" id="encrypt-button" value="Encrypt"/><input type="button" id="sign-button" value="Sign"/>
 			</div>
 		</div>
+
+		<!-- TODO loading gif -->
+		<div id="page-cover"><h2>Loading...</h2></div>
 	</body>
 </html>
