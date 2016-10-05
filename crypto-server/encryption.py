@@ -1,4 +1,5 @@
 import os
+import json
 import gpgme
 import io
 from urllib import quote_plus, unquote
@@ -26,7 +27,9 @@ if GPGContext.INSTANCE is None:
 
 
 class DecryptedMessage(object):
-    def __init__(self, js_dict):
+    def __init__(self, json_string):
+        js_dict         = json.loads(json_string)
+
         self.sender     = js_dict['sender']
         self.message    = js_dict['message']
         self.id         = js_dict['id']
@@ -41,7 +44,9 @@ class DecryptedMessage(object):
         return self.__dict__
 
 class EncryptedMessage(object):
-    def __init__(self, js_dict):
+    def __init__(self, json_string):
+        js_dict         = json.loads(json_string)
+
         self.message    = js_dict['message']
         self.recipients = js_dict['recipients']
 

@@ -8,7 +8,7 @@ function transmit(path, msg, responseCallback, preSend) {
 	http.open("POST", url, true);
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
-		if (http.readyState == XMLHttpRequest.DONE) {
+		if (http.readyState == XMLHttpRequest.DONE && responseCallback) {
 			if (http.status == 200) {
 				var resp = JSON.parse(http.responseText);
 				responseCallback(resp);

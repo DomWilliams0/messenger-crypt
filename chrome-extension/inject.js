@@ -74,6 +74,18 @@ function patchRequestSending() {
 	function overloadSend() {
 		var orig = window.XMLHttpRequest.prototype.send;
 		window.XMLHttpRequest.prototype.send = function(params) {
+			function getCurrentState(callback) {
+				var http = new XMLHttpRequest();
+				http.open("GET", "https://localhost:50456/state", true);
+				http.setRequestHeader("Content-Type", "application/json");
+				http.onreadystatechange = function() {
+					if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
+						var state = JSON.parse(http.responseText);
+						callback(state);
+					}
+				};
+				http.send();
+			};
 
 			if (this.interceptMe) {
 
@@ -88,18 +100,20 @@ function patchRequestSending() {
 					return orig.apply(this, arguments);
 				}
 
-				var participants = getConversationParticipants();
-				var msg = {
-					message:    decodeURI(json['body']) + "\n",
-					recipients: participants
-				};
+				getCurrentState(function(state) {
+					var convoState = getConversationState(state);
+					var msg = {
+						message:    decodeURI(json['body']) + "\n",
+						recipients: convoState['participants']
+					};
 
-				var requestContext = {
-					origSend:     orig,
-					request:      request,
-					formDataJson: json
-				};
-				transmitForEncryption(msg, requestContext);
+					var requestContext = {
+						origSend:     orig,
+						request:      request,
+						formDataJson: json
+					};
+					transmitForEncryption(msg, requestContext);
+				});
 			}
 			else
 				return orig.apply(this, arguments);
@@ -121,7 +135,7 @@ function patchRequestSending() {
 
 	addFunc(transmit, false);
 	addFunc(transmitForEncryption, false);
-	addFunc(getConversationParticipants, false);
+	addFunc(getConversationState, false);
 	addFunc(overloadOpen, true);
 	addFunc(overloadSend, true);
 };
@@ -140,13 +154,11 @@ function startStatePolling(pollTime) {
 
 	function intervalCallback() {
 		if (hasPathChanged()) {
-			updateCachedState();
+			transmit("state", regenerateState());
 		};
 	};
 
-
 	// initalisation
-	updateCachedState();
 	setInterval(intervalCallback, pollTime);
 };
 
@@ -155,8 +167,7 @@ window.addEventListener("load", function(e) {
 	startPolling(250);
 
 	// sent message interception and encryption
-	// TODO fix global state access
-	// patchRequestSending();
+	patchRequestSending();
 
 	// state polling
 	startStatePolling(50);

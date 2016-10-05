@@ -53,8 +53,7 @@ function getAllMessages() {
 	return messageList;
 };
 
-var YUGE_JSON = null;
-function updateCachedState() {
+function regenerateState() {
 
 	function findScript() {
 		s = Array.from(document.body.children).find(function(x, i, a) {
@@ -99,10 +98,13 @@ function updateCachedState() {
 		return null;
 	}
 
-	YUGE_JSON = json['mercuryPayload'];
+	return {
+		threads:      json['mercuryPayload']['threads'],
+		participants: json['mercuryPayload']['participants']
+	}
 }
 
-function getState() {
+function getConversationState(globalState) {
 	function findThread(allThreads, allParticipants) {
 		// remove /t/ from path
 		var path = document.location.pathname.slice(3);
@@ -126,12 +128,8 @@ function getState() {
 		});
 	};
 
-	var allThreads      = YUGE_JSON['threads'];
-	var allParticipants = YUGE_JSON['participants'];
-	if (!allThreads || !allParticipants) {
-		console.error("Failed to extract threads or participants");
-		return;
-	}
+	var allThreads      = globalState['threads'];
+	var allParticipants = globalState['participants'];
 
 	// get current thread
 	var fullThread     = findThread(allThreads, allParticipants);
