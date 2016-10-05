@@ -99,67 +99,65 @@ function updateCachedState() {
 		return null;
 	}
 
-	YUGE_JSON = json;
-};
+	YUGE_JSON = json['mercuryPayload'];
+}
 
-function getConversationParticipants() {
-	function findParticipantFromVanity(participants, vanity) {
-		var p = participants.find(function(x, i, a) {
-			return x['vanity'] == vanity;
-		});
-
-		return p ? p['id'] : null;
-	};
-
-	function findPartipantsFromThreadID(threads, id) {
-		var t = threads.find(function(x, i, a) {
-			return x['thread_fbid'] == id;
-		});
-
-		return t ? t['participants'] : null;
-	};
-
-	function getCurrentParticipants(threads, participants) {
-		// get current conversation ID
+function getState() {
+	function findThread(allThreads, allParticipants) {
 		// remove /t/ from path
 		var path = document.location.pathname.slice(3);
 
-		// non-group chat with single person
-		var singleParticipant = findParticipantFromVanity(participants, path);
-		if (singleParticipant) {
-			return [singleParticipant];
+		var fullThread = allThreads.find(function(x, i, a) {
+			return x['thread_fbid'] == path;
+		});
+
+		// group
+		if (fullThread) {
+			return fullThread;
 		}
 
-		// group chat with multiple participants
-		var groupParticipants = findPartipantsFromThreadID(threads, path);
-		return groupParticipants;
+		// single user
+		var participantID = allParticipants.find(function(x, i, a) {
+			return x['vanity'] == path;
+		})['fbid'];
+
+		return allThreads.find(function(x, i, a) {
+			return x['other_user_fbid'] == participantID;
+		});
 	};
 
-	function objectifyParticipants(participants, ids) {
-		for (var i = 0; i < ids.length; i++) {
-			var pid = ids[i];
-			var fullParticpant = participants.find(function(x, i, a) {
-				return x['id'] == pid;
-			});
-
-			ids[i] = {
-				"name":    fullParticpant['name'],
-				"fbid":    fullParticpant['id'],
-				"profile": fullParticpant['href']
-			}
-		}
-
-		return ids;
-	};
-
-	// TODO do these ever change? can we cache them instead of reprocessing everytime?
-	var threads      = YUGE_JSON['mercuryPayload']['threads'];
-	var participants = YUGE_JSON['mercuryPayload']['participants'];
-	if (!threads || !participants) {
+	var allThreads      = YUGE_JSON['threads'];
+	var allParticipants = YUGE_JSON['participants'];
+	if (!allThreads || !allParticipants) {
 		console.error("Failed to extract threads or participants");
 		return;
 	}
 
-	var participantIDs = getCurrentParticipants(threads, participants);
-	return objectifyParticipants(participants, participantIDs);
+	// get current thread
+	var fullThread     = findThread(allThreads, allParticipants);
+	var participantIDs = fullThread['participants'];
+	var participants   = participantIDs.map(function(x, i, a) {
+		var fullParticpant = allParticipants.find(function(y, j, ar) {
+			return x == y['id'];
+		});
+
+		return {
+			name:    fullParticpant['name'],
+			fbid:    fullParticpant['id'],
+			profile: fullParticpant['href'],
+			image:   fullParticpant['image_src']
+		}
+	});
+
+	var thread = {
+		name: fullThread['name'] || participants[0]['name'],
+		image: fullThread['image_src'] || participants[0]['image']
+	};
+
+	return {
+		thread:          thread,
+		participants:    participants,
+		allThreads:      allThreads,
+		allParticipants: allParticipants
+	};
 };

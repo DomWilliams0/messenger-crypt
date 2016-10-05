@@ -127,14 +127,9 @@ function patchRequestSending() {
 };
 
 function startStatePolling(pollTime) {
-	function getPath() {
-		return window.location.pathname;
-	};
-
-	var oldPath = getPath();
-
+	var oldPath = null;
 	function hasPathChanged() {
-		var newPath = getPath();
+		var newPath = window.location.pathname;
 		if (newPath != oldPath) {
 			oldPath = newPath;
 			return true;
@@ -157,10 +152,12 @@ function startStatePolling(pollTime) {
 
 window.addEventListener("load", function(e) {
 	// message decrypting
-	startPolling(250);
+	// TODO fix
+	// startPolling(250);
 
 	// sent message interception and encryption
-	patchRequestSending();
+	// TODO fix global state access
+	// patchRequestSending();
 
 	// state polling
 	startStatePolling(50);
