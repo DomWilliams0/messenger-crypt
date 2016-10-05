@@ -1,11 +1,9 @@
-function transmit(path, msg, responseCallback, preSend) {
+function transmit(method, path, msg, responseCallback) {
 
 	var http = new XMLHttpRequest();
 	var url  = "https://localhost:50456/" + path;
 
-	console.log(url);
-
-	http.open("POST", url, true);
+	http.open(method, url, true);
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
 		if (http.readyState == XMLHttpRequest.DONE && responseCallback) {
@@ -22,11 +20,6 @@ function transmit(path, msg, responseCallback, preSend) {
 		}
 	};
 
-	if (preSend) {
-		preSend(msg);
-	}
-
-	console.log("Posting to /" + path);
 	http.send(JSON.stringify(msg));
 };
 
@@ -86,11 +79,8 @@ function transmitForDecryption(msg) {
 		element.innerHTML = statusElement + msg.message;
 	};
 
-	transmit("decrypt", msg, onRecvDecryptedMessage,
-		function(msg) {
-			delete msg.element;
-		}
-	);
+	delete msg.element;
+	transmit("POST", "decrypt", msg, onRecvDecryptedMessage);
 };
 
 function transmitForEncryption(msg, origRequestContext) {
@@ -116,7 +106,7 @@ function transmitForEncryption(msg, origRequestContext) {
 		sendFunc.apply(request, sendArgs);
 	};
 
-	transmit("encrypt", msg,
+	transmit("POST", "encrypt", msg,
 		function(resp) {
 			onRecvEncryptedMessage(resp, origRequestContext);
 		}

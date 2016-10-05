@@ -74,19 +74,6 @@ function patchRequestSending() {
 	function overloadSend() {
 		var orig = window.XMLHttpRequest.prototype.send;
 		window.XMLHttpRequest.prototype.send = function(params) {
-			function getCurrentState(callback) {
-				var http = new XMLHttpRequest();
-				http.open("GET", "https://localhost:50456/state", true);
-				http.setRequestHeader("Content-Type", "application/json");
-				http.onreadystatechange = function() {
-					if (http.readyState == XMLHttpRequest.DONE && http.status == 200) {
-						var state = JSON.parse(http.responseText);
-						callback(state);
-					}
-				};
-				http.send();
-			};
-
 			if (this.interceptMe) {
 
 				var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
@@ -100,7 +87,12 @@ function patchRequestSending() {
 					return orig.apply(this, arguments);
 				}
 
-				getCurrentState(function(state) {
+				transmit("GET", "state", null, function(state) {
+					if (state['net_error']) {
+						console.error(state['net_error']);
+						return orig.apply(this, null);
+					}
+
 					var convoState = getConversationState(state);
 					var msg = {
 						message:    decodeURI(json['body']) + "\n",
@@ -154,7 +146,7 @@ function startStatePolling(pollTime) {
 
 	function intervalCallback() {
 		if (hasPathChanged()) {
-			transmit("state", regenerateState());
+			transmit("POST", "state", regenerateState());
 		};
 	};
 
