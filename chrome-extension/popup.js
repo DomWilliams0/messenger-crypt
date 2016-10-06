@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		var participants = resp['participants'];
 
 		META['convoName'] = thread['name'];
-		META['convoKey']  = thread['name']; // TODO thread id instead
+		META['convoKey']  = thread['id'];
 		updateState();
 
 		// remove loading overlay to reveal the jewels

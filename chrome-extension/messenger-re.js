@@ -56,7 +56,7 @@ function getAllMessages() {
 function regenerateState() {
 
 	function findScript() {
-		s = Array.from(document.body.children).find(function(x, i, a) {
+		var s = Array.from(document.body.children).find(function(x, i, a) {
 			return x.innerHTML.startsWith(
 				"require(\"TimeSlice\").guard(function() {require(\"ServerJSDefine\").handleDefines("
 			);
@@ -145,12 +145,13 @@ function getConversationState(globalState, convo) {
 	});
 
 	var thread = {
-		name: fullThread['name'] || participants[0]['name'],
+		name:  fullThread['name'] || participants[0]['name'],
+		id:    fullThread['thread_fbid'],
 		image: fullThread['image_src'] || participants[0]['image']
 	};
 
 	return {
-		thread:          thread,
-		participants:    participants
+		thread:       thread,
+		participants: participants
 	};
 };

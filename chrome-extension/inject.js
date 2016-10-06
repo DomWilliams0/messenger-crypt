@@ -146,7 +146,7 @@ function startStatePolling(pollTime) {
 	function intervalCallback() {
 		if (hasPathChanged()) {
 			var newState = {
-				global: regenerateState(),
+				global: regenerateState(), // has to be run in content script context
 				convo:  oldPath
 			};
 
