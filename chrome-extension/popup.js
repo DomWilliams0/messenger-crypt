@@ -1,16 +1,24 @@
-function updateButton(b) {
-	var encrypting = b.id.startsWith("encrypt");
+var META  = {};
 
-	if (b.classList.contains("buttonOff")) {
-		b.classList.remove("buttonOff");
-		b.classList.add("buttonOn");
+var DEFAULT_STATE = {
+	encryption: false,
+	signing:    false
+};
+var STATE = Object.assign({}, DEFAULT_STATE);
+
+function setButtonState(b, active) {
+	if (active === undefined) {
+		active = b.classList.contains("buttonOn");
 	}
-	else {
+
+	if (active) {
 		b.classList.remove("buttonOn");
 		b.classList.add("buttonOff");
 	}
-
-	console.log(b);
+	else {
+		b.classList.remove("buttonOff");
+		b.classList.add("buttonOn");
+	}
 };
 
 function buttonPress(e) {
@@ -25,8 +33,54 @@ function buttonPress(e) {
 	var button = e.target;
 	var action = button.id.slice(0, index);
 
-	// toggle button
-	updateButton(button, action == "encrypt");
+	switch(action) {
+		case "encrypt":
+			STATE.encryption = !STATE.encryption;
+			break;
+		case "sign":
+			STATE.signing = !STATE.signing;
+			break;
+	}
+
+	setButtonState(button);
+
+	// save state
+	chrome.storage.local.get("conversations", function(oldState) {
+
+		var convoKey              = META['convoKey'];
+		var newConversationsState = oldState['conversations'] || {};
+
+		// to be honest this is pretty grim
+		if (JSON.stringify(STATE) == JSON.stringify(DEFAULT_STATE)) {
+			delete newConversationsState[convoKey];
+		}
+		else {
+			newConversationsState[convoKey] = STATE;
+		}
+
+		chrome.storage.local.set({conversations: newConversationsState});
+	});
+};
+
+function updateState() {
+	chrome.storage.local.get("conversations", function(state) {
+		var convoKey  = META['convoKey'];
+		var convoName = META['convoName'];
+
+		// update state from local storage
+		var allConversationsState = state['conversations'] || {};
+		var conversationState     = allConversationsState[convoKey] || {};
+		Object.assign(STATE, conversationState);
+
+		// update popup fields
+		var header    = document.getElementById("conversation");
+		var encButton = document.getElementById("encrypt-button");
+		var sigButton = document.getElementById("sign-button");
+
+		header.innerText = convoName;
+		setButtonState(encButton, STATE['encryption']);
+		setButtonState(sigButton, STATE['signing']);
+	});
 };
 
 function initPopup() {
@@ -34,7 +88,6 @@ function initPopup() {
 	for (var i = 0; i < buttons.length; i++) {
 		var b = buttons[i];
 		b.classList.add("button");
-		updateButton(b);
 		b.addEventListener("click", buttonPress);
 	};
 };
@@ -43,10 +96,16 @@ document.addEventListener('DOMContentLoaded', function() {
 	initPopup();
 
 	chrome.runtime.sendMessage({action: "get_state"}, function(resp) {
-		// update fields
-		// TODO get conversation state, not global
-		// TODO read encryption/signing toggles from config for this convo too
+		var thread       = resp['thread'];
+		var participants = resp['participants'];
 
-		// TODO remove loading overlay to reveal the jewels
+		META['convoName'] = thread['name'];
+		META['convoKey']  = thread['name']; // TODO thread id instead
+		updateState();
+
+		// remove loading overlay to reveal the jewels
+		var cover = document.getElementById("page-cover");
+		cover.remove();
 	});
+
 });
