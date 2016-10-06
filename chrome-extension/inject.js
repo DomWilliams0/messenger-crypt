@@ -93,10 +93,9 @@ function patchRequestSending() {
 						return orig.apply(this, null);
 					}
 
-					var convoState = getConversationState(state);
 					var msg = {
 						message:    decodeURI(json['body']) + "\n",
-						recipients: convoState['participants']
+						recipients: state['participants']
 					};
 
 					var requestContext = {
@@ -135,7 +134,7 @@ function patchRequestSending() {
 function startStatePolling(pollTime) {
 	var oldPath = null;
 	function hasPathChanged() {
-		var newPath = window.location.pathname;
+		var newPath = window.location.pathname.slice(3);
 		if (newPath != oldPath) {
 			oldPath = newPath;
 			return true;
@@ -146,7 +145,11 @@ function startStatePolling(pollTime) {
 
 	function intervalCallback() {
 		if (hasPathChanged()) {
-			var newState = regenerateState();
+			var newState = {
+				global: regenerateState(),
+				convo:  oldPath
+			};
+
 			chrome.runtime.sendMessage({action: "set_state", data: newState}, function(resp) {});
 		};
 	};

@@ -104,13 +104,10 @@ function regenerateState() {
 	}
 }
 
-function getConversationState(globalState) {
+function getConversationState(globalState, convo) {
 	function findThread(allThreads, allParticipants) {
-		// remove /t/ from path
-		var path = document.location.pathname.slice(3);
-
 		var fullThread = allThreads.find(function(x, i, a) {
-			return x['thread_fbid'] == path;
+			return x['thread_fbid'] == convo;
 		});
 
 		// group
@@ -120,7 +117,7 @@ function getConversationState(globalState) {
 
 		// single user
 		var participantID = allParticipants.find(function(x, i, a) {
-			return x['vanity'] == path;
+			return x['vanity'] == convo;
 		})['fbid'];
 
 		return allThreads.find(function(x, i, a) {
@@ -154,8 +151,6 @@ function getConversationState(globalState) {
 
 	return {
 		thread:          thread,
-		participants:    participants,
-		allThreads:      allThreads,
-		allParticipants: allParticipants
+		participants:    participants
 	};
 };

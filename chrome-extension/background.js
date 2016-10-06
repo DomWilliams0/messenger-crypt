@@ -13,24 +13,24 @@ chrome.webRequest.onHeadersReceived.addListener(function(details) {
 
 }, {urls: ["https://*.messenger.com/*"]}, ["blocking", "responseHeaders"]);
 
-var STATE = null;
+var STATE_CONVO  = null;
 chrome.runtime.onMessage.addListener(
 	function(req, sender, callback) {
 		var action = req['action'];
 
 		if (action == "set_state") {
-			var state = req['data'];
+			var global = req['data']['global'];
+			var convo  = req['data']['convo'];
 
 			// stored here to send to popup when opened
-			STATE = state;
+			STATE_CONVO = getConversationState(global, convo);
 
 			// stored on server for XMLHttpRequest to request during send()
-			transmit("POST", "state", state);
+			transmit("POST", "state", STATE_CONVO);
 		}
 
 		else if (action == "get_state") {
-			// TODO conversation state, not global
-			callback(STATE);
+			callback(STATE_CONVO);
 		}
 	}
 );
