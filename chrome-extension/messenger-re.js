@@ -118,10 +118,12 @@ function getConversationState(globalState, convo) {
 		// single user
 		var participantID = allParticipants.find(function(x, i, a) {
 			return x['vanity'] == convo;
-		})['fbid'];
+		});
+
+		if (!participantID) { return null; }
 
 		return allThreads.find(function(x, i, a) {
-			return x['other_user_fbid'] == participantID;
+			return x['other_user_fbid'] == participantID['fbid'];
 		});
 	};
 
@@ -129,7 +131,14 @@ function getConversationState(globalState, convo) {
 	var allParticipants = globalState['participants'];
 
 	// get current thread
-	var fullThread     = findThread(allThreads, allParticipants);
+	var fullThread = findThread(allThreads, allParticipants);
+
+	if (!fullThread) {
+		// TODO show error in popup instead of alert
+		console.error("Failed to fetch state for newly loaded conversations, please refresh the page");
+		return;
+	}
+
 	var participantIDs = fullThread['participants'];
 	var participants   = participantIDs.map(function(x, i, a) {
 		var fullParticpant = allParticipants.find(function(y, j, ar) {
