@@ -34,3 +34,15 @@ chrome.runtime.onMessage.addListener(
 		}
 	}
 );
+
+chrome.tabs.onActivated.addListener(function(activeInfo) {
+	var tabId = activeInfo.tabId;
+	chrome.tabs.get(tabId, function(tab) {
+		if (tab.highlighted && tab.url.startsWith("https://www.messenger.com/t/")) {
+			chrome.browserAction.enable(tabId);
+		}
+		else {
+			chrome.browserAction.disable(tabId);
+		}
+	});
+});

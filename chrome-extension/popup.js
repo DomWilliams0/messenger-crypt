@@ -96,6 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	initPopup();
 
 	chrome.runtime.sendMessage({action: "get_state"}, function(resp) {
+		if (!resp) { return; }
+
 		var thread       = resp['thread'];
 		var participants = resp['participants'];
 
