@@ -126,6 +126,8 @@ function patchRequestSending() {
 	};
 
 	addFunc(transmit, false);
+	addFunc(setBadgeState, false);
+	addFunc(setBadgeError, false);
 	addFunc(flattenJSON, false);
 	addFunc(transmitForEncryption, false);
 	addFunc(getConversationState, false);

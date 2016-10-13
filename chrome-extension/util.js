@@ -25,24 +25,24 @@ function transmit(method, path, msg, responseCallback, errorCallback) {
 			}
 		}
 	};
+	http.onerror = errorCallback;
 
 	http.send(JSON.stringify(msg));
 };
 
-BADGE_NORMAL = "#5289f5"
-BADGE_ERROR  = "#f92b2b"
-
 function setBadgeState(msg, colour) {
-	chrome.browserAction.setBadgeText({text: msg});
-	chrome.browserAction.setBadgeBackgroundColor({color: colour});
+	if (chrome && chrome.browserAction) {
+		chrome.browserAction.setBadgeText({text: msg});
+		chrome.browserAction.setBadgeBackgroundColor({color: colour});
+	}
 };
 
 function setBadgeText(msg) {
-	setBadgeState(msg, BADGE_NORMAL);
+	setBadgeState(msg, "#5289f5");
 };
 
 function setBadgeError() {
-	setBadgeState("ERR", BADGE_ERROR);
+	setBadgeState("ERR", "#f92b2b");
 };
 
 function updateBadge(encrypt, signing) {
