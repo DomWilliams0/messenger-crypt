@@ -1,13 +1,5 @@
 function transmitForDecryption(messages) {
 	function onRecvDecryptedMessage(resp) {
-		var netError = resp['net_error'];
-
-		// unrelated error
-		if (netError) {
-			console.error(netError);
-			return;
-		}
-
 		var messages = resp['messages'];
 		for (var i = 0; i < messages.length; i++) {
 			var msg = messages[i];
@@ -74,7 +66,7 @@ function transmitForEncryption(msg, origRequestContext) {
 		var sendArgs = null;
 
 		// handle error
-		var err = response['net_error'] || response['error'];
+		var err = response['error'];
 		if (err) {
 			// TODO show error
 			console.error(err);

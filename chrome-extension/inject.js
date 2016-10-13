@@ -94,11 +94,6 @@ function patchRequestSending() {
 				}
 
 				transmit("GET", "state", null, function(state) {
-					if (state['net_error']) {
-						console.error(state['net_error']);
-						return orig.apply(this, null);
-					}
-
 					var msg = {
 						message:    decodeURI(json['body']) + "\n",
 						recipients: state['participants'],
