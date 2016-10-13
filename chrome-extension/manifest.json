@@ -8,7 +8,7 @@
 	"content_scripts": [
 		{
 			"matches": ["*://*.messenger.com/*"],
-			"js": ["messenger-re.js", "crypto.js", "inject.js"]
+			"js": ["util.js", "messenger-re.js", "crypto.js", "inject.js"]
 		}
 	],
 
