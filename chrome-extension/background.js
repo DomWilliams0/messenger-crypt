@@ -16,9 +16,11 @@ chrome.webRequest.onHeadersReceived.addListener(function(details) {
 var STATE_CONVO  = null;
 
 function updateBadgeFromBackground() {
-	transmit("GET", "settings", {id: STATE_CONVO['thread']['id']}, function(resp) {
-		updateBadge(resp['encryption'], resp['signing']);
-	});
+	if (STATE_CONVO) {
+		transmit("GET", "settings", {id: STATE_CONVO['thread']['id']}, function(resp) {
+			updateBadge(resp['encryption'], resp['signing']);
+		});
+	}
 }
 
 chrome.runtime.onMessage.addListener(
@@ -50,11 +52,13 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 	var tabId = activeInfo.tabId;
 	chrome.tabs.get(tabId, function(tab) {
 		if (tab.highlighted && tab.url.startsWith("https://www.messenger.com/t/")) {
-			chrome.browserAction.enable(tabId);
+			chrome.browserAction.enable();
+			updateBadgeFromBackground();
 		}
 		else {
-			chrome.browserAction.disable(tabId);
+			chrome.browserAction.disable();
 			setBadgeText("");
 		}
+
 	});
 });
