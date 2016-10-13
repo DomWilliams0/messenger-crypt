@@ -18,7 +18,7 @@ class GPGContext(object):
         # create context
         self._ctx = gpgme.Context()
         self._ctx.armor = True
-        print "Created GPG context"
+        # print "Created GPG context"
 
     def __getattr__(self, attr):
         return getattr(self._ctx, attr)
