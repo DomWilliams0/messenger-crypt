@@ -32,7 +32,6 @@ class DecryptedMessage(object):
     def __init__(self, json_string):
         js_dict         = json.loads(json_string)
 
-        self.sender     = js_dict['sender']
         self.message    = js_dict['message']
         self.id         = js_dict['id']
 
