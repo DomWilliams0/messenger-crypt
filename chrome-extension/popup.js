@@ -1,6 +1,7 @@
 var META       = {};
 
 var HEADER     = null;
+var FBID       = null;
 var BUTTON_ENC = null;
 var BUTTON_SIG = null;
 
@@ -43,6 +44,7 @@ function updateState() {
 
 function clearPopup() {
 	HEADER.innerText = "N/A";
+	FBID.innerText = "fbid:N/A";
 	setButtonState(BUTTON_ENC, false);
 	setButtonState(BUTTON_SIG, false);
 };
@@ -55,6 +57,7 @@ function receiveState() {
 		var signing = settings['signing']    === "true";
 
 		HEADER.innerText = META['convoName'];
+		FBID.innerText = "fbid:" + META['convoKey'];
 		setButtonState(BUTTON_ENC, encrypt);
 		setButtonState(BUTTON_SIG, signing);
 
@@ -64,6 +67,7 @@ function receiveState() {
 
 function initPopup() {
 	HEADER     = document.getElementById("conversation");
+	FBID       = document.getElementById("fbid");
 	BUTTON_ENC = document.getElementById("encrypt-button");
 	BUTTON_SIG = document.getElementById("sign-button");
 

@@ -20,6 +20,16 @@
 			.header {
 				text-align: center;
 				width: 100%;
+				margin-bottom: 5%;
+			}
+
+			#conversation {
+				margin-bottom: 0;
+			}
+
+			#fbid {
+				color: #889;
+				text-transform: uppercase;
 			}
 
 			.buttons {
@@ -27,7 +37,7 @@
 			}
 
 			body {
-				width: 200px;
+				width: 250px;
 			}
 
 			input {
@@ -59,7 +69,9 @@
 	</head>
 	<body>
 		<div>
-			<div class="header"><h2 id="conversation">N/A</h2></div>
+			<div class="header">
+				<h2 id="conversation">N/A</h2><span id="fbid">fbid:123123123123</span>
+			</div>
 			<div class="buttons">
 				<input type="button" id="encrypt-button" value="Encrypt"/><input type="button" id="sign-button" value="Sign"/>
 			</div>

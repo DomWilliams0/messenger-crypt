@@ -48,7 +48,6 @@ def link_handler(args):
     if not fbid[5:].isdigit():
         fbid = find_fbid(fbid)
         if fbid is None:
-            # TODO no false promises now
             return "Profile not found. Maybe it's not publicly visible; copy their ID from the browser extension popup instead."
 
     # update contacts
