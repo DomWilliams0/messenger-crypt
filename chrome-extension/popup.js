@@ -59,7 +59,14 @@ function buttonPress(e) {
 		}
 
 		chrome.storage.local.set({conversations: newConversationsState});
+
+		// send to server too
+		var http = new XMLHttpRequest();
+		http.open("POST", "https://localhost:50456/settings" , true);
+		http.setRequestHeader("Content-Type", "application/json");
+		http.send(JSON.stringify(newConversationsState));
 	});
+
 };
 
 function updateState() {

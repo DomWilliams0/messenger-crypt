@@ -40,6 +40,11 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 	chrome.tabs.get(tabId, function(tab) {
 		if (tab.highlighted && tab.url.startsWith("https://www.messenger.com/t/")) {
 			chrome.browserAction.enable(tabId);
+
+			chrome.storage.local.get("conversations", function(settings) {
+				var convoSettings = settings['conversations'] || {};
+				transmit("POST", "settings", JSON.stringify(convoSettings));
+			});
 		}
 		else {
 			chrome.browserAction.disable(tabId);

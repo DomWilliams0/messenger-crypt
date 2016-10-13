@@ -79,7 +79,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.end_headers();
 
-    def state_handler_get(self, args):
+    def state_handler_get(self, msg):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -87,6 +87,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers();
         self.wfile.write(STATE)
+
+    def settings_handler_post(self, msg):
+        encryption.CONVERSATION_CONFIGS = json.loads(msg);
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers();
 
 
 class HTTPServer(ThreadingMixIn, HTTPServer):

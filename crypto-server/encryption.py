@@ -8,6 +8,8 @@ from threading import Lock
 import config
 from constants import join_list
 
+CONVERSATION_CONFIGS = {}
+
 class GPGContext(object):
     INSTANCE = None
     LOCK     = Lock()
@@ -49,6 +51,7 @@ class EncryptedMessage(object):
 
         self.message    = js_dict['message']
         self.recipients = js_dict['recipients']
+        self.id         = js_dict['id']
 
         self.encrypted  = False
         self.signed     = None
@@ -67,20 +70,37 @@ def decrypt_message(msg):
     with GPGContext.LOCK:
         config.reload()
 
-        # find decryption key
-        decrypt_key, error = _get_secret_key()
-        if error:
-            msg.error = error
+        # find what we have to do
+        is_just_signed = msg.message.startswith("-----BEGIN PGP SIGNED")
+        is_encrypted   = msg.message.startswith("-----BEGIN PGP MESSAGE")
+
+        # nothing!
+        if not is_just_signed and not is_encrypted:
             return
 
-        # attempt decryption
+        if is_encrypted:
+            # find decryption key
+            decrypt_key, error = _get_secret_key()
+            if error:
+                msg.error = error
+                return
+
+        # off we go
         in_buf  = io.BytesIO(msg.message.encode("utf8"))
         out_buf = io.BytesIO()
 
         try:
-            signing_sigs  = GPGContext.INSTANCE.decrypt_verify(in_buf, out_buf)
+            # no decryption needed
+            if is_just_signed:
+                signing_sigs = GPGContext.INSTANCE.verify(in_buf, None, out_buf)
+
+            # encryption and maybe signing too
+            else:
+                signing_sigs  = GPGContext.INSTANCE.decrypt_verify(in_buf, out_buf)
+
             msg.message   = out_buf.getvalue().decode("utf8").rstrip('\n')
-            msg.decrypted = True
+            msg.decrypted = is_encrypted
+
         except gpgme.GpgmeError as e:
             msg.error = "Failed to decrypt: %s" % e.message.lower()
             msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
@@ -106,62 +126,90 @@ def decrypt_message(msg):
 
 
 def encrypt_message(msg):
+    # check config
+    convo_config = CONVERSATION_CONFIGS.get(msg.id, {})
+    pls_encrypt  = convo_config.get("encryption", False)
+    pls_sign     = convo_config.get("signing", False)
+
+    # nothing to do here
+    if not pls_encrypt and not pls_sign:
+        return
+
     # ensure all recipients have corresponding keys
-    enc_key_ids  = []
-    missing_keys = []
-    config.reload()
-    contacts     = config.get_item("keys.contacts")
-    for r in msg.recipients:
-        try:
-            user = contacts[r['fbid']]
-            enc_key_ids.append(user['key'])
-        except KeyError:
-            missing_keys.append(r)
+    if pls_encrypt:
+        enc_key_ids  = []
+        missing_keys = []
+        config.reload()
+        contacts     = config.get_item("keys.contacts")
+        for r in msg.recipients:
+            try:
+                user = contacts[r['fbid']]
+                enc_key_ids.append(user['key'])
+            except KeyError:
+                missing_keys.append(r)
 
-    # validate
-    if missing_keys:
-        names = map(lambda r: "%s (%s)" % (r['name'], r['fbid']), missing_keys)
-        msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (len(names), join_list(names))
-        return
-
-    if not enc_key_ids:
-        msg.error = "There are no keys to encrypt for, something went horribly wrong"
-        return
-
-    with GPGContext.LOCK:
-        # gather keys
-        enc_keys     = []
-        invalid_keys = []
-        for kid in enc_key_ids:
-            key, _ = get_single_key(kid)
-            if key is not None:
-                enc_keys.append(key)
-            else:
-                invalid_keys.append(kid)
-
-        if invalid_keys:
-            msg.error = "Missing public key(s) for %s" % join_list(invalid_keys)
+        # validate
+        if missing_keys:
+            names = map(lambda r: "%s (%s)" % (r['name'], r['fbid']), missing_keys)
+            msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (len(names), join_list(names))
             return
 
+        if not enc_key_ids:
+            msg.error = "There are no keys to encrypt for, something went horribly wrong"
+            return
+
+        with GPGContext.LOCK:
+            # gather keys
+            enc_keys     = []
+            invalid_keys = []
+            for kid in enc_key_ids:
+                key, _ = get_single_key(kid)
+                if key is not None:
+                    enc_keys.append(key)
+                else:
+                    invalid_keys.append(kid)
+
+            if invalid_keys:
+                msg.error = "Missing public key(s) for %s" % join_list(invalid_keys)
+                return
+
+    if pls_sign:
         # get signing key
         sign_key, error = _get_secret_key()
         if error:
             msg.error = error
             return
+
         GPGContext.INSTANCE.signers = [sign_key]
 
-        # attempt encryption
-        in_buf  = io.BytesIO(unquote(msg.message.encode("utf8")))
-        out_buf = io.BytesIO()
+    # off we go
+    in_buf  = io.BytesIO(unquote(msg.message.encode("utf8")))
+    out_buf = io.BytesIO()
 
-        try:
-            signing_sigs  = GPGContext.INSTANCE.encrypt_sign(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
-            msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
-            msg.encrypted = True
-            msg.signed    = len(signing_sigs) == 1
-        except gpgme.GpgmeError as e:
-            msg.error = "Failed to encrypt: %s" % e.message.lower()
-            return
+    try:
+        # encryption involved
+        if pls_encrypt:
+
+            # signing too
+            if pls_sign:
+                func = GPGContext.INSTANCE.encrypt_sign
+            else:
+                func = GPGContext.INSTANCE.encrypt
+
+            # returns list of signing keys if signed
+            signing_sigs = func(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
+
+        # only signing
+        else:
+            signing_sigs = GPGContext.INSTANCE.sign(in_buf, out_buf, gpgme.SIG_MODE_CLEAR)
+
+        msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
+        msg.signed    = pls_sign and len(signing_sigs) == 1
+        msg.encrypted = pls_encrypt
+
+    except gpgme.GpgmeError as e:
+        msg.error = "Failed to encrypt: %s" % e.message.lower()
+        return
 
 
 def get_single_key(keyid, secret=False):

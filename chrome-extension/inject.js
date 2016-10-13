@@ -20,7 +20,7 @@ function decryptMessages() {
 		}
 
 		// pgp message found
-		if (msg.message.startsWith("-----BEGIN PGP MESSAGE-----")) {
+		if (msg.message.startsWith("-----BEGIN PGP ")) {
 			// generate unique id
 			var msgID = LAST_MESSAGE_ID;
 			LAST_MESSAGE_ID += 1;
@@ -95,7 +95,8 @@ function patchRequestSending() {
 
 					var msg = {
 						message:    decodeURI(json['body']) + "\n",
-						recipients: state['participants']
+						recipients: state['participants'],
+						id:         state['thread']['id']
 					};
 
 					var requestContext = {

@@ -41,7 +41,7 @@ function transmitForDecryption(msg) {
 			return;
 		}
 
-		var success = msg['decrypted'] === true;
+		var success = !msg['error'];
 
 		// create temporarily incredibly ugly status header
 		var statusElement = "<div>";
@@ -52,19 +52,20 @@ function transmitForDecryption(msg) {
 			statusElement += msg['error'];
 		}
 		else {
+			var msgDesc = msg['decrypted'] ? "Decrypted message" : "Verified message";
+
 			// signing
 			var signer = msg['signed_by'];
-
 			if (signer) {
 
 				// well signed
-				if( msg['valid_sig']) {
-					statusElement += "Decrypted message with good signature from " + signer;
+				if(msg['valid_sig']) {
+					statusElement += msgDesc + " with good signature from " + signer;
 				}
 
 				// badly signed
 				else {
-					statusElement += "Decrypted message with BAD signature from " + signer;
+					statusElement += msgDesc + " with BAD signature from " + signer;
 				}
 			}
 
