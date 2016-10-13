@@ -14,6 +14,8 @@ function transmitForDecryption(messages) {
 
 			var success = !msg['error'];
 
+			element.parentNode.style.backgroundColor = success ? "#0f844d" : "#bd0e0e";
+
 			// create temporarily incredibly ugly status header
 			var statusElement = "<div>";
 
