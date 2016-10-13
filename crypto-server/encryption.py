@@ -110,13 +110,28 @@ def decrypt_message(msg):
 
     # ensure correctly signed if actually signed
     if signing_sigs:
-        sig = signing_sigs[0]
-        msg.signed_by = sig.fpr[-8:]
-        # TODO also get identity and master key if possible
+        sig       = signing_sigs[0]
+        fpr       = sig.fpr
+        signed_by = fpr[-8:]
+
+        # find key
+        signing_key, error = get_single_key(fpr)
+        if signing_key:
+            # find master key and uid
+            master_key = signing_key.subkeys[0]
+            uid = signing_key.uids[0]
+
+            # show master key if subkey used
+            if fpr != master_key.fpr:
+                signed_by = master_key.fpr[-8:]
+
+            signed_by = "%s (%s)" % (uid.name, signed_by)
+
+        msg.signed_by = signed_by
 
         # invalid signature
         if sig.status is not None:
-            msg.error = "Failed to verify signature by '%s': %s" % (by, sig.status)
+            msg.error = "Failed to verify signature by %s: %s" % (signed_by, sig.status.strerror)
             return
 
         msg.valid_sig = True
