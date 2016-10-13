@@ -7,7 +7,6 @@ import constants
 
 class Config(object):
     DEFAULT_VALUES = [
-            ("port", 50456),
             ("tls-cert", "../../certs/cert.pem"),
             ("tls-key", "../../certs/key.pem")
             ]
