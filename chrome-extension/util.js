@@ -2,7 +2,7 @@ function flattenJSON(json) {
 	return [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
 }
 
-function transmit(method, path, msg, responseCallback) {
+function transmit(method, path, msg, responseCallback, errorCallback) {
 
 	var http = new XMLHttpRequest();
 	var url  = "https://localhost:50456/" + path;
@@ -20,10 +20,8 @@ function transmit(method, path, msg, responseCallback) {
 				responseCallback(resp);
 			}
 			else {
-				var resp = {
-					net_error: "Failed to connect to " + url
-				};
-				responseCallback(resp);
+				setBadgeError();
+				if (errorCallback) { errorCallback(); }
 			}
 		}
 	};
@@ -37,21 +35,20 @@ BADGE_ERROR  = "#f92b2b"
 function setBadgeState(msg, colour) {
 	chrome.browserAction.setBadgeText({text: msg});
 	chrome.browserAction.setBadgeBackgroundColor({color: colour});
-}
+};
 
 function setBadgeText(msg) {
 	setBadgeState(msg, BADGE_NORMAL);
-}
+};
 
 function setBadgeError() {
 	setBadgeState("ERR", BADGE_ERROR);
-}
+};
 
 function updateBadge(encrypt, signing) {
 	var badge = "";
-	if (encrypt === "true") { badge += "E"; }
-	if (signing === "true") { badge += "S"; }
-
+	if (encrypt === "true" || encrypt == true) { badge += "E"; }
+	if (signing === "true" || signing == true) { badge += "S"; }
 	setBadgeText(badge);
-}
+};
 

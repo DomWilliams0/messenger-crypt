@@ -39,23 +39,27 @@ function updateState() {
 
 	transmit("POST", "settings", newSettings);
 	updateBadge(newSettings['encryption'], newSettings['signing']);
-}
+};
+
+function clearPopup() {
+	HEADER.innerText = "N/A";
+	setButtonState(BUTTON_ENC, false);
+	setButtonState(BUTTON_SIG, false);
+};
 
 function receiveState() {
 	var convoKey  = META['convoKey'];
 
 	transmit("GET", "settings", {id: convoKey}, function(settings) {
-		// TODO net_error? possibly handle in transmit() instead
-
 		var encrypt = settings['encryption'] === "true";
-		var signing = settings['signing'] === "true";
+		var signing = settings['signing']    === "true";
 
 		HEADER.innerText = META['convoName'];
 		setButtonState(BUTTON_ENC, encrypt);
 		setButtonState(BUTTON_SIG, signing);
 
 		updateBadge(encrypt, signing);
-	});
+	}, clearPopup);
 };
 
 function initPopup() {
