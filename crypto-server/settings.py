@@ -25,10 +25,14 @@ def update_settings_handler(msg):
 
     msg = json.loads(msg)
     convoID = msg.pop("id")
+    msg = _convert_btos(msg)
 
-    settings[convoID] = _convert_btos(msg)
+    if msg == _DEFAULT_SETTINGS:
+        del settings[convoID]
+    else:
+        settings[convoID] = msg
+
     config.save()
-
 
 def get_settings_handler(msg):
     convoID = msg['id'][0]
