@@ -140,7 +140,7 @@ def parse_args():
             help="The new secret key which will be used to decrypt and sign messages.")
 
     parsed = vars(parser.parse_args())
-    cmd = parsed.pop("subcommand", None);
+    cmd = parsed.pop("subcommand", None)
     return cmd, parsed
 
 
