@@ -29,9 +29,7 @@ if GPGContext.INSTANCE is None:
 
 
 class DecryptedMessage(object):
-    def __init__(self, json_string):
-        js_dict         = json.loads(json_string)
-
+    def __init__(self, js_dict):
         self.message    = js_dict['message']
         self.id         = js_dict['id']
 
@@ -46,9 +44,7 @@ class DecryptedMessage(object):
 
 
 class EncryptedMessage(object):
-    def __init__(self, json_string):
-        js_dict         = json.loads(json_string)
-
+    def __init__(self, js_dict):
         self.message    = js_dict['message']
         self.recipients = js_dict['recipients']
         self.id         = js_dict['id']
@@ -124,6 +120,11 @@ def decrypt_message(msg):
             return
 
         msg.valid_sig = True
+
+def decrypt_message_handler(msg):
+    msg = DecryptedMessage(msg)
+    decrypt_message(msg)
+    return msg.serialise()
 
 
 def encrypt_message(msg):
@@ -214,6 +215,10 @@ def encrypt_message(msg):
         msg.error = "Failed to encrypt: %s" % e.message.lower()
         return
 
+def encrypt_message_handler(msg):
+    msg = EncryptedMessage(msg)
+    encrypt_message(msg)
+    return msg.serialise()
 
 def get_single_key(keyid, secret=False):
     ret   = None

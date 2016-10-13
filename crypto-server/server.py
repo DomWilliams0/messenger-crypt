@@ -44,13 +44,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         handler(args)
 
     def decrypt_handler_post(self, msg):
-        msg = encryption.DecryptedMessage(msg)
-        encryption.decrypt_message(msg)
+        msg = json.loads(msg)
+        response = json.dumps(encryption.decrypt_message_handler(msg))
 
-        if msg.error:
-            print "ERROR: %s" % msg.error  # TODO use some actual logging, you savage
-
-        response = json.dumps(msg.serialise())
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
@@ -58,13 +54,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def encrypt_handler_post(self, msg):
-        msg = encryption.EncryptedMessage(msg)
-        encryption.encrypt_message(msg)
+        msg = json.loads(msg)
+        response = json.dumps(encryption.encrypt_message_handler(msg))
 
-        if msg.error:
-            print "ERROR: %s" % msg.error
-
-        response = json.dumps(msg.serialise())
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
