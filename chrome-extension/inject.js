@@ -126,6 +126,7 @@ function patchRequestSending() {
 	};
 
 	addFunc(transmit, false);
+	addFunc(flattenJSON, false);
 	addFunc(transmitForEncryption, false);
 	addFunc(getConversationState, false);
 	addFunc(overloadOpen, true);

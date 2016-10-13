@@ -1,3 +1,7 @@
+function flattenJSON(json) {
+	return [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
+}
+
 function transmit(method, path, msg, responseCallback) {
 
 	var http = new XMLHttpRequest();

@@ -76,7 +76,7 @@ function transmitForEncryption(msg, origRequestContext) {
 		else {
 			// update messenger request with encrypted message
 			json['body'] = response['message'];
-			sendArgs = [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
+			sendArgs = flattenJSON(json)
 		}
 
 		sendFunc.apply(request, sendArgs);
