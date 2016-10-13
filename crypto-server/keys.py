@@ -80,6 +80,21 @@ def self_handler(args):
 
     print "Registered '%s' as self" % keyid
 
+def list_handler(args):
+    print "=== CONTACTS ==="
+    contacts = config.get_section("keys.contacts").items()
+    if not contacts:
+        print "No linked contacts."
+    else:
+        for k, v in contacts:
+            print "%-24s %s (%s)" % (k, v['key'], v['name'])
+
+    print
+    self = config.get_item("keys.self")
+    if not self:
+        print "Secret key not set."
+    else:
+        print "Secret key: %s" % self
 
 def parse_args():
     class Parser(argparse.ArgumentParser):
@@ -91,13 +106,18 @@ def parse_args():
     parser = Parser(description="Manage Facebook GPG keys")
     subparsers = parser.add_subparsers(dest="subcommand")
 
-    parser_link = subparsers.add_parser("link")
+    parser_link = subparsers.add_parser("link",
+            help="Link facebook profiles to public keys")
     parser_link.add_argument("fbid",
             help="The numerical Facebook user ID, optionally with the prefix 'fbid:'.")
     parser_link.add_argument("pubkey", nargs="?",
             help="Any valid key selector (i.e. fingerprint, email, name etc.). If left blank, the fbid is unlinked from any existing key.")
 
-    parser_self = subparsers.add_parser("self")
+    parser_list = subparsers.add_parser("list",
+            help="List currently stored keys")
+
+    parser_self = subparsers.add_parser("self",
+            help="Set your private key to decrypt incoming messages")
     parser_self.add_argument("seckey",
             help="The new secret key which will be used to decrypt and sign messages.")
 
@@ -108,7 +128,7 @@ def parse_args():
 
 def main():
     cmd, args = parse_args()
-    if not cmd or not args:
+    if not cmd or args is None:
         return
 
     handler = globals().get("%s_handler" % cmd, None)
@@ -118,6 +138,7 @@ def main():
     err = handler(args)
     if err:
         sys.stderr.write("ERROR: %s\n" % err)
+        sys.stderr.flush()
         sys.exit(1)
 
     sys.exit(0)
