@@ -2,8 +2,8 @@
 import argparse
 import sys
 
-import encryption
 import config
+import encryption
 
 
 def link_handler(args):
@@ -59,6 +59,7 @@ def link_handler(args):
 
     print "%s '%s' %s %s (%s)" % (verb, user["key"], direction, user["name"], fbid)
 
+
 def self_handler(args):
     key = args.pop("seckey")
 
@@ -78,6 +79,7 @@ def self_handler(args):
     config.save()
 
     print "Registered '%s' as self" % keyid
+
 
 def parse_args():
     class Parser(argparse.ArgumentParser):

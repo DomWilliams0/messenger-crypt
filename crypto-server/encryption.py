@@ -1,13 +1,14 @@
-import os
-import json
-import gpgme
 import io
-from urllib import quote_plus, unquote
+import json
 from threading import Lock
+from urllib import quote_plus, unquote
+
+import gpgme
 
 import config
 import settings
 from constants import join_list
+
 
 class GPGContext(object):
     INSTANCE = None
@@ -44,6 +45,7 @@ class DecryptedMessage(object):
     def serialise(self):
         return self.__dict__
 
+
 class EncryptedMessage(object):
     def __init__(self, json_string):
         js_dict         = json.loads(json_string)
@@ -59,6 +61,7 @@ class EncryptedMessage(object):
 
     def serialise(self):
         return self.__dict__
+
 
 def _get_secret_key():
     seckey_id = config.get_item("keys.self")
@@ -138,8 +141,9 @@ def encrypt_message(msg):
     if pls_encrypt:
         enc_key_ids  = []
         missing_keys = []
+
         config.reload()
-        contacts     = config.get_item("keys.contacts")
+        contacts = config.get_item("keys.contacts")
         for r in msg.recipients:
             try:
                 user = contacts[r['fbid']]
@@ -150,7 +154,8 @@ def encrypt_message(msg):
         # validate
         if missing_keys:
             names = map(lambda r: "%s (%s)" % (r['name'], r['fbid']), missing_keys)
-            msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (len(names), join_list(names))
+            msg.error = "Missing %d fbid:pubkey mapping(s) required for encryption from %s" % (
+                len(names), join_list(names))
             return
 
         if not enc_key_ids:
@@ -220,6 +225,6 @@ def get_single_key(keyid, secret=False):
     elif len(keys) != 1:
         error = "Multiple keys found with id '%s', be more specific" % keyid
     else:
-        ret = keys[0];
+        ret = keys[0]
 
     return ret, error

@@ -2,8 +2,10 @@ import json
 
 import config
 
+
 def _convert_btos(settings):
     return {k: str(v).lower() if isinstance(v, bool) else v for k, v in settings.items()}
+
 
 def _convert_stob(settings):
     def _convert(x):
@@ -12,6 +14,7 @@ def _convert_stob(settings):
         return x
 
     return {k: _convert(v) for k, v in settings.items()}
+
 
 _DEFAULT_SETTINGS = _convert_btos({
         "encryption": False,
@@ -34,12 +37,14 @@ def update_settings_handler(msg):
 
     config.save()
 
+
 def get_settings_handler(msg):
     convoID = msg['id'][0]
     settings = get_settings(convoID)
 
     # convert to string format
     return json.dumps(_convert_btos(settings))
+
 
 # returns python booleans
 def get_settings(convoID):

@@ -1,5 +1,6 @@
 CONFIG_PATH = "settings.conf"
 
+
 def join_list(l):
     length = len(l)
 
@@ -10,4 +11,3 @@ def join_list(l):
 
     strs = map(str, l)
     return "%s and %s" % (", ".join(strs[:-1]), strs[-1])
-

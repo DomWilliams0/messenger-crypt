@@ -1,21 +1,20 @@
 #!/usr/bin/env python2
 
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from SocketServer import ThreadingMixIn
 import json
 import ssl
 import sys
 import urlparse
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from SocketServer import ThreadingMixIn
 
-import constants
 import config
 import encryption
 import settings
 
 STATE = ""
 
-class RequestHandler(BaseHTTPRequestHandler):
 
+class RequestHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -49,7 +48,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         encryption.decrypt_message(msg)
 
         if msg.error:
-            print "ERROR: %s" % msg.error # TODO use some actual logging, you savage
+            print "ERROR: %s" % msg.error  # TODO use some actual logging, you savage
 
         response = json.dumps(msg.serialise())
         self.send_response(200)
@@ -81,7 +80,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
-        self.end_headers();
+        self.end_headers()
 
     def state_handler_get(self, msg):
         self.send_response(200)
@@ -89,7 +88,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers();
+        self.end_headers()
         self.wfile.write(STATE)
 
     def settings_handler_post(self, msg):
@@ -97,7 +96,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
-        self.end_headers();
+        self.end_headers()
 
     # TODO looks a bit repetitive to me chief
     def settings_handler_get(self, msg):
@@ -108,7 +107,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers();
+        self.end_headers()
 
         self.wfile.write(response)
 
@@ -116,13 +115,14 @@ class RequestHandler(BaseHTTPRequestHandler):
 class HTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
+
 def start_server(port, certfile, keyfile):
     addr = ("127.0.0.1", port)
     httpd = HTTPServer(addr, RequestHandler)
     httpd.socket = ssl.wrap_socket(httpd.socket, certfile=certfile, keyfile=keyfile, server_side=True)
 
     print "Listening on %s:%d..." % addr
-    httpd.serve_forever();
+    httpd.serve_forever()
 
 
 def main():
