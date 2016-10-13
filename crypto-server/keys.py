@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
 import argparse
+import urllib2
+import urllib
 import sys
 
 import config
@@ -7,14 +9,21 @@ import encryption
 
 
 def link_handler(args):
+    def find_fbid(profile):
+        sys.stdout.write("Searching for profile '%s'... " % profile)
+        sys.stdout.flush()
+
+        data = urllib.urlencode({"url": profile})
+        path = urllib2.urlopen("http://findmyfbid.com", data).url
+        print "done"
+        fbid = path[path.rindex("/") + 1:]
+        if fbid == "failure" or not fbid.isdigit():
+            return None
+        return fbid
+
+
     fbid  = args['fbid']
     keyid = args['pubkey']
-
-    # validate
-    if not fbid.startswith("fbid:"):
-        fbid = "fbid:" + fbid
-    if not fbid[5:].isdigit():
-        return "fbid must be numeric"
 
     # find valid public key if given
     if keyid is not None:
@@ -31,6 +40,16 @@ def link_handler(args):
                 "key": primkey.fpr,
                 "name": uid.name
                 }
+        print "Found key for %s" % uid.name
+
+    # validate and normalise
+    if fbid.startswith("fbid:"):
+        fbid = fbid[4:]
+    if not fbid[5:].isdigit():
+        fbid = find_fbid(fbid)
+        if fbid is None:
+            # TODO no false promises now
+            return "Profile not found. Maybe it's not publicly visible; copy their ID from the browser extension popup instead."
 
     # update contacts
     contacts = config.get_section("keys.contacts")
