@@ -20,12 +20,14 @@ function transmit(method, path, msg, responseCallback, errorCallback) {
 				responseCallback(resp);
 			}
 			else {
-				setBadgeError();
-				if (errorCallback) { errorCallback(); }
+				http.onerror();
 			}
 		}
 	};
-	http.onerror = errorCallback;
+	http.onerror = function() {
+		setBadgeError();
+		if (errorCallback) { errorCallback(); }
+	};
 
 	http.send(JSON.stringify(msg));
 };
