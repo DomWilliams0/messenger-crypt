@@ -6,9 +6,8 @@ from urllib import quote_plus, unquote
 from threading import Lock
 
 import config
+import settings
 from constants import join_list
-
-CONVERSATION_CONFIGS = {}
 
 class GPGContext(object):
     INSTANCE = None
@@ -127,9 +126,9 @@ def decrypt_message(msg):
 
 def encrypt_message(msg):
     # check config
-    convo_config = CONVERSATION_CONFIGS.get(msg.id, {})
-    pls_encrypt  = convo_config.get("encryption", False)
-    pls_sign     = convo_config.get("signing", False)
+    convo_config = settings.get_settings(msg.id)
+    pls_encrypt  = convo_config['encryption']
+    pls_sign     = convo_config['signing']
 
     # nothing to do here
     if not pls_encrypt and not pls_sign:

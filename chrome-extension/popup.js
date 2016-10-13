@@ -1,98 +1,64 @@
-var META  = {};
+var META       = {};
 
-var DEFAULT_STATE = {
-	encryption: false,
-	signing:    false
-};
-var STATE = Object.assign({}, DEFAULT_STATE);
+var HEADER     = null;
+var BUTTON_ENC = null;
+var BUTTON_SIG = null;
 
-function setButtonState(b, active) {
-	if (active === undefined) {
-		active = b.classList.contains("buttonOn");
+function isButtonPressed(b) {
+	return b.classList.contains("buttonEnabled");
+}
+
+function setButtonState(b, newState) {
+	if (newState === undefined) {
+		newState = !isButtonPressed(b);
 	}
 
-	if (active) {
-		b.classList.remove("buttonOn");
-		b.classList.add("buttonOff");
+	if (!newState) {
+		b.classList.remove("buttonEnabled");
+		b.classList.add("buttonDisabled");
+		b.value = "Don't " + b.value;
 	}
 	else {
-		b.classList.remove("buttonOff");
-		b.classList.add("buttonOn");
+		b.classList.remove("buttonDisabled");
+		b.classList.add("buttonEnabled");
+		b.value = b.value.replace("Don't ", "")
 	}
 };
 
 function buttonPress(e) {
-	if (!(e && e.target && e.target.id)) {
-		return;
-	}
-	var index = e.target.id.indexOf("-button");
-	if (index < 0) {
-		return;
-	};
-
-	var button = e.target;
-	var action = button.id.slice(0, index);
-
-	switch(action) {
-		case "encrypt":
-			STATE.encryption = !STATE.encryption;
-			break;
-		case "sign":
-			STATE.signing = !STATE.signing;
-			break;
-	}
-
-	setButtonState(button);
-
-	// save state
-	chrome.storage.local.get("conversations", function(oldState) {
-
-		var convoKey              = META['convoKey'];
-		var newConversationsState = oldState['conversations'] || {};
-
-		// to be honest this is pretty grim
-		if (JSON.stringify(STATE) == JSON.stringify(DEFAULT_STATE)) {
-			delete newConversationsState[convoKey];
-		}
-		else {
-			newConversationsState[convoKey] = STATE;
-		}
-
-		chrome.storage.local.set({conversations: newConversationsState});
-
-		// send to server too
-		transmit("POST", "settings", newConversationsState);
-	});
-
+	setButtonState(e.target);
+	updateState();
 };
 
 function updateState() {
-	chrome.storage.local.get("conversations", function(state) {
-		var convoKey  = META['convoKey'];
-		var convoName = META['convoName'];
+	var newSettings = {
+		id:         META['convoKey'],
+		encryption: isButtonPressed(BUTTON_ENC),
+		signing:    isButtonPressed(BUTTON_SIG),
+	};
+	transmit("POST", "settings", newSettings);
+}
 
-		// update state from local storage
-		var allConversationsState = state['conversations'] || {};
-		var conversationState     = allConversationsState[convoKey] || {};
-		Object.assign(STATE, conversationState);
+function receiveState() {
+	var convoKey  = META['convoKey'];
 
-		// update popup fields
-		var header    = document.getElementById("conversation");
-		var encButton = document.getElementById("encrypt-button");
-		var sigButton = document.getElementById("sign-button");
-
-		header.innerText = convoName;
-		setButtonState(encButton, STATE['encryption']);
-		setButtonState(sigButton, STATE['signing']);
+	transmit("GET", "settings", {id: convoKey}, function(settings) {
+		// TODO net_error? possibly handle in transmit() instead
+		HEADER.innerText = META['convoName'];
+		setButtonState(BUTTON_ENC, settings['encryption'] === "true");
+		setButtonState(BUTTON_SIG, settings['signing'] === "true");
 	});
 };
 
 function initPopup() {
-	var buttons = document.getElementsByTagName("input");
+	HEADER     = document.getElementById("conversation");
+	BUTTON_ENC = document.getElementById("encrypt-button");
+	BUTTON_SIG = document.getElementById("sign-button");
+
+	var buttons = [BUTTON_ENC, BUTTON_SIG];
 	for (var i = 0; i < buttons.length; i++) {
-		var b = buttons[i];
-		b.classList.add("button");
-		b.addEventListener("click", buttonPress);
+		buttons[i].classList.add("button", "buttonOff");
+		buttons[i].addEventListener("click", buttonPress);
 	};
 };
 
@@ -107,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		META['convoName'] = thread['name'];
 		META['convoKey']  = thread['id'];
-		updateState();
+		receiveState();
 
 		// remove loading overlay to reveal the jewels
 		var cover = document.getElementById("page-cover");
