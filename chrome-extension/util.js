@@ -7,6 +7,10 @@ function transmit(method, path, msg, responseCallback) {
 	var http = new XMLHttpRequest();
 	var url  = "https://localhost:50456/" + path;
 
+	if (msg && method == "GET") {
+		url += "?" + flattenJSON(msg);
+	}
+
 	http.open(method, url, true);
 	http.setRequestHeader("Content-Type", "application/json");
 	http.onreadystatechange = function() {
