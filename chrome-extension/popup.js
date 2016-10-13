@@ -36,7 +36,9 @@ function updateState() {
 		encryption: isButtonPressed(BUTTON_ENC),
 		signing:    isButtonPressed(BUTTON_SIG),
 	};
+
 	transmit("POST", "settings", newSettings);
+	updateBadge(newSettings['encryption'], newSettings['signing']);
 }
 
 function receiveState() {
@@ -44,9 +46,15 @@ function receiveState() {
 
 	transmit("GET", "settings", {id: convoKey}, function(settings) {
 		// TODO net_error? possibly handle in transmit() instead
+
+		var encrypt = settings['encryption'] === "true";
+		var signing = settings['signing'] === "true";
+
 		HEADER.innerText = META['convoName'];
-		setButtonState(BUTTON_ENC, settings['encryption'] === "true");
-		setButtonState(BUTTON_SIG, settings['signing'] === "true");
+		setButtonState(BUTTON_ENC, encrypt);
+		setButtonState(BUTTON_SIG, signing);
+
+		updateBadge(encrypt, signing);
 	});
 };
 
