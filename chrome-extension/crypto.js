@@ -1,6 +1,6 @@
-function transmitForDecryption(msg) {
-	function onRecvDecryptedMessage(msg) {
-		var netError = msg['net_error'];
+function transmitForDecryption(messages) {
+	function onRecvDecryptedMessage(resp) {
+		var netError = resp['net_error'];
 
 		// unrelated error
 		if (netError) {
@@ -8,54 +8,61 @@ function transmitForDecryption(msg) {
 			return;
 		}
 
-		// find message element
-		var element = document.getElementById(formatElementID(msg['id']))
+		var messages = resp['messages'];
+		for (var i = 0; i < messages.length; i++) {
+			var msg = messages[i];
 
-		// no longer visible, oh well
-		if (!element) {
-			return;
-		}
+			// find message element
+			var element = document.getElementById(formatElementID(msg['id']))
 
-		var success = !msg['error'];
-
-		// create temporarily incredibly ugly status header
-		var statusElement = "<div>";
-
-		// decryption status
-		statusElement += "<b>";
-		if (!success) {
-			statusElement += msg['error'];
-		}
-		else {
-			var msgDesc = msg['decrypted'] ? "Decrypted message" : "Verified message";
-
-			// signing
-			var signer = msg['signed_by'];
-			if (signer) {
-
-				// well signed
-				if(msg['valid_sig']) {
-					statusElement += msgDesc + " with good signature from " + signer;
-				}
-
-				// badly signed
-				else {
-					statusElement += msgDesc + " with BAD signature from " + signer;
-				}
+			// no longer visible, oh well
+			if (!element) {
+				continue;
 			}
 
-			// unsigned
+			var success = !msg['error'];
+
+			// create temporarily incredibly ugly status header
+			var statusElement = "<div>";
+
+			// decryption status
+			statusElement += "<b>";
+			if (!success) {
+				statusElement += msg['error'];
+			}
 			else {
-				statusElement += "Decrypted unsigned message";
-			}
-		}
-		statusElement += "</b></div>";
+				var msgDesc = msg['decrypted'] ? "Decrypted message" : "Verified message";
 
-		// update message content
-		element.innerHTML = statusElement + msg.message;
+				// signing
+				var signer = msg['signed_by'];
+				if (signer) {
+
+					// well signed
+					if(msg['valid_sig']) {
+						statusElement += msgDesc + " with good signature from " + signer;
+					}
+
+					// badly signed
+					else {
+						statusElement += msgDesc + " with BAD signature from " + signer;
+					}
+				}
+
+				// unsigned
+				else {
+					statusElement += "Decrypted unsigned message";
+				}
+			}
+			statusElement += "</b></div>";
+
+			// update message content
+			element.innerHTML = statusElement + msg.message;
+		}
 	};
 
-	delete msg.element;
+	var msg = {
+		messages: messages
+	};
 	transmit("POST", "decrypt", msg, onRecvDecryptedMessage);
 };
 

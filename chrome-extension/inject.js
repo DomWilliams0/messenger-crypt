@@ -11,6 +11,7 @@ function decryptMessages() {
 	}
 
 	// find encrypted messages
+	var encryptedMessages = [];
 	for (var i = 0; i < messages.length; i++) {
 		var msg = messages[i];
 
@@ -28,9 +29,14 @@ function decryptMessages() {
 			// mark element with id
 			msg["id"] = msgID;
 			msg.element.id = formatElementID(msgID);
+			delete msg.element;
 
-			transmitForDecryption(msg);
+			encryptedMessages.push(msg);
 		}
+	}
+
+	if (encryptedMessages.length > 0) {
+		transmitForDecryption(encryptedMessages);
 	}
 };
 

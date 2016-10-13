@@ -121,10 +121,15 @@ def decrypt_message(msg):
 
         msg.valid_sig = True
 
+
 def decrypt_message_handler(msg):
-    msg = DecryptedMessage(msg)
-    decrypt_message(msg)
-    return msg.serialise()
+    resp = []
+    for message in msg['messages']:
+        dmsg = DecryptedMessage(message)
+        decrypt_message(dmsg)
+        resp.append(dmsg.serialise())
+
+    return {"messages": resp}
 
 
 def encrypt_message(msg):
