@@ -91,6 +91,13 @@ def decrypt_message(msg):
             if is_just_signed:
                 signing_sigs = GPGContext.INSTANCE.verify(in_buf, None, out_buf)
 
+                # something messed up
+                if not signing_sigs:
+                    msg.error = "Failed to verify message"
+                    msg.message = "-----BEGIN PGP SIGNED MESSAGE-----\n...\n...\n-----END PGP SIGNATURE-----"
+                    return
+
+
             # encryption and maybe signing too
             else:
                 signing_sigs  = GPGContext.INSTANCE.decrypt_verify(in_buf, out_buf)
