@@ -71,7 +71,7 @@ function transmitForEncryption(msg, origRequestContext) {
 		// handle error
 		var err = response['error'];
 		if (err) {
-			// TODO show error
+			alert(err);
 			console.error(err);
 			sendArgs = null; // block request
 		}
