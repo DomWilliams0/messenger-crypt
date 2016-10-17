@@ -62,13 +62,50 @@
 				color: #445;
 			}
 
+			/* tab bar */
+			.tab-bar {
+				margin: 0;
+				padding: 0;
+				list-style-type: none;
+				overflow: hidden;
+			}
+
+			.tab-bar li {
+				float: left;
+			}
+
+			.tab-bar li a {
+				display: inline-block;
+				color: #666; /* beware */
+				text-align: center;
+				padding: 5px 5px;
+				text-decoration: none;
+				font-size: 10px;
+			}
+
+			.tab-bar li a:hover:not(.tab-active) {
+				background-color: #f3f3f3;
+			}
+
+			.tab-active {
+				background-color: #e5e5e5;
+			}
+
+			.tab-content {
+				display: none;
+			}
 
 		</style>
 		<script src="util.js"></script>
 		<script src="popup.js"></script>
 	</head>
 	<body>
-		<div>
+		<ul class="tab-bar">
+			<li><a href="#" class="tab">Conversation</a></li>
+			<li><a href="#" class="tab">Participants</a></li>
+		</ul>
+
+		<div id="conversation-tab" class="tab-content">
 			<div class="header">
 				<h2 id="conversation">N/A</h2><span id="fbid">fbid:123123123123</span>
 			</div>
@@ -77,7 +114,11 @@
 			</div>
 		</div>
 
-		<!-- TODO loading gif -->
-		<div id="page-cover"><h2>Loading...</h2></div>
+		<div id="participants-tab" class="tab-content">
+			<div class="header">
+				<h2>ooer nothing to see here</h2>
+			</div>
+
+			<div id="page-cover"><h2>Loading...</h2></div>
 	</body>
 </html>

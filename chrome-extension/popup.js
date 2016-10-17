@@ -1,9 +1,26 @@
-var META       = {};
+var META        = {};
 
-var HEADER     = null;
-var FBID       = null;
-var BUTTON_ENC = null;
-var BUTTON_SIG = null;
+var HEADER      = null;
+var FBID        = null;
+var BUTTON_ENC  = null;
+var BUTTON_SIG  = null;
+
+var CURRENT_TAB = null;
+
+function onTabClick(e) {
+	var newTab = e.target;
+	var oldTab = CURRENT_TAB || newTab;
+
+	oldTab.classList.remove("tab-active");
+	newTab.classList.add("tab-active");
+
+	var newTabContent = document.getElementById(newTab.innerText.toLowerCase() + "-tab");
+	var oldTabContent = document.getElementById(oldTab.innerText.toLowerCase() + "-tab");
+	oldTabContent.style.display = "none";
+	newTabContent.style.display = "block";
+
+	CURRENT_TAB = newTab;
+};
 
 function isButtonPressed(b) {
 	return b.classList.contains("buttonEnabled");
@@ -76,6 +93,14 @@ function initPopup() {
 		buttons[i].classList.add("button", "buttonOff");
 		buttons[i].addEventListener("click", buttonPress);
 	};
+
+	var tabs = document.getElementsByClassName("tab");
+	for (var i = 0; i < tabs.length; i++) {
+		tabs[i].addEventListener("click", onTabClick);
+	};
+
+	// show first tab
+	onTabClick({target: tabs[0]});
 };
 
 document.addEventListener('DOMContentLoaded', function() {
