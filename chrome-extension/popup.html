@@ -95,6 +95,46 @@
 				display: none;
 			}
 
+			#participants-list {
+				padding-top: 5%;
+
+			}
+
+			#participants-list li {
+				list-style-type: none;
+				padding-right: 2%;
+			}
+
+			.participant {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				justify-content: flex-start;
+			}
+
+			.participant-deets {
+				display: inline-block;
+				width: 50%;
+			}
+
+			.participant-photo {
+				padding: 4px 6px;
+				border-radius: 50%;
+			}
+
+			.participant-key {
+				display: inline-block;
+				width: 48%;
+				padding: 2% 1%;
+				vertical-align: top;
+			}
+
+
+			.participant-key input {
+				width: 100%;
+				margin: 4px 0 0 0;
+			}
+
 		</style>
 		<script src="util.js"></script>
 		<script src="popup.js"></script>
@@ -115,10 +155,9 @@
 		</div>
 
 		<div id="participants-tab" class="tab-content">
-			<div class="header">
-				<h2>ooer nothing to see here</h2>
-			</div>
+			<div id="participants-list"></div>
+		</div>
 
-			<div id="page-cover"><h2>Loading...</h2></div>
+		<div id="page-cover"><h2>Loading...</h2></div>
 	</body>
 </html>

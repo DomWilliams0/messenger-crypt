@@ -67,6 +67,19 @@ function clearPopup() {
 };
 
 function receiveState() {
+	function createParticipantEntry(participant) {
+		return "" +
+			"<div class=\"participant-deets\">" +
+				"<div class=\"participant\">" +
+					"<img class=\"participant-photo\" src=\"" + participant['image'] + "\" />" +
+					"<span class=\"participant-name\">" + participant['name'] + "</span>" +
+				"</div>" +
+			"</div>" +
+			"<span class=\"participant-key\">" +
+				"<input type=\"text\" name=\"key-" + participant['fbid'] + "\">" +
+			"</span>";
+	};
+
 	var convoKey  = META['convoKey'];
 
 	transmit("GET", "settings", {id: convoKey}, function(settings) {
@@ -80,6 +93,24 @@ function receiveState() {
 
 		updateBadge(encrypt, signing);
 	}, clearPopup);
+
+	transmit("GET", "state", null, function(state) {
+		var participants = state['participants'];
+
+		if (participants.length > 1) {
+			participants.pop();
+		}
+
+		var list = document.getElementById("participants-list");
+		for (var i = 0; i < participants.length; i++) {
+			var p = participants[i];
+			var element = document.createElement("li");
+			element.innerHTML = createParticipantEntry(p);
+			list.appendChild(element);
+		}
+
+
+	});
 };
 
 function initPopup() {
