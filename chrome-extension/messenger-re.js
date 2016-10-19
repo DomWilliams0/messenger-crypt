@@ -122,7 +122,7 @@ function getConversationState(globalState, convo) {
 
 		return {
 			name:    fullParticpant['name'],
-			fbid:    fullParticpant['id'],
+			fbid:    fullParticpant['id'].slice(5),
 			profile: fullParticpant['href'],
 			image:   fullParticpant['image_src']
 		}
