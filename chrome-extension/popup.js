@@ -112,12 +112,12 @@ function receiveState() {
 
 		// fetch key state
 		var url = participants.reduce(function(acc, p) { return acc + "&id=" + p['fbid']; }, "keys?")
-		transmit("GET", url, null, function(response) {
-			var keys = response['keys'];
+		transmit("GET", url, null, function(keys) {
 			Object.keys(keys).forEach(function(fbid) {
 				var key = keys[fbid];
 				var textBox = document.getElementById("key-" + fbid);
 				textBox.value = key['key'].slice(-8);
+				textBox.title = key['str'];
 				textBox.classList.remove("missing-key");
 			});
 		});

@@ -8,8 +8,11 @@ import json
 import config
 import encryption
 
-def _format_user(user):
-    return "%s (%s <%s>)" % (user['key'], user['name'], user['email'])
+def _format_user(user, shorten_key=False):
+    key = user['key']
+    if shorten_key:
+        key = key[-8:]
+    return "%s (%s <%s>)" % (key, user['name'], user['email'])
 
 def get_key(fbid):
     config.reload()
@@ -61,9 +64,15 @@ def set_key(fbid, key_id):
 
 
 def get_keys_handler(fbids):
-    keys = {fbid: get_key(fbid) for fbid in fbids}
-    keys_filtered = {k: v for k, v in keys.iteritems() if v is not None}
-    return json.dumps({"keys": keys_filtered})
+    users = {fbid: get_key(fbid) for fbid in fbids}
+    for fbid, user in users.items():
+        if not user:
+            del users[fbid]
+        else:
+            user['str'] = _format_user(user)
+            users[fbid] = user
+
+    return json.dumps(users)
 
 def set_keys_handler(fbids):
     pass
