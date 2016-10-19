@@ -24,7 +24,7 @@ function onTabClick(e) {
 
 function isButtonPressed(b) {
 	return b.classList.contains("buttonEnabled");
-}
+};
 
 function setButtonState(b, newState) {
 	if (newState === undefined) {
@@ -101,6 +101,7 @@ function receiveState() {
 			participants.pop();
 		}
 
+		// add names to list
 		var list = document.getElementById("participants-list");
 		for (var i = 0; i < participants.length; i++) {
 			var p = participants[i];
@@ -109,6 +110,11 @@ function receiveState() {
 			list.appendChild(element);
 		}
 
+		// fetch key state
+		var url = participants.reduce(function(acc, p) { return acc + "&id=" + p['fbid']; }, "keys?")
+		transmit("GET", url, null, function(keys) {
+			console.log(keys);
+		});
 
 	});
 };

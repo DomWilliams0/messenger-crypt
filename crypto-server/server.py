@@ -10,6 +10,7 @@ from SocketServer import ThreadingMixIn
 import config
 import encryption
 import settings
+import keys
 
 STATE = ""
 
@@ -93,6 +94,18 @@ class RequestHandler(BaseHTTPRequestHandler):
     # TODO looks a bit repetitive to me chief
     def settings_handler_get(self, msg):
         response = settings.get_settings_handler(msg)
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
+        self.wfile.write(response)
+
+    def keys_handler_get(self, msg):
+        response = keys.get_keys_handler(msg['id'])
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')

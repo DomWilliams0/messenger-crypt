@@ -3,9 +3,19 @@ import argparse
 import urllib2
 import urllib
 import sys
+import json
 
 import config
 import encryption
+
+def get_key(fbid):
+    # TODO stub
+    return "AABBCCDD"
+
+def get_keys_handler(fbids):
+    keys = {fbid: get_key(fbid) for fbid in fbids}
+    keys_filtered = {k: v for k, v in keys.iteritems() if v is not None}
+    return json.dumps({"keys": keys_filtered})
 
 
 def link_handler(args):
