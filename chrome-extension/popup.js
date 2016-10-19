@@ -76,7 +76,7 @@ function receiveState() {
 				"</div>" +
 			"</div>" +
 			"<span class=\"participant-key\">" +
-				"<input type=\"text\" name=\"key-" + participant['fbid'] + "\">" +
+				"<input type=\"text\" id=\"key-" + participant['fbid'] + "\" value=\"No key\" class=\"missing-key\">" +
 			"</span>";
 	};
 
@@ -112,8 +112,14 @@ function receiveState() {
 
 		// fetch key state
 		var url = participants.reduce(function(acc, p) { return acc + "&id=" + p['fbid']; }, "keys?")
-		transmit("GET", url, null, function(keys) {
-			console.log(keys);
+		transmit("GET", url, null, function(response) {
+			var keys = response['keys'];
+			Object.keys(keys).forEach(function(fbid) {
+				var key = keys[fbid];
+				var textBox = document.getElementById("key-" + fbid);
+				textBox.value = key['key'].slice(-8);
+				textBox.classList.remove("missing-key");
+			});
 		});
 
 	});
