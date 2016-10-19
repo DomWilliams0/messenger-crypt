@@ -9,13 +9,60 @@ import config
 import encryption
 
 def get_key(fbid):
-    # TODO stub
-    return "AABBCCDD"
+    config.reload()
+    contacts = config.get_section("keys.contacts")
+
+    return contacts.get(fbid, None) if contacts else None
+
+# returns (key_user, error)
+def set_key(fbid, key_id):
+    # linking
+    user = None
+    if key_id is not None:
+        with encryption.GPGContext.LOCK:
+
+            # search for key if linking
+            pubkey, error = encryption.get_single_key(key_id)
+            if error:
+                return None, error
+
+            if not pubkey.subkeys:
+                return None, "There are no subkeys associated with this key"
+
+            primkey = pubkey.subkeys[0]
+            uid = pubkey.uids[0]
+            user = {
+                    "key": primkey.fpr,
+                    "name": uid.name
+                    }
+
+    # save to contacts
+    config.reload()
+    contacts = config.get_section("keys.contacts")
+
+    # linking
+    if key_id:
+        contacts[fbid] = user
+
+    # unlinking
+    else:
+        try:
+            user = contacts[fbid]
+            del contacts[fbid]
+        except KeyError:
+            return None, "Cannot unlink non-existant fbid '%s'" % fbid
+
+    config.save()
+    return user, None
+
 
 def get_keys_handler(fbids):
     keys = {fbid: get_key(fbid) for fbid in fbids}
     keys_filtered = {k: v for k, v in keys.iteritems() if v is not None}
     return json.dumps({"keys": keys_filtered})
+
+def set_keys_handler(fbids):
+    pass
 
 
 def link_handler(args):
@@ -35,24 +82,7 @@ def link_handler(args):
     fbid  = args['fbid']
     keyid = args['pubkey']
 
-    # find valid public key if given
-    if keyid is not None:
-        pubkey, error = encryption.get_single_key(keyid)
-        if error:
-            return error
-
-        if not pubkey.subkeys:
-            return "There are no subkeys associated with this key"
-
-        primkey = pubkey.subkeys[0]
-        uid = pubkey.uids[0]
-        user = {
-                "key": primkey.fpr,
-                "name": uid.name
-                }
-        print "Found key for %s" % uid.name
-
-    # validate and normalise
+    # validate and normalise fbid
     if fbid.startswith("fbid:"):
         fbid = fbid[4:]
     if not fbid[5:].isdigit():
@@ -60,22 +90,10 @@ def link_handler(args):
         if fbid is None:
             return "Profile not found. Maybe it's not publicly visible; copy their ID from the browser extension popup instead."
 
-    # update contacts
-    contacts = config.get_section("keys.contacts")
-
-    # linking
-    if keyid:
-        contacts[fbid] = user
-
-    # unlinking
-    else:
-        try:
-            user = contacts[fbid]
-            del contacts[fbid]
-        except KeyError:
-            return "Cannot unlink non-existant fbid '%s'" % fbid
-
-    config.save()
+    # attempt to set key
+    user, error = set_key(fbid, keyid)
+    if error:
+        return error
 
     # beautiful elegance
     if keyid:
