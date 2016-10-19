@@ -84,8 +84,8 @@ def link_handler(args):
 
     # validate and normalise fbid
     if fbid.startswith("fbid:"):
-        fbid = fbid[4:]
-    if not fbid[5:].isdigit():
+        fbid = fbid[5:]
+    if not fbid.isdigit():
         fbid = find_fbid(fbid)
         if fbid is None:
             return "Profile not found. Maybe it's not publicly visible; copy their ID from the browser extension popup instead."
