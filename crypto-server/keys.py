@@ -8,6 +8,9 @@ import json
 import config
 import encryption
 
+def _format_user(user):
+    return "%s (%s <%s>)" % (user['key'], user['name'], user['email'])
+
 def get_key(fbid):
     config.reload()
     contacts = config.get_section("keys.contacts")
@@ -32,8 +35,9 @@ def set_key(fbid, key_id):
             primkey = pubkey.subkeys[0]
             uid = pubkey.uids[0]
             user = {
-                    "key": primkey.fpr,
-                    "name": uid.name
+                    "key":   primkey.fpr,
+                    "name":  uid.name,
+                    "email": uid.email
                     }
 
     # save to contacts
@@ -133,7 +137,7 @@ def list_handler(args):
         print "No linked contacts."
     else:
         for k, v in contacts:
-            print "%-24s %s (%s)" % (k, v['key'], v['name'])
+            print "%-24s %s" % (k, _format_user(v))
 
     print
     self = config.get_item("keys.self")
