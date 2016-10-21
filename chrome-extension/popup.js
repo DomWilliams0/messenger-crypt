@@ -72,7 +72,10 @@ function receiveState() {
 			"<div class=\"participant-deets\">" +
 				"<div class=\"participant\">" +
 					"<img class=\"participant-photo\" src=\"" + participant['image'] + "\" />" +
-					"<span class=\"participant-name\">" + participant['name'] + "</span>" +
+					"<div class=\"participant-name\">" +
+						"<span>" + participant['name'] + "</span>" +
+						"<h5 class=\"participant-fbid\">" + participant['fbid'] + "</h5>" +
+					"</div>" +
 				"</div>" +
 			"</div>" +
 			"<span class=\"participant-key\">" +
