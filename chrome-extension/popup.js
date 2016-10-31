@@ -7,6 +7,8 @@ var BUTTON_SIG  = null;
 
 var CURRENT_TAB = null;
 
+var MISSING_KEY = "No key";
+
 function onTabClick(e) {
 	var newTab = e.target;
 	var oldTab = CURRENT_TAB || newTab;
@@ -48,6 +50,55 @@ function buttonPress(e) {
 	updateState();
 };
 
+function onKeyInputChange(element, isFocused)
+{
+	var participant = element.participant;
+
+	if (isFocused) {
+		transmit("GET", "keys?id=" + participant['fbid'], null, function(resp) {
+			var hasKey = resp.count != 0;
+
+			// no key: blank box for entry
+			if (!hasKey) {
+				element.value = "";
+				element.placeholder = "Enter key identifier";
+			}
+
+			// overwrite styles while editing
+			element.classList.add("key-editing");
+
+			var inputState = {
+				hasKey:   hasKey,
+				oldValue: element.value
+			};
+			element.inputState = inputState;
+		});
+	}
+
+	else {
+		var inputState = element.inputState;
+		delete element.inputState;
+		element.classList.remove("key-editing");
+
+		// key changed
+		var newValue = element.value;
+		if (inputState.oldValue != newValue) {
+			if (!newValue) newValue = null;
+
+			// send to server for validation
+			element.value = "Updating...";
+			element.classList.add("key-updating");
+
+			// TODO submit to server
+		}
+		// no change
+		else {
+			if (!inputState.oldValue)
+				element.value = MISSING_KEY;
+		}
+	}
+};
+
 function updateState() {
 	var newSettings = {
 		id:         META['convoKey'],
@@ -79,7 +130,7 @@ function receiveState() {
 				"</div>" +
 			"</div>" +
 			"<span class=\"participant-key\">" +
-				"<input type=\"text\" id=\"key-" + participant['fbid'] + "\" value=\"No key\" class=\"missing-key\">" +
+				"<input type=\"text\" id=\"key-" + participant['fbid'] + "\" class=\"missing-key\">" +
 			"</span>";
 	};
 
@@ -111,11 +162,21 @@ function receiveState() {
 			var element = document.createElement("li");
 			element.innerHTML = createParticipantEntry(p);
 			list.appendChild(element);
+
+			var keyInput = element.getElementsByTagName("input")[0];
+			keyInput.value = MISSING_KEY;
+
+			// add key input box listeners
+			var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus"); };
+			keyInput.onfocus = inputCallback;
+			keyInput.onblur = inputCallback;
+			keyInput.participant = p;
 		}
 
 		// fetch key state
 		var url = participants.reduce(function(acc, p) { return acc + "&id=" + p['fbid']; }, "keys?")
-		transmit("GET", url, null, function(keys) {
+		transmit("GET", url, null, function(resp) {
+			var keys = resp['keys'];
 			Object.keys(keys).forEach(function(fbid) {
 				var key = keys[fbid];
 				var textBox = document.getElementById("key-" + fbid);

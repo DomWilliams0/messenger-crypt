@@ -72,7 +72,8 @@ def get_keys_handler(fbids):
             user['str'] = _format_user(user)
             users[fbid] = user
 
-    return json.dumps(users)
+    out = { "count": len(users), "keys":  users}
+    return json.dumps(out)
 
 def set_keys_handler(fbids):
     pass
