@@ -8,11 +8,14 @@ import json
 import config
 import encryption
 
+def _format_id(user):
+    return "%s <%s>" % (user['name'], user['email'])
+
 def _format_user(user, shorten_key=False):
     key = user['key']
     if shorten_key:
         key = key[-8:]
-    return "%s (%s <%s>)" % (key, user['name'], user['email'])
+    return "%s %s" % (key, _format_id(user))
 
 def get_key(fbid):
     config.reload()
@@ -84,6 +87,7 @@ def set_keys_handler(input_json):
     response = { "error": err }
     if user:
         response['user'] = _format_user(user)
+        response['user_id'] = _format_id(user)
         response['key']  = user['key']
 
     return json.dumps(response)

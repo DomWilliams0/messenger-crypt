@@ -48,11 +48,11 @@ function buttonPress(e) {
 	updateState();
 };
 
-function resetKeyTextbox(textbox, key, tooltip) {
+function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
 	textbox.classList.remove("key-updating");
 
-	if (key) {
-		textbox.value = key.slice(-8);
+	if (value) {
+		textbox.value = dontShorten ? value : value.slice(-8);
 		textbox.classList.remove("key-invalid", "key-success", "missing-key");
 	}
 	else {
@@ -114,7 +114,7 @@ function onKeyInputChange(element, isFocused) {
 				var key = response['key'];
 
 				// update element appropriately
-				resetKeyTextbox(element, err ? null : response['key'], response['user']);
+				resetKeyTextbox(element, err ? null : response['user_id'], response['user'], true);
 				element.classList.add(err ? "key-invalid" : "key-success");
 				if (err)
 					element.value = err;
