@@ -1,3 +1,5 @@
+var shownServerError = false;
+
 function flattenJSON(json) {
 	return [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
 }
@@ -26,6 +28,7 @@ function transmit(method, path, msg, responseCallback, errorCallback) {
 	};
 	http.onerror = function() {
 		setBadgeError();
+		errorServerDown();
 		if (errorCallback) { errorCallback(); }
 	};
 
@@ -54,3 +57,14 @@ function updateBadge(encrypt, signing) {
 	setBadgeText(badge);
 };
 
+function errorServerDown() {
+	if (!shownServerError) {
+		shownServerError = true;
+		alert("Could not contact the local server at http://localhost:50456. Ensure that it is running and that its certificate is trusted by the browser.");
+	}
+}
+
+function errorStateMissing() {
+	alert("The server has no idea what is going on, please refresh the page to inform it of Messenger's state.");
+
+}

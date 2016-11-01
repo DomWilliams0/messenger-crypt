@@ -181,6 +181,11 @@ function receiveState() {
 	}, clearPopup);
 
 	transmit("GET", "state", null, function(state) {
+		if (!state) {
+			errorStateMissing();
+			return;
+		}
+
 		var participants = state['participants'];
 
 		if (participants.length > 1) {
