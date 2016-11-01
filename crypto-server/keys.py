@@ -75,9 +75,18 @@ def get_keys_handler(fbids):
     out = { "count": len(users), "keys":  users}
     return json.dumps(out)
 
-def set_keys_handler(fbids):
-    pass
+def set_keys_handler(input_json):
+    parsed = json.loads(input_json)
+    fbid   = parsed['fbid']
+    keyid  = parsed['identifier']
 
+    user, err = set_key(fbid, keyid)
+    response = { "error": err }
+    if user:
+        response['user'] = _format_user(user)
+        response['key']  = user['key']
+
+    return json.dumps(response)
 
 def link_handler(args):
     def find_fbid(profile):

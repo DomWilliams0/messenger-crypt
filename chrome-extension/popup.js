@@ -7,8 +7,6 @@ var BUTTON_SIG  = null;
 
 var CURRENT_TAB = null;
 
-var MISSING_KEY = "No key";
-
 function onTabClick(e) {
 	var newTab = e.target;
 	var oldTab = CURRENT_TAB || newTab;
@@ -50,26 +48,45 @@ function buttonPress(e) {
 	updateState();
 };
 
-function onKeyInputChange(element, isFocused)
-{
+function resetKeyTextbox(textbox, key, tooltip) {
+	textbox.classList.remove("key-updating");
+
+	if (key) {
+		textbox.value = key.slice(-8);
+		textbox.classList.remove("key-invalid", "key-success", "missing-key");
+	}
+	else {
+		textbox.value = "No key";
+		textbox.classList.remove("key-invalid", "key-success");
+		textbox.classList.add("missing-key");
+	}
+
+	if (tooltip) {
+		textbox.title = tooltip;
+	}
+	else {
+		textbox.removeAttribute("title");
+	}
+};
+
+function onKeyInputChange(element, isFocused) {
 	var participant = element.participant;
 
 	if (isFocused) {
 		transmit("GET", "keys?id=" + participant['fbid'], null, function(resp) {
 			var hasKey = resp.count != 0;
 
-			// no key: blank box for entry
-			if (!hasKey) {
-				element.value = "";
-				element.placeholder = "Enter key identifier";
-			}
+			// blank box for entry
+			element.value = "";
+			element.placeholder = "Enter key identifier";
 
 			// overwrite styles while editing
 			element.classList.add("key-editing");
+			element.classList.remove("key-invalid", "key-success")
 
 			var inputState = {
-				hasKey:   hasKey,
-				oldValue: element.value
+				currentKey:     hasKey ? resp['keys'][participant['fbid']]['key'] : undefined,
+				currentTooltip: element.title
 			};
 			element.inputState = inputState;
 		});
@@ -80,21 +97,36 @@ function onKeyInputChange(element, isFocused)
 		delete element.inputState;
 		element.classList.remove("key-editing");
 
-		// key changed
-		var newValue = element.value;
-		if (inputState.oldValue != newValue) {
-			if (!newValue) newValue = null;
+		// key entered
+		var input = element.value;
+		if (input) {
 
 			// send to server for validation
 			element.value = "Updating...";
 			element.classList.add("key-updating");
 
-			// TODO submit to server
+			var data = {
+				fbid:       participant['fbid'],
+				identifier: input
+			};
+			transmit("POST", "keys", data, function(response) {
+				var err = response['error'];
+				var key = response['key'];
+
+				// update element appropriately
+				resetKeyTextbox(element, err ? null : response['key'], response['user']);
+				element.classList.add(err ? "key-invalid" : "key-success");
+				if (err)
+					element.value = err;
+
+				// if (key) {
+				// 	alert("Linked " + participant['name'] + " to key " + response['user']);
+				// }
+			});
 		}
 		// no change
 		else {
-			if (!inputState.oldValue)
-				element.value = MISSING_KEY;
+			resetKeyTextbox(element, inputState['currentKey'], inputState['currentTooltip']);
 		}
 	}
 };
@@ -163,14 +195,14 @@ function receiveState() {
 			element.innerHTML = createParticipantEntry(p);
 			list.appendChild(element);
 
-			var keyInput = element.getElementsByTagName("input")[0];
-			keyInput.value = MISSING_KEY;
-
 			// add key input box listeners
+			var keyInput = element.getElementsByTagName("input")[0];
 			var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus"); };
 			keyInput.onfocus = inputCallback;
 			keyInput.onblur = inputCallback;
 			keyInput.participant = p;
+
+			resetKeyTextbox(keyInput);
 		}
 
 		// fetch key state
@@ -179,10 +211,8 @@ function receiveState() {
 			var keys = resp['keys'];
 			Object.keys(keys).forEach(function(fbid) {
 				var key = keys[fbid];
-				var textBox = document.getElementById("key-" + fbid);
-				textBox.value = key['key'].slice(-8);
-				textBox.title = key['str'];
-				textBox.classList.remove("missing-key");
+				var textbox = document.getElementById("key-" + fbid);
+				resetKeyTextbox(textbox, key['key'], key['str']);
 			});
 		});
 
