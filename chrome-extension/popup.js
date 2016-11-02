@@ -53,12 +53,12 @@ function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
 
 	if (value) {
 		textbox.value = dontShorten ? value : value.slice(-8);
-		textbox.classList.remove("key-invalid", "key-success", "missing-key");
+		textbox.classList.remove("key-invalid", "key-success", "key-missing");
 	}
 	else {
 		textbox.value = "No key";
 		textbox.classList.remove("key-invalid", "key-success");
-		textbox.classList.add("missing-key");
+		textbox.classList.add("key-missing");
 	}
 
 	if (tooltip) {
@@ -162,7 +162,7 @@ function receiveState() {
 				"</div>" +
 			"</div>" +
 			"<span class=\"participant-key\">" +
-				"<input type=\"text\" id=\"key-" + participant['fbid'] + "\" class=\"missing-key\">" +
+				"<input type=\"text\" id=\"key-" + participant['fbid'] + "\" class=\"key-missing\">" +
 			"</span>";
 	};
 
