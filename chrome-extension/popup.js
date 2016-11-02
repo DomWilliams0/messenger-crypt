@@ -131,6 +131,15 @@ function onKeyInputChange(element, isFocused) {
 	}
 };
 
+function onKeyInputKeyPress(e) {
+	var key = e.keyCode || e.which;
+
+	// enter
+	if (key == 13) {
+		e.target.blur();
+	}
+};
+
 function updateState() {
 	var newSettings = {
 		id:         META['convoKey'],
@@ -205,6 +214,7 @@ function receiveState() {
 			var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus"); };
 			keyInput.onfocus = inputCallback;
 			keyInput.onblur = inputCallback;
+			keyInput.onkeyup = onKeyInputKeyPress;
 			keyInput.participant = p;
 
 			resetKeyTextbox(keyInput);
