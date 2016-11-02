@@ -109,8 +109,7 @@ function getConversationState(globalState, convo) {
 	var fullThread = findThread(allThreads, allParticipants);
 
 	if (!fullThread) {
-		// TODO show error in popup instead of alert
-		console.error("Failed to fetch state for newly loaded conversations, please refresh the page");
+		console.error("Failed to get state for old conversation '" + convo + "'");
 		return;
 	}
 
