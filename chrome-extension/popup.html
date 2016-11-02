@@ -62,7 +62,6 @@
 				color: #445;
 			}
 
-			/* tab bar */
 			.tab-bar {
 				margin: 0;
 				padding: 0;
@@ -95,14 +94,16 @@
 				display: none;
 			}
 
-			#participants-list {
-				padding-top: 5%;
-
-			}
-
 			#participants-list li {
 				list-style-type: none;
 				padding-right: 2%;
+			}
+
+			#participants-tip {
+				color: #777;
+				font-weight: normal;
+				text-align: center;
+				margin: 10px 0;
 			}
 
 			.participant {
@@ -181,6 +182,7 @@
 		</div>
 
 		<div id="participants-tab" class="tab-content">
+			<h5 id="participants-tip">Tip: unlink an existing key with Backspace</h5>
 			<div id="participants-list"></div>
 		</div>
 

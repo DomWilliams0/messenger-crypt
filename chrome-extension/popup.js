@@ -1,11 +1,13 @@
-var META        = {};
+var META         = {};
 
-var HEADER      = null;
-var FBID        = null;
-var BUTTON_ENC  = null;
-var BUTTON_SIG  = null;
+var HEADER       = null;
+var FBID         = null;
+var BUTTON_ENC   = null;
+var BUTTON_SIG   = null;
 
-var CURRENT_TAB = null;
+var CURRENT_TAB  = null;
+
+var UNLINK_STATE = false;
 
 function onTabClick(e) {
 	var newTab = e.target;
@@ -70,6 +72,8 @@ function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
 };
 
 function onKeyInputChange(element, isFocused) {
+	UNLINK_STATE = false;
+
 	var participant = element.participant;
 
 	if (isFocused) {
@@ -138,6 +142,32 @@ function onKeyInputKeyPress(e) {
 	if (key == 13) {
 		e.target.blur();
 	}
+
+	// backspace
+	if (key == 8) {
+		// show confirmation
+		if (!UNLINK_STATE) {
+			UNLINK_STATE = true;
+
+			// TODO check there actually is a key
+			e.target.placeholder = "Press again to unlink key";
+		}
+
+		// confirmed
+		else {
+			var unlink = {
+				fbid: e.target.participant['fbid'],
+				identifier: null
+			};
+			transmit("POST", "keys", unlink);
+
+			e.target.removeAttribute("placeholder");
+			e.target.blur();
+			resetKeyTextbox(e.target);
+		}
+
+	}
+
 };
 
 function updateState() {
