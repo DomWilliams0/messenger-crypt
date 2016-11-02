@@ -32,7 +32,7 @@ class Config(object):
     def get_item(self, path):
         split = path.split(".")
         section = self.get_section(".".join(split[:-1]))
-        return section[split[-1]]
+        return section.get(split[-1], None)
 
     def set_item(self, path, value):
         split = path.split(".")

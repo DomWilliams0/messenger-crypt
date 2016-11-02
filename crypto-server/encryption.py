@@ -170,10 +170,10 @@ def encrypt_message(msg):
         missing_keys = []
 
         config.reload()
-        contacts = config.get_item("keys.contacts")
+        contacts = config.get_item("keys.contacts") or {}
         for r in msg.recipients:
             try:
-                user = contacts[r['fbid'][5:]]
+                user = contacts[r['fbid']]
                 enc_key_ids.append(user['key'])
             except KeyError:
                 missing_keys.append(r)
