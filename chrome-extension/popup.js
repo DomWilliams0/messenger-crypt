@@ -63,6 +63,8 @@ function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
 		textbox.classList.add("key-missing");
 	}
 
+	textbox.hasKey = Boolean(value);
+
 	if (tooltip) {
 		textbox.title = tooltip;
 	}
@@ -144,7 +146,7 @@ function onKeyInputKeyPress(e) {
 	}
 
 	// backspace
-	if (key == 8) {
+	if (key == 8 && e.target.hasKey) {
 		// show confirmation
 		if (!UNLINK_STATE) {
 			UNLINK_STATE = true;
