@@ -156,7 +156,7 @@ def decrypt_message_handler(msg):
 
 def encrypt_message(msg):
     # check config
-    convo_config = settings.get_settings(msg.id)
+    convo_config = settings.get_convo_settings(msg.id)
     pls_encrypt  = convo_config['encryption']
     pls_sign     = convo_config['signing']
 
