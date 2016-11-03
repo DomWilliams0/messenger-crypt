@@ -1,6 +1,7 @@
 import os
+import errno
 import sys
-from configobj import ConfigObj
+import json
 
 import constants
 
@@ -12,16 +13,16 @@ class Config(object):
             ]
 
     def __init__(self, path):
-        self.conf = ConfigObj(path)
+        self._path = path
+        self.conf = dict(self.DEFAULT_VALUES)
 
-        if not os.path.exists(path):
-            print "Config not found at '%s', writing default settings" % path
-            for (k, v) in self.DEFAULT_VALUES:
-                self.conf[k] = v
-            self.conf.write()
-
-    def __getattr__(self, attr):
-        return getattr(self.conf, attr)
+        load = self._load()
+        if load == False:
+            print "Config not found at '%s', writing defaults" % path
+            self.save()
+        elif isinstance(load, str):
+            print "Error loading config: %s" % load
+            exit(1)
 
     def __getitem__(self, key):
         return self.conf[key]
@@ -40,6 +41,9 @@ class Config(object):
         section[split[-1]] = value
 
     def get_section(self, path):
+        if not path:
+            return self.conf
+
         split = path.split(".")
         current = self.conf
         for p in split:
@@ -50,8 +54,36 @@ class Config(object):
                 current = current[p]
         return current
 
+    # returns True:   success
+    # returns False:  file not found
+    # returns string: other error message
+    def _load(self):
+        if not os.path.exists(self._path):
+            return False
+
+        with open(self._path) as f:
+            try:
+                self.conf.update(json.load(f))
+            except ValueError as e:
+                return e.message
+
+        return True
+
     def save(self):
-        self.conf.write()
+        try:
+            parent_path = os.path.dirname(self._path)
+            if parent_path:
+                os.makedirs(parent_path)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise
+
+        with open(self._path, "w") as f:
+            json.dump(self.conf, f, indent=4)
+
+    reload = _load
 
 
 class _ConfigModule(object):

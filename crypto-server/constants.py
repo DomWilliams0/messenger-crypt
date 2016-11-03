@@ -1,4 +1,4 @@
-CONFIG_PATH = "settings.conf"
+CONFIG_PATH = "config.json"
 
 
 def join_list(l):
