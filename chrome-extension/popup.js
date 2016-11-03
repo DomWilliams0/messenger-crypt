@@ -141,7 +141,7 @@ function onKeyInputChange(element, isFocused) {
 };
 
 function onKeyInputKeyPress(e) {
-	var key = e.key;
+	var key = e.keyCode || e.which;
 
 	// enter
 	if (key == 13) {
