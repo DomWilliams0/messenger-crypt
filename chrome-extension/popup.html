@@ -96,16 +96,24 @@
 				display: none;
 			}
 
-			#participants-list li {
+			li {
 				list-style-type: none;
+			}
+
+			#participants-list li {
 				padding-right: 2%;
 			}
 
-			#participants-tip {
+			.tip {
 				color: #777;
 				font-weight: normal;
 				text-align: center;
 				margin: 10px 0;
+			}
+
+			.settings-tip {
+				margin-top: 10px;
+				margin-bottom: 0;
 			}
 
 			.participant {
@@ -120,6 +128,12 @@
 				width: 50%;
 			}
 
+			.setting-deets {
+				display: inline-block;
+				width: 85%;
+				margin-top: 1em;
+			}
+
 			.participant-photo {
 				padding: 4px 6px;
 				border-radius: 50%;
@@ -128,6 +142,11 @@
 			.participant-fbid {
 				margin: 0 0;
 				color: #AAB;
+				font-size: 7pt;
+			}
+
+			.setting-desc {
+				color: #666;
 				font-size: 7pt;
 			}
 
@@ -142,10 +161,16 @@
 				vertical-align: top;
 			}
 
-
 			.participant-key input {
 				width: 100%;
 				margin: 4px 0 0 0;
+			}
+
+			.setting-checkbox {
+				display: inline-block;
+				width: 13%;
+				padding: 1px 0;
+				text-align: right;
 			}
 
 			.key-missing {
@@ -176,6 +201,7 @@
 		<ul class="tab-bar">
 			<li><a href="#" class="tab">Conversation</a></li>
 			<li><a href="#" class="tab">Participants</a></li>
+			<li><a href="#" class="tab">Settings</a></li>
 		</ul>
 
 		<div id="conversation-tab" class="tab-content">
@@ -188,8 +214,13 @@
 		</div>
 
 		<div id="participants-tab" class="tab-content">
-			<h5 id="participants-tip">Tip: unlink an existing key with Backspace</h5>
+			<h5 class="tip">Tip: unlink an existing key with Backspace</h5>
 			<div id="participants-list"></div>
+		</div>
+
+		<div id="settings-tab" class="tab-content">
+			<h5 class="tip settings-tip">Tip: these settings apply to all conversations</h5>
+			<div id="settings-list"></div>
 		</div>
 
 		<div id="page-cover"><h2>Loading...</h2></div>

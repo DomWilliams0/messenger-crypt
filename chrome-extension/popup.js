@@ -236,6 +236,18 @@ function receiveState() {
 			"</span>";
 	};
 
+	function createSettingEntry(setting) {
+		return "" +
+			"<div class=\"setting-deets\">" +
+				"<span>" + setting['title'] + "</span>" +
+				"<br/>" +
+				"<span class=\"setting-desc\">" + setting['description'] + "</span>" +
+			"</div>" +
+			"<span class=\"setting-checkbox\">" +
+				"<input type=\"checkbox\" value=\"" + setting['key'] + "\">" +
+			"</span>";
+	};
+
 	var convoKey  = META['convoKey'];
 
 	transmit("GET", "convosettings", {id: convoKey}, function(settings) {
@@ -294,6 +306,22 @@ function receiveState() {
 			});
 		});
 
+	});
+
+	transmit("GET", "settings", null, function(settings) {
+		if (!settings) { return; } // any network errors will be alerted by previous transmits
+
+		var settingsList = document.getElementById("settings-list");
+		settings.forEach(function(x) {
+			var element = document.createElement("li");
+			element.innerHTML = createSettingEntry(x);
+
+			var checkbox = element.getElementsByTagName("input")[0];
+			checkbox.checked = x['value'];
+			element.title = x['description'];
+
+			settingsList.appendChild(element);
+		});
 	});
 };
 
