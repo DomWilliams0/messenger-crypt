@@ -205,7 +205,7 @@ function updateState() {
 		signing:    isButtonPressed(BUTTON_SIG),
 	};
 
-	transmit("POST", "settings", newSettings);
+	transmit("POST", "convosettings", newSettings);
 	updateBadge(newSettings['encryption'], newSettings['signing']);
 };
 
@@ -238,7 +238,7 @@ function receiveState() {
 
 	var convoKey  = META['convoKey'];
 
-	transmit("GET", "settings", {id: convoKey}, function(settings) {
+	transmit("GET", "convosettings", {id: convoKey}, function(settings) {
 		var encrypt = settings['encryption'] === "true";
 		var signing = settings['signing']    === "true";
 

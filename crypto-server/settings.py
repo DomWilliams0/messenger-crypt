@@ -16,13 +16,13 @@ def _convert_stob(settings):
     return {k: _convert(v) for k, v in settings.items()}
 
 
-_DEFAULT_SETTINGS = _convert_btos({
+_DEFAULT_CONVO_SETTINGS = _convert_btos({
         "encryption": False,
         "signing":    False
         })
 
 
-def update_settings_handler(msg):
+def update_convo_settings_handler(msg):
     config.reload()
     settings = config.get_section('conversations')
 
@@ -30,7 +30,7 @@ def update_settings_handler(msg):
     convoID = msg.pop("id")
     msg = _convert_btos(msg)
 
-    if msg == _DEFAULT_SETTINGS:
+    if msg == _DEFAULT_CONVO_SETTINGS:
         del settings[convoID]
     else:
         settings[convoID] = msg
@@ -38,18 +38,18 @@ def update_settings_handler(msg):
     config.save()
 
 
-def get_settings_handler(msg):
+def get_convo_settings_handler(msg):
     convoID = msg['id'][0]
-    settings = get_settings(convoID)
+    settings = get_convo_settings(convoID)
 
     # convert to string format
     return json.dumps(_convert_btos(settings))
 
 
 # returns python booleans
-def get_settings(convoID):
+def get_convo_settings(convoID):
     config.reload()
     settings = config.get_section('conversations')
 
-    response = settings.get(convoID, _DEFAULT_SETTINGS)
+    response = settings.get(convoID, _DEFAULT_CONVO_SETTINGS)
     return _convert_stob(response)

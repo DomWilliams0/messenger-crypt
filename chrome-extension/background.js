@@ -17,7 +17,7 @@ var STATE_CONVO  = null;
 
 function updateBadgeFromBackground() {
 	if (STATE_CONVO) {
-		transmit("GET", "settings", {id: STATE_CONVO['thread']['id']}, function(resp) {
+		transmit("GET", "convosettings", {id: STATE_CONVO['thread']['id']}, function(resp) {
 			updateBadge(resp['encryption'], resp['signing']);
 		});
 	}

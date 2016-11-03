@@ -84,16 +84,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(STATE)
 
-    def settings_handler_post(self, msg):
-        settings.update_settings_handler(msg)
+    def convosettings_handler_post(self, msg):
+        settings.update_convo_settings_handler(msg)
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
 
     # TODO looks a bit repetitive to me chief
-    def settings_handler_get(self, msg):
-        response = settings.get_settings_handler(msg)
+    def convosettings_handler_get(self, msg):
+        response = settings.get_convo_settings_handler(msg)
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
