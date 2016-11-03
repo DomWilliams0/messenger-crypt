@@ -198,6 +198,17 @@ function onParticipantsKeyPress(e) {
 	}
 };
 
+function onSettingCheckboxChange(e) {
+	var checkbox = e.target;
+
+	var req = {
+		key: checkbox.value,
+		value: checkbox.checked
+	};
+
+	transmit("POST", "settings", req);
+};
+
 function updateState() {
 	var newSettings = {
 		id:         META['convoKey'],
@@ -318,6 +329,7 @@ function receiveState() {
 
 			var checkbox = element.getElementsByTagName("input")[0];
 			checkbox.checked = x['value'];
+			checkbox.onchange = onSettingCheckboxChange;
 			element.title = x['description'];
 
 			settingsList.appendChild(element);

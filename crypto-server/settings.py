@@ -83,7 +83,10 @@ def get_settings_handler(msg):
     return json.dumps(settings_descriptions)
 
 def update_settings_handler(msg):
-    pass
+    parsed = _convert_btos(json.loads(msg))
+    settings = config.get_section('settings')
+    settings[parsed['key']] = parsed['value']
+    config.save()
 
 def get_settings():
     config.reload()
