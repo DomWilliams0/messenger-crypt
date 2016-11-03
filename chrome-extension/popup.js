@@ -225,7 +225,7 @@ function receiveState() {
 						"<h5>" + index + "</h5>" +
 					"</div>" +
 					"<img class=\"participant-photo\" src=\"" + participant['image'] + "\" />" +
-					"<div class=\"participant-name\">" +
+					"<div>" +
 						"<span>" + participant['name'] + "</span>" +
 						"<h5 class=\"participant-fbid\">" + participant['fbid'] + "</h5>" +
 					"</div>" +
