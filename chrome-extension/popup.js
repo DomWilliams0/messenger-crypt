@@ -8,6 +8,7 @@ var BUTTON_SIG   = null;
 var CURRENT_TAB  = null;
 
 var UNLINK_STATE = false;
+var HOTKEY_ACCUM = [];
 
 function onTabClick(e) {
 	var newTab = e.target;
@@ -22,6 +23,8 @@ function onTabClick(e) {
 	newTabContent.style.display = "block";
 
 	CURRENT_TAB = newTab;
+
+	document.body.onkeyup = newTabContent.keyListener || null;
 };
 
 function isButtonPressed(b) {
@@ -138,7 +141,7 @@ function onKeyInputChange(element, isFocused) {
 };
 
 function onKeyInputKeyPress(e) {
-	var key = e.keyCode || e.which;
+	var key = e.key;
 
 	// enter
 	if (key == 13) {
@@ -150,8 +153,6 @@ function onKeyInputKeyPress(e) {
 		// show confirmation
 		if (!UNLINK_STATE) {
 			UNLINK_STATE = true;
-
-			// TODO check there actually is a key
 			e.target.placeholder = "Press again to unlink key";
 		}
 
@@ -170,6 +171,31 @@ function onKeyInputKeyPress(e) {
 
 	}
 
+};
+
+function onParticipantsKeyPress(e) {
+	var key = e.keyCode || e.which;
+
+	// enter: submit
+	if (key == 13) {
+		var chosenIndex = HOTKEY_ACCUM.join("");
+		var participant = document.getElementById("participant-" + chosenIndex);
+		if (participant) {
+			participant.getElementsByTagName("input")[0].focus();
+		}
+
+		HOTKEY_ACCUM = [];
+	}
+
+	// backspace
+	else if (key == 8) {
+		HOTKEY_ACCUM.pop();
+	}
+
+	// number
+	else if ((key >= 48 && key <= 57) || (key >= 96 && key <= 105)) {
+		HOTKEY_ACCUM.push(e.key);
+	}
 };
 
 function updateState() {
@@ -191,10 +217,13 @@ function clearPopup() {
 };
 
 function receiveState() {
-	function createParticipantEntry(participant) {
+	function createParticipantEntry(participant, index) {
 		return "" +
 			"<div class=\"participant-deets\">" +
 				"<div class=\"participant\">" +
+					"<div class=\"participant-index\">" +
+						"<h5>" + index + "</h5>" +
+					"</div>" +
 					"<img class=\"participant-photo\" src=\"" + participant['image'] + "\" />" +
 					"<div class=\"participant-name\">" +
 						"<span>" + participant['name'] + "</span>" +
@@ -237,8 +266,10 @@ function receiveState() {
 		var list = document.getElementById("participants-list");
 		for (var i = 0; i < participants.length; i++) {
 			var p = participants[i];
+			var index = i + 1;
 			var element = document.createElement("li");
-			element.innerHTML = createParticipantEntry(p);
+			element.innerHTML = createParticipantEntry(p, index);
+			element.id = "participant-" + index;
 			list.appendChild(element);
 
 			// add key input box listeners
@@ -282,6 +313,9 @@ function initPopup() {
 	for (var i = 0; i < tabs.length; i++) {
 		tabs[i].addEventListener("click", onTabClick);
 	};
+
+	// tab keyboard listeners
+	document.getElementById("participants-tab").keyListener = onParticipantsKeyPress;
 
 	// show first tab
 	onTabClick({target: tabs[0]});
