@@ -102,6 +102,24 @@ function getConversationState(globalState, convo) {
 		});
 	};
 
+	function getConversationName(thread, participants) {
+		var name = thread['name'];
+		if (name) {
+			return name;
+		}
+
+		name = participants[0]['name'];
+		if (participants.length > 2) {
+			var len = participants.length - 2;
+			name += " and " + len + " other";
+			if (len > 1) {
+				name += "s";
+			}
+		}
+
+		return name;
+	};
+
 	var allThreads      = globalState['threads'];
 	var allParticipants = globalState['participants'];
 
@@ -128,7 +146,7 @@ function getConversationState(globalState, convo) {
 	});
 
 	var thread = {
-		name:  fullThread['name'] || participants[0]['name'],
+		name:  getConversationName(fullThread, participants),
 		id:    fullThread['thread_fbid'],
 		image: fullThread['image_src'] || participants[0]['image']
 	};
