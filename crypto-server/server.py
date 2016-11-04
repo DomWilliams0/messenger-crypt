@@ -14,12 +14,65 @@ import keys
 
 STATE = ""
 
+def arg_dropper(func):
+    def new_func(dummy):
+        return func()
+    return new_func
+
+
+def _set_state(state):
+    global STATE
+    STATE = state
+
+@arg_dropper
+def _get_state():
+    return STATE
+
+_HANDLERS = {}
+def register_handler(path, post=None, get=None):
+    def get_wrapper(func):
+        def real_handler(req, args):
+            resp = func(args)
+
+            req.send_response(200)
+            req.send_header('Access-Control-Allow-Origin', 'https://www.messenger.com')
+            req.send_header('Access-Control-Allow-Methods', 'GET')
+            req.send_header("Access-Control-Allow-Headers", "Content-Type")
+            req.send_header('Content-Type', 'application/json')
+            req.end_headers()
+
+            if resp:
+                req.wfile.write(resp)
+
+        return real_handler
+
+    def post_wrapper(func):
+        def real_handler(req, args):
+            resp = func(args)
+
+            req.send_response(200)
+            req.send_header('Access-Control-Allow-Origin', 'https://www.messenger.com')
+            req.send_header('Access-Control-Allow-Methods', 'POST')
+            req.send_header("Access-Control-Allow-Headers", "Content-Type")
+            req.send_header('Content-Type', 'application/json')
+            req.end_headers()
+
+            if resp:
+                req.wfile.write(resp)
+
+        return real_handler
+
+    if post:
+        _HANDLERS[(path, "POST")] = post_wrapper(post)
+    if get:
+        _HANDLERS[(path, "GET")] = get_wrapper(get)
+
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Origin', 'https://www.messenger.com')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
@@ -34,117 +87,38 @@ class RequestHandler(BaseHTTPRequestHandler):
         self._get_going(params)
 
     def _get_going(self, args):
-        # find corresponding handler
-        handler = getattr(self, "%s_handler_%s" % (self.path.lstrip("/"), self.command.lower()), None)
+        path = self.path.lstrip("/")
+        method = self.command
+        handler = _HANDLERS.get((path, method), None)
 
-        # not found
         if handler is None:
             self.send_response(404)
-            return
-
-        handler(args)
-
-    def decrypt_handler_post(self, msg):
-        response = encryption.decrypt_message_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-
-        self.wfile.write(response)
-
-    def encrypt_handler_post(self, msg):
-        response = encryption.encrypt_message_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-
-        self.wfile.write(response)
-
-    def state_handler_post(self, msg):
-        global STATE
-        STATE = msg
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-
-    def state_handler_get(self, msg):
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-        self.wfile.write(STATE)
-
-    def convosettings_handler_post(self, msg):
-        settings.update_convo_settings_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-
-    # TODO looks a bit repetitive to me chief
-    def convosettings_handler_get(self, msg):
-        response = settings.get_convo_settings_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-
-        self.wfile.write(response)
-
-    def settings_handler_post(self, msg):
-        settings.update_settings_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-
-    def settings_handler_get(self, msg):
-        response = settings.get_settings_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-
-        self.wfile.write(response)
-
-    def keys_handler_get(self, msg):
-        response = keys.get_keys_handler(msg['id'])
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-
-        self.wfile.write(response)
-
-    def keys_handler_post(self, msg):
-        response = keys.set_keys_handler(msg)
-
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-
-        self.wfile.write(response)
-
+            self.end_headers()
+        else:
+            handler(self, args)
 
 class HTTPServer(ThreadingMixIn, HTTPServer):
     pass
+
+def register_handlers():
+    register_handler("decrypt",
+            post=encryption.decrypt_message_handler)
+    register_handler("encrypt",
+            post=encryption.encrypt_message_handler)
+
+    register_handler("state",
+            post=_set_state,
+            get=_get_state)
+    register_handler("keys",
+            post=keys.set_keys_handler,
+            get=keys.get_keys_handler)
+
+    register_handler("convosettings",
+            post=settings.update_convo_settings_handler,
+            get=settings.get_convo_settings_handler)
+    register_handler("settings",
+            post=settings.update_settings_handler,
+            get=settings.get_settings_handler)
 
 
 def start_server(port, certfile, keyfile):
@@ -161,6 +135,8 @@ def main():
     port     = 50456
     certfile = config['tls-cert']
     keyfile  = config['tls-key']
+
+    register_handlers()
     start_server(port, certfile, keyfile)
 
     return 0

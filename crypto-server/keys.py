@@ -66,7 +66,8 @@ def set_key(fbid, key_id):
     return user, None
 
 
-def get_keys_handler(fbids):
+def get_keys_handler(args):
+    fbids = args.get("id", [])
     users = {fbid: get_key(fbid) for fbid in fbids}
     for fbid, user in users.items():
         if not user:
