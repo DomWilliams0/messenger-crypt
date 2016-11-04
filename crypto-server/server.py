@@ -11,6 +11,7 @@ import config
 import encryption
 import settings
 import keys
+import constants
 
 STATE = ""
 
@@ -132,12 +133,11 @@ def start_server(port, certfile, keyfile):
 
 def main():
     # start listening
-    port     = 50456
     certfile = config['tls-cert']
     keyfile  = config['tls-key']
 
     register_handlers()
-    start_server(port, certfile, keyfile)
+    start_server(constants.SERVER_PORT, certfile, keyfile)
 
     return 0
 

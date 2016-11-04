@@ -1,4 +1,5 @@
 CONFIG_PATH = "config.json"
+SERVER_PORT = 50456
 
 
 def join_list(l):
