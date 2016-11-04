@@ -45,8 +45,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         handler(args)
 
     def decrypt_handler_post(self, msg):
-        msg = json.loads(msg)
-        response = json.dumps(encryption.decrypt_message_handler(msg))
+        response = encryption.decrypt_message_handler(msg)
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -55,8 +54,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def encrypt_handler_post(self, msg):
-        msg = json.loads(msg)
-        response = json.dumps(encryption.encrypt_message_handler(msg))
+        response = encryption.encrypt_message_handler(msg)
 
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')

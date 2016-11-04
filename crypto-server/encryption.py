@@ -145,13 +145,14 @@ def decrypt_message(msg):
 
 
 def decrypt_message_handler(msg):
+    parsed = json.loads(msg)
     resp = []
-    for message in msg['messages']:
+    for message in parsed['messages']:
         dmsg = DecryptedMessage(message)
         decrypt_message(dmsg)
         resp.append(dmsg.serialise())
 
-    return {"messages": resp}
+    return json.dumps({"messages": resp})
 
 
 def encrypt_message(msg):
@@ -243,9 +244,9 @@ def encrypt_message(msg):
         return
 
 def encrypt_message_handler(msg):
-    msg = EncryptedMessage(msg)
+    msg = EncryptedMessage(json.loads(msg))
     encrypt_message(msg)
-    return msg.serialise()
+    return json.dumps(msg.serialise())
 
 def get_single_key(keyid, secret=False):
     ret   = None
