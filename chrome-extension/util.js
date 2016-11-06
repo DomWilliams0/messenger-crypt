@@ -1,5 +1,13 @@
 var shownServerError = false;
 
+function getSettingValues(keys, callback) {
+	var url = keys.reduce(function(acc, s) { return acc + "&key=" + s; }, "settings?")
+	transmit("GET", url, null, function(resp) {
+		callback(resp.reduce(function(acc,x) {acc[x['key']] = x['value']; return acc; }, {}));
+	});
+};
+
+
 function flattenJSON(json) {
 	return [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
 }

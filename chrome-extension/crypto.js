@@ -1,5 +1,5 @@
 function transmitForDecryption(messages) {
-	function onRecvDecryptedMessage(resp, verboseHeader) {
+	function onRecvDecryptedMessage(resp, settings) {
 		var messages = resp['messages'];
 		for (var i = 0; i < messages.length; i++) {
 			var msg = messages[i];
@@ -14,13 +14,15 @@ function transmitForDecryption(messages) {
 
 			var success = !msg['error'];
 
-			element.parentNode.style.backgroundColor = success ? "#0f844d" : "#bd0e0e";
-			element.parentNode.style.color           = "#fff";
+			if (settings['message-colour']) {
+				element.parentNode.style.backgroundColor = success ? "#0f844d" : "#bd0e0e";
+				element.parentNode.style.color = "#fff";
+			}
 
 			// create temporarily incredibly ugly status header
 			var statusElement = "";
 
-			if (verboseHeader) {
+			if (settings['verbose-header']) {
 				statusElement = "<div>";
 
 				// decryption status
@@ -63,10 +65,9 @@ function transmitForDecryption(messages) {
 		messages: messages
 	};
 
-	transmit("GET", "settings", {key: "verbose-header"}, function(resp) {
-		var verboseHeader = resp[0]["value"];
-		var newCallback = function(response) { onRecvDecryptedMessage(response, verboseHeader); };
-
+	var settings = ["verbose-header", "message-colour"];
+	getSettingValues(settings, function(settings) {
+		var newCallback = function(response) { onRecvDecryptedMessage(response, settings); };
 		transmit("POST", "decrypt", msg, newCallback);
 	});
 };
