@@ -3,21 +3,6 @@ from collections import namedtuple, OrderedDict
 
 import config
 
-_True  = "true"
-_False = "false"
-
-def _convert_btos(settings):
-    return {k: str(v).lower() if isinstance(v, bool) else v for k, v in settings.items()}
-
-
-def _convert_stob(settings):
-    def _convert(x):
-        if x == "true":  return True
-        if x == "false": return False
-        return x
-
-    return {k: _convert(v) for k, v in settings.items()}
-
 def _popchained(d, key):
     d.pop(key)
     return d
@@ -30,16 +15,16 @@ def _putchained(d, *key_values):
 Setting = namedtuple("Setting", ["title", "description", "value"])
 
 _DEFAULT_CONVO_SETTINGS = {
-        "encryption": _False,
-        "signing":    _False
+        "encryption": False,
+        "signing":    False
         }
 
 _DEFAULT_SETTINGS_FULL = {
-        "ignore-revoked": Setting("Ignore revoked keys", "Don't use revoked public keys for encryption", _True),
-        "verbose-header": Setting("Show verbose message status", "Show decryption and signature status above every GPG message", _True),
-        "message-colour": Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", _True),
-        "block-files": Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", _False),
-        "numerical-hotkeys": Setting("Enable numerical hotkeys", "Enable jumping to a user's key in the participants tab with their index - e.g. to edit user #2's key, type 2 followed by Enter", _True)
+        "ignore-revoked": Setting("Ignore revoked keys", "Don't use revoked public keys for encryption", True),
+        "verbose-header": Setting("Show verbose message status", "Show decryption and signature status above every GPG message", True),
+        "message-colour": Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", True),
+        "block-files": Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", False),
+        "numerical-hotkeys": Setting("Enable numerical hotkeys", "Enable jumping to a user's key in the participants tab with their index - e.g. to edit user #2's key, type 2 followed by Enter", True)
         }
 
 _DEFAULT_SETTINGS = {k: v.value for k, v in _DEFAULT_SETTINGS_FULL.items()}
@@ -51,7 +36,6 @@ def update_convo_settings_handler(msg):
 
     msg = json.loads(msg)
     convoID = msg.pop("id")
-    msg = _convert_btos(msg)
 
     if msg == _DEFAULT_CONVO_SETTINGS:
         del settings[convoID]
@@ -66,7 +50,7 @@ def get_convo_settings_handler(msg):
     settings = get_convo_settings(convoID)
 
     # convert to string format
-    return json.dumps(_convert_btos(settings))
+    return json.dumps(settings)
 
 
 # returns python booleans
@@ -75,7 +59,7 @@ def get_convo_settings(convoID):
     settings = config.get_section('conversations')
 
     response = settings.get(convoID, _DEFAULT_CONVO_SETTINGS)
-    return _convert_stob(response)
+    return response
 
 def get_settings_handler(msg):
     settings_values = get_settings()
@@ -101,5 +85,5 @@ def get_settings():
     merged = dict(_DEFAULT_SETTINGS)
     merged.update(user_set)
 
-    return _convert_stob(merged)
+    return merged
 
