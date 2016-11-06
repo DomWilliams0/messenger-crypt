@@ -24,12 +24,6 @@ class Config(object):
             print "Error loading config: %s" % load
             exit(1)
 
-    def __getitem__(self, key):
-        return self.conf[key]
-
-    def __setitem__(self, key, value):
-        self.conf[key] = value
-
     def get_item(self, path):
         split = path.split(".")
         section = self.get_section(".".join(split[:-1]))
@@ -39,6 +33,9 @@ class Config(object):
         split = path.split(".")
         section = self.get_section(".".join(split[:-1]))
         section[split[-1]] = value
+
+    __getitem__ = get_item
+    __setitem__ = set_item
 
     def get_section(self, path):
         if not path:
