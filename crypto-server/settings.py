@@ -37,7 +37,7 @@ _DEFAULT_CONVO_SETTINGS = {
 
 _DEFAULT_SETTINGS_FULL = {
         "ignore-revoked": Setting("Ignore revoked keys", "Don't use revoked public keys for encryption", _True),
-        "verbose-header": Setting("Show verbose message status", "Show decryption and signature status above every GPG message", _False),
+        "verbose-header": Setting("Show verbose message status", "Show decryption and signature status above every GPG message", _True),
         "message-colour": Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", _True),
         "block-files": Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", _False),
         "numerical-hotkeys": Setting("Enable numerical hotkeys", "Enable jumping to a user's key in the participants tab with their index - e.g. to edit user #2's key, type 2 followed by Enter", _True)
