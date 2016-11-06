@@ -28,7 +28,6 @@ def _putchained(d, *key_values):
     return d
 
 Setting = namedtuple("Setting", ["title", "description", "value"])
-Setting.__str__ = str(Setting.__dict__)
 
 _DEFAULT_CONVO_SETTINGS = {
         "encryption": _False,
