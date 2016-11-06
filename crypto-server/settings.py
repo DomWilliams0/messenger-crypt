@@ -1,5 +1,5 @@
 import json
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import config
 
@@ -79,6 +79,11 @@ def get_convo_settings(convoID):
 
 def get_settings_handler(msg):
     settings_values = get_settings()
+
+    keys = msg.get("key", None)
+    if keys:
+        settings_values = OrderedDict((key, settings_values.get(key, None)) for key in keys if key in settings_values)
+
     settings_descriptions = [_putchained(_DEFAULT_SETTINGS_FULL[k].__dict__, ("key", k), ("value", v)) for k, v in settings_values.items()]
     return json.dumps(settings_descriptions)
 

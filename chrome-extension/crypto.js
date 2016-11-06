@@ -1,5 +1,5 @@
 function transmitForDecryption(messages) {
-	function onRecvDecryptedMessage(resp) {
+	function onRecvDecryptedMessage(resp, verboseHeader) {
 		var messages = resp['messages'];
 		for (var i = 0; i < messages.length; i++) {
 			var msg = messages[i];
@@ -18,37 +18,41 @@ function transmitForDecryption(messages) {
 			element.parentNode.style.color           = "#fff";
 
 			// create temporarily incredibly ugly status header
-			var statusElement = "<div>";
+			var statusElement = "";
 
-			// decryption status
-			statusElement += "<b>";
-			if (!success) {
-				statusElement += msg['error'];
-			}
-			else {
-				var msgDesc = msg['decrypted'] ? "Decrypted message" : "Verified message";
+			if (verboseHeader) {
+				statusElement = "<div>";
 
-				// signing
-				var signer = msg['signed_by'];
-				if (signer) {
-
-					// well signed
-					if(msg['valid_sig']) {
-						statusElement += msgDesc + " with good signature from " + signer;
-					}
-
-					// badly signed
-					else {
-						statusElement += msgDesc + " with BAD signature from " + signer;
-					}
+				// decryption status
+				statusElement += "<b>";
+				if (!success) {
+					statusElement += msg['error'];
 				}
-
-				// unsigned
 				else {
-					statusElement += "Decrypted unsigned message";
+					var msgDesc = msg['decrypted'] ? "Decrypted message" : "Verified message";
+
+					// signing
+					var signer = msg['signed_by'];
+					if (signer) {
+
+						// well signed
+						if(msg['valid_sig']) {
+							statusElement += msgDesc + " with good signature from " + signer;
+						}
+
+						// badly signed
+						else {
+							statusElement += msgDesc + " with BAD signature from " + signer;
+						}
+					}
+
+					// unsigned
+					else {
+						statusElement += "Decrypted unsigned message";
+					}
 				}
+				statusElement += "</b></div>";
 			}
-			statusElement += "</b></div>";
 
 			// update message content
 			element.innerHTML = statusElement + msg.message;
@@ -58,7 +62,13 @@ function transmitForDecryption(messages) {
 	var msg = {
 		messages: messages
 	};
-	transmit("POST", "decrypt", msg, onRecvDecryptedMessage);
+
+	transmit("GET", "settings", {key: "verbose-header"}, function(resp) {
+		var verboseHeader = resp[0]["value"];
+		var newCallback = function(response) { onRecvDecryptedMessage(response, verboseHeader); };
+
+		transmit("POST", "decrypt", msg, newCallback);
+	});
 };
 
 function transmitForEncryption(msg, origRequestContext) {
