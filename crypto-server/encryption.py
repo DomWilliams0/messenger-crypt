@@ -251,7 +251,9 @@ def encrypt_message_handler(msg):
 def get_single_key(keyid, secret=False):
     ret   = None
     error = None
-    keys  = list(GPGContext.INSTANCE.keylist(keyid, secret))
+
+    filter_revoked = config['settings.ignore-revoked']
+    keys  = [k for k in GPGContext.INSTANCE.keylist(keyid, secret) if not (filter_revoked and k.revoked)]
     if not keys:
         error = "Key '%s' not found" % keyid
     elif len(keys) != 1:
