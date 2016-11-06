@@ -123,7 +123,7 @@ function onKeyInputChange(element, isFocused) {
 				var key = response['key'];
 
 				// update element appropriately
-				resetKeyTextbox(element, err ? null : response['user_id'], response['user'], true);
+				resetKeyTextbox(element, err ? null : response['user_id'], response['user'] || err, true);
 				element.classList.add(err ? "key-invalid" : "key-success");
 				if (err)
 					element.value = err;
