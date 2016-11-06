@@ -86,26 +86,34 @@ function patchRequestSending() {
 				var request = this;
 				var args    = arguments;
 
-				// attachment
-				if (!json['body'] || json['has_attachment'] == "true") {
-					// TODO allow blocking in config, and make sure to block upload to upload.messenger.com
-					console.log("Attachments (and stickers) are not currently supported");
-					return orig.apply(this, arguments);
-				}
+				getSettingValues(["block-files"], function(settings) {
+					// attachment
+					if (!json['body'] || json['has_attachment'] == "true") {
+						var blockFile = settings['block-files'];
+						if (blockFile && !window.BLOCKED_FILE_ALERT) {
+							window.BLOCKED_FILE_ALERT = true;
+							alertFileBlocked();
+							args = null;
+							// TODO make sure to block upload to upload.messenger.com
+						}
 
-				transmit("GET", "state", null, function(state) {
-					var msg = {
-						message:    decodeURI(json['body']) + "\n",
-						recipients: state['participants'],
-						id:         state['thread']['id']
-					};
+						return orig.apply(request, args);
+					}
 
-					var requestContext = {
-						origSend:     orig,
-						request:      request,
-						formDataJson: json
-					};
-					transmitForEncryption(msg, requestContext);
+					transmit("GET", "state", null, function(state) {
+						var msg = {
+							message:    decodeURI(json['body']) + "\n",
+							recipients: state['participants'],
+							id:         state['thread']['id']
+						};
+
+						var requestContext = {
+							origSend:     orig,
+							request:      request,
+							formDataJson: json
+						};
+						transmitForEncryption(msg, requestContext);
+					});
 				});
 			}
 			else
@@ -126,6 +134,8 @@ function patchRequestSending() {
 		script.remove();
 	};
 
+	addFunc(getSettingValues, false);
+	addFunc(alertFileBlocked, false);
 	addFunc(transmit, false);
 	addFunc(setBadgeState, false);
 	addFunc(setBadgeError, false);

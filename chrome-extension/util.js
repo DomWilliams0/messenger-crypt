@@ -76,3 +76,7 @@ function errorStateMissing() {
 	alert("The server has no idea what is going on, please refresh the page to inform it of Messenger's state.");
 
 }
+
+function alertFileBlocked() {
+	alert("File uploading and stickers are disabled in the settings, as their encryption is not yet supported. Disable this option at your own risk.");
+}
