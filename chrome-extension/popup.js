@@ -76,6 +76,16 @@ function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
 	}
 };
 
+function initialiseKeyInputField(keyInput, participant) {
+	var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus"); };
+	keyInput.onfocus = inputCallback;
+	keyInput.onblur = inputCallback;
+	keyInput.onkeyup = onKeyInputKeyPress;
+	keyInput.participant = participant;
+
+	resetKeyTextbox(keyInput);
+};
+
 function onKeyInputChange(element, isFocused) {
 	UNLINK_STATE = false;
 
@@ -302,13 +312,7 @@ function receiveState() {
 
 			// add key input box listeners
 			var keyInput = element.getElementsByTagName("input")[0];
-			var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus"); };
-			keyInput.onfocus = inputCallback;
-			keyInput.onblur = inputCallback;
-			keyInput.onkeyup = onKeyInputKeyPress;
-			keyInput.participant = p;
-
-			resetKeyTextbox(keyInput);
+			initialiseKeyInputField(keyInput, p);
 		}
 
 		// fetch key state
@@ -350,7 +354,16 @@ function receiveState() {
 
 			var inputField = element.getElementsByTagName("input")[0];
 			if (textField) {
-
+				var dummyFbid = x['data']['key-id'];
+				var dummy = {
+					fbid: dummyFbid
+				};
+				// TODO secret keys!
+				initialiseKeyInputField(inputField, dummy);
+				transmit("GET", "keys", {id: dummyFbid}, function(resp) {
+					var value = resp['count'] == 1 ? resp['keys'][dummyFbid] : {};
+					resetKeyTextbox(inputField, value['key'], value['str']);
+				});
 			}
 			else {
 				inputField.checked = x['value'];

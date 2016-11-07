@@ -12,7 +12,8 @@ def _putchained(d, *key_values):
         d[k] = v
     return d
 
-Setting = namedtuple("Setting", ["title", "description", "type", "value"])
+SettingType = namedtuple("Setting", ["title", "description", "type", "value", "data"])
+def Setting(title, description, setting_type, value, data=None): return SettingType(title, description, setting_type, value, data)
 SETTING_TYPE_TEXT = "TEXT"
 SETTING_TYPE_BOOL = "BOOL"
 
@@ -26,8 +27,10 @@ _DEFAULT_SETTINGS_FULL = OrderedDict([
     ("verbose-header", Setting("Show verbose message status", "Show decryption and signature status above every GPG message", SETTING_TYPE_BOOL, True)),
     ("message-colour", Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", SETTING_TYPE_BOOL, True)),
     ("block-files", Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", SETTING_TYPE_BOOL, False)),
-    ("decrypt-key", Setting("Secret decryption key", "The secret key to use for decryption", SETTING_TYPE_TEXT, None)),
-    ("signing-key", Setting("Secret signing key", "Defaults to decryption key if not specified", SETTING_TYPE_TEXT, None)),
+    ("decrypt-key", Setting("Secret decryption key", "The secret key to use for decryption", SETTING_TYPE_TEXT, None,
+        {"key-id": "self-decrypt"})),
+    ("signing-key", Setting("Secret signing key", "Defaults to decryption key if not specified", SETTING_TYPE_TEXT, None,
+        {"key-id": "self-sign"})),
     ])
 
 _DEFAULT_SETTINGS = OrderedDict([(k, v.value) for k, v in _DEFAULT_SETTINGS_FULL.items()])
