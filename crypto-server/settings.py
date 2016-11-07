@@ -12,7 +12,9 @@ def _putchained(d, *key_values):
         d[k] = v
     return d
 
-Setting = namedtuple("Setting", ["title", "description", "value"])
+Setting = namedtuple("Setting", ["title", "description", "type", "value"])
+SETTING_TYPE_TEXT = "TEXT"
+SETTING_TYPE_BOOL = "BOOL"
 
 _DEFAULT_CONVO_SETTINGS = {
         "encryption": False,
@@ -20,10 +22,12 @@ _DEFAULT_CONVO_SETTINGS = {
         }
 
 _DEFAULT_SETTINGS_FULL = OrderedDict([
-    ("ignore-revoked", Setting("Ignore revoked keys", "Don't use revoked public keys for encryption", True)),
-    ("verbose-header", Setting("Show verbose message status", "Show decryption and signature status above every GPG message", True)),
-    ("message-colour", Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", True)),
-    ("block-files", Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", False))
+    ("ignore-revoked", Setting("Ignore revoked keys", "Don't use revoked public keys for encryption", SETTING_TYPE_BOOL, True)),
+    ("verbose-header", Setting("Show verbose message status", "Show decryption and signature status above every GPG message", SETTING_TYPE_BOOL, True)),
+    ("message-colour", Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", SETTING_TYPE_BOOL, True)),
+    ("block-files", Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", SETTING_TYPE_BOOL, False)),
+    ("decrypt-key", Setting("Secret decryption key", "The secret key to use for decryption", SETTING_TYPE_TEXT, None)),
+    ("signing-key", Setting("Secret signing key", "Defaults to decryption key if not specified", SETTING_TYPE_TEXT, None)),
     ])
 
 _DEFAULT_SETTINGS = OrderedDict([(k, v.value) for k, v in _DEFAULT_SETTINGS_FULL.items()])

@@ -247,16 +247,21 @@ function receiveState() {
 			"</span>";
 	};
 
-	function createSettingEntry(setting) {
+	function createSettingEntry(setting, textField) {
 		return "" +
-			"<div class=\"setting-deets\">" +
+			"<div class=\"setting-deets" + (textField ? " setting-deets-textbox" : "") + "\">" +
 				"<span>" + setting['title'] + "</span>" +
 				"<br/>" +
 				"<span class=\"setting-desc\">" + setting['description'] + "</span>" +
 			"</div>" +
+			(textField ?
+			"<span class=\"participant-key settings-key\">" +
+				"<input type=\"text\">" +
+			"</span>"
+				:
 			"<span class=\"setting-checkbox\">" +
 				"<input type=\"checkbox\" value=\"" + setting['key'] + "\">" +
-			"</span>";
+			"</span>");
 	};
 
 	var convoKey  = META['convoKey'];
@@ -325,12 +330,32 @@ function receiveState() {
 		var settingsList = document.getElementById("settings-list");
 		settings.forEach(function(x) {
 			var element = document.createElement("li");
-			element.innerHTML = createSettingEntry(x);
 
-			var checkbox = element.getElementsByTagName("input")[0];
-			checkbox.checked = x['value'];
-			checkbox.onchange = onSettingCheckboxChange;
+			var textField;
+			switch(x['type'])
+			{
+				case "BOOL":
+					textField = false;
+					break;
+				case "TEXT":
+					textField = true;
+					break;
+				default:
+					console.error("Invalid setting type '" + x['type'] + "'");
+					return;
+			}
+			element.innerHTML = createSettingEntry(x, textField);
+
 			element.title = x['description'];
+
+			var inputField = element.getElementsByTagName("input")[0];
+			if (textField) {
+
+			}
+			else {
+				inputField.checked = x['value'];
+				inputField.onchange = onSettingCheckboxChange;
+			}
 
 			settingsList.appendChild(element);
 		});
