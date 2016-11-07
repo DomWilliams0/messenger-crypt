@@ -12,6 +12,10 @@ def _putchained(d, *key_values):
         d[k] = v
     return d
 
+def _filterchained(d):
+    return {k: v for k, v in d.items() if v is not None}
+
+
 SettingType = namedtuple("Setting", ["title", "description", "type", "value", "data"])
 def Setting(title, description, setting_type, value, data=None): return SettingType(title, description, setting_type, value, data)
 SETTING_TYPE_TEXT = "TEXT"
@@ -28,9 +32,9 @@ _DEFAULT_SETTINGS_FULL = OrderedDict([
     ("message-colour", Setting("Enable message colours", "Indicate decryption and verification success by changing the colour of PGP messages", SETTING_TYPE_BOOL, True)),
     ("block-files", Setting("Block attachments and stickers", "Block the sending of attachments and stickers, as their encryption is not currently supported", SETTING_TYPE_BOOL, False)),
     ("decrypt-key", Setting("Secret decryption key", "The secret key to use for decryption", SETTING_TYPE_TEXT, None,
-        {"key-id": "self-decrypt"})),
+        data={"key-id": "self-decrypt"})),
     ("signing-key", Setting("Secret signing key", "Defaults to decryption key if not specified", SETTING_TYPE_TEXT, None,
-        {"key-id": "self-sign"})),
+        data={"key-id": "self-sign"})),
     ])
 
 _DEFAULT_SETTINGS = OrderedDict([(k, v.value) for k, v in _DEFAULT_SETTINGS_FULL.items()])
@@ -74,7 +78,15 @@ def get_settings_handler(msg):
     if keys:
         settings_values = OrderedDict((key, settings_values.get(key, None)) for key in keys if key in settings_values)
 
-    settings_descriptions = [_putchained(_DEFAULT_SETTINGS_FULL[k].__dict__, ("key", k), ("value", v)) for k, v in settings_values.items()]
+    settings_descriptions = [
+            _filterchained(  # remove all None values
+                _putchained( # add key and value
+                    _DEFAULT_SETTINGS_FULL[k].__dict__, ("key", k), ("value", v)
+                    )
+                )
+            for k, v in settings_values.items()
+            ]
+
     return json.dumps(settings_descriptions)
 
 def update_settings_handler(msg):
@@ -82,14 +94,18 @@ def update_settings_handler(msg):
     settings = get_settings()
     settings[parsed['key']] = parsed['value']
 
+    # remove Nones
+    settings = {k: v for k, v in settings.iteritems() if v is not None}
+
     config.set_item('settings', settings)
     config.save()
 
 def get_settings():
     config.reload()
-    user_set = config.get_section('settings')
     merged = OrderedDict(_DEFAULT_SETTINGS)
+    user_set = config.get_section('settings')
     merged.update(user_set)
+    # merged = {k: v for k, v in merged.items() if v is not None}
 
     return merged
 
