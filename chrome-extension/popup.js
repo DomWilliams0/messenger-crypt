@@ -278,8 +278,8 @@ function receiveState() {
 	var convoKey  = META['convoKey'];
 
 	transmit("GET", "convosettings", {id: convoKey}, function(settings) {
-		var encrypt = settings['encryption'] === "true";
-		var signing = settings['signing']    === "true";
+		var encrypt = Boolean(settings['encryption']);
+		var signing = Boolean(settings['signing']);
 
 		HEADER.innerText = META['convoName'];
 		FBID.innerText = "fbid:" + META['convoKey'];
