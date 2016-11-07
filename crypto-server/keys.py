@@ -24,14 +24,14 @@ def get_key(fbid):
     return contacts.get(fbid, None) if contacts else None
 
 # returns (key_user, error)
-def set_key(fbid, key_id):
+def set_key(fbid, key_id, secret=False):
     # linking
     user = None
     if key_id is not None:
         with encryption.GPGContext.LOCK:
 
             # search for key if linking
-            pubkey, error = encryption.get_single_key(key_id)
+            pubkey, error = encryption.get_single_key(key_id, secret=secret)
             if error:
                 return None, error
 
@@ -83,8 +83,9 @@ def set_keys_handler(input_json):
     parsed = json.loads(input_json)
     fbid   = parsed['fbid']
     keyid  = parsed['identifier']
+    secret = parsed.get("secret", False)
 
-    user, err = set_key(fbid, keyid)
+    user, err = set_key(fbid, keyid, secret)
     response = { "error": err }
     if user:
         response['user'] = _format_user(user)

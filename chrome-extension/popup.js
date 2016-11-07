@@ -76,8 +76,8 @@ function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
 	}
 };
 
-function initialiseKeyInputField(keyInput, participant) {
-	var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus"); };
+function initialiseKeyInputField(keyInput, participant, secretKey) {
+	var inputCallback = function(e) { onKeyInputChange(e.target, e.type == "focus", secretKey); };
 	keyInput.onfocus = inputCallback;
 	keyInput.onblur = inputCallback;
 	keyInput.onkeyup = onKeyInputKeyPress;
@@ -86,13 +86,13 @@ function initialiseKeyInputField(keyInput, participant) {
 	resetKeyTextbox(keyInput);
 };
 
-function onKeyInputChange(element, isFocused) {
+function onKeyInputChange(element, isFocused, isSecretKey) {
 	UNLINK_STATE = false;
 
 	var participant = element.participant;
 
 	if (isFocused) {
-		transmit("GET", "keys?id=" + participant['fbid'], null, function(resp) {
+		transmit("GET", "keys", {id: participant['fbid']}, function(resp) {
 			var hasKey = resp.count != 0;
 
 			// blank box for entry
@@ -126,7 +126,8 @@ function onKeyInputChange(element, isFocused) {
 
 			var data = {
 				fbid:       participant['fbid'],
-				identifier: input
+				identifier: input,
+				secret: isSecretKey
 			};
 			transmit("POST", "keys", data, function(response) {
 				var err = response['error'];
@@ -358,8 +359,7 @@ function receiveState() {
 				var dummy = {
 					fbid: dummyFbid
 				};
-				// TODO secret keys!
-				initialiseKeyInputField(inputField, dummy);
+				initialiseKeyInputField(inputField, dummy, true);
 				transmit("GET", "keys", {id: dummyFbid}, function(resp) {
 					var value = resp['count'] == 1 ? resp['keys'][dummyFbid] : {};
 					resetKeyTextbox(inputField, value['key'], value['str']);
