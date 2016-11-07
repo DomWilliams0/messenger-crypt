@@ -25,22 +25,24 @@ def get_key(fbid):
     return contacts.get(fbid, None) if contacts else None
 
 # returns (key_user, error)
-def set_key(fbid, key_id, secret=False, raise_keyerror=False):
+def set_key(fbid, key_id, secret=False, raise_keyerror=False, raw_key=False):
     # linking
     user = None
+    key = None
+
     if key_id is not None:
         with encryption.GPGContext.LOCK:
 
             # search for key if linking
-            pubkey, error = encryption.get_single_key(key_id, secret=secret)
+            key, error = encryption.get_single_key(key_id, secret=secret)
             if error:
                 return None, error
 
-            if not pubkey.subkeys:
+            if not key.subkeys:
                 return None, "There are no subkeys associated with this key"
 
-            primkey = pubkey.subkeys[0]
-            uid = pubkey.uids[0]
+            primkey = key.subkeys[0]
+            uid = key.uids[0]
             user = {
                     "key":   primkey.fpr,
                     "name":  uid.name,
@@ -67,7 +69,10 @@ def set_key(fbid, key_id, secret=False, raise_keyerror=False):
                 return None, "Cannot unlink non-existent fbid '%s'" % fbid
 
     config.save()
-    return user, None
+    if raw_key:
+        return (user, key), None
+    else:
+        return user, None
 
 
 def get_keys_handler(args):
@@ -151,17 +156,26 @@ def self_handler(args):
     if both or which == "decrypt":
         contacts_to_set.append("self-decrypt")
 
+    err = None
+    success = False
     for contact_fbid in contacts_to_set:
         try:
-            user, error = set_key(contact_fbid, key, True, raise_keyerror=True)
-            if error:
-                return error
+            user_rawkey, error = set_key(contact_fbid, key, True, raise_keyerror=True, raw_key=True)
+            err = error
+            if error is None:
+                success = True
         except KeyError:
-            return "Cannot unlink non-existent key"
+            # don't overwrite any existing error
+            if err is None:
+                err = True
 
-    # TODO validation
-    # if (which == "sign" and not subkey.can_sign) or (which == "decrypt" and not subkey.can_decrypt):
-    #     return "Secret key '%s' cannot be used to %s" % (keyid, which)
+    if not success and err:
+        return err if isinstance(err, str) else "Cannot unlink non-existent key"
+
+    # validation
+    user, raw_key = user_rawkey
+    if raw_key and which == "sign" and not raw_key.can_sign:
+        return "Secret key cannot be used to %s" % which
 
     action = "%sing" % which if not both else "both signing and decrypting"
     if key:
