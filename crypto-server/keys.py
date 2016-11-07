@@ -4,6 +4,7 @@ import urllib2
 import urllib
 import sys
 import json
+import operator
 
 import config
 import encryption
@@ -24,7 +25,7 @@ def get_key(fbid):
     return contacts.get(fbid, None) if contacts else None
 
 # returns (key_user, error)
-def set_key(fbid, key_id, secret=False):
+def set_key(fbid, key_id, secret=False, raise_keyerror=False):
     # linking
     user = None
     if key_id is not None:
@@ -60,7 +61,10 @@ def set_key(fbid, key_id, secret=False):
             user = contacts[fbid]
             del contacts[fbid]
         except KeyError:
-            return None, "Cannot unlink non-existant fbid '%s'" % fbid
+            if raise_keyerror:
+                raise
+            else:
+                return None, "Cannot unlink non-existent fbid '%s'" % fbid
 
     config.save()
     return user, None
@@ -137,39 +141,74 @@ def link_handler(args):
 
 def self_handler(args):
     key = args.pop("seckey")
+    which = args.pop("which")
 
     # find secret key
-    seckey, error = encryption.get_single_key(key, True)
-    if error:
-        return error
+    contacts_to_set = []
+    both = which == "both"
+    if both or which == "sign":
+        contacts_to_set.append("self-sign")
+    if both or which == "decrypt":
+        contacts_to_set.append("self-decrypt")
 
-    subkey = seckey.subkeys[0]  # TODO need to specify subkey?
-    keyid  = subkey.fpr
+    for contact_fbid in contacts_to_set:
+        try:
+            user, error = set_key(contact_fbid, key, True, raise_keyerror=True)
+            if error:
+                return error
+        except KeyError:
+            return "Cannot unlink non-existent key"
 
-    if not subkey.can_sign:
-        return "Secret key '%s' cannot be used to sign" % keyid
+    # TODO validation
+    # if (which == "sign" and not subkey.can_sign) or (which == "decrypt" and not subkey.can_decrypt):
+    #     return "Secret key '%s' cannot be used to %s" % (keyid, which)
 
-    # save
-    config.set_item("keys.self", keyid)
-    config.save()
-
-    print "Registered '%s' as self" % keyid
+    action = "%sing" % which if not both else "both signing and decrypting"
+    if key:
+        print "Registered secret key for %s: %s" % (action, _format_user(user))
+    else:
+        print "Unregistered secret key for %s" % action
 
 def list_handler(args):
-    print "=== CONTACTS ==="
-    contacts = config.get_section("keys.contacts").items()
+    contacts = config.get_section("keys.contacts")
+    selfs = (contacts.pop("self-decrypt", None), contacts.pop("self-sign", None))
+
     if not contacts:
         print "No linked contacts."
     else:
-        for k, v in contacts:
+        for k, v in contacts.iteritems():
             print "%-24s %s" % (k, _format_user(v))
-
     print
-    self = config.get_item("keys.self")
-    if not self:
-        print "Secret key not set."
+
+    decrypt, sign = selfs
+
+    print_pairs = []
+
+    # both set
+    if decrypt and sign:
+        # same key
+        if decrypt == sign:
+            print_pairs.append(("signing and decrypting", decrypt))
+
+        # different
+        else:
+            print_pairs.append(("decrypting", decrypt))
+            print_pairs.append(("signing", sign))
+
+    # one key
+    elif decrypt != sign and (decrypt or sign):
+        set_verb = "decrypting" if decrypt else "signing"
+        not_set_verb = "decrypting" if not decrypt else "signing"
+
+        print_pairs.append((set_verb, decrypt or sign))
+        print_pairs.append((not_set_verb, "not explicitly set, so will use the key set for %s" % set_verb))
+
+    if not print_pairs:
+        print "No secret keys specified."
     else:
-        print "Secret key: %s" % self
+        max_len = str(max(map(lambda x: len(x[0]), print_pairs)))
+        for action, user in print_pairs:
+            print ("Secret key for %-" + max_len + "s: %s") % (action, _format_user(user) if isinstance(user, dict) else user)
 
 def parse_args():
     class Parser(argparse.ArgumentParser):
@@ -192,9 +231,11 @@ def parse_args():
             help="List currently stored keys")
 
     parser_self = subparsers.add_parser("self",
-            help="Set your private key to decrypt incoming messages")
-    parser_self.add_argument("seckey",
-            help="The new secret key which will be used to decrypt and sign messages.")
+            help="Set your private keys to decrypt and sign incoming messages")
+    parser_self.add_argument("--which", "-w", nargs="?", choices=["sign", "decrypt", "both"], default="both",
+            help="Which secret key to set. Defaults to both.")
+    parser_self.add_argument("seckey", nargs="?",
+            help="The new secret key which will be used to decrypt/sign messages. If left blank, the specified secret key is unlinked.")
 
     parsed = vars(parser.parse_args())
     cmd = parsed.pop("subcommand", None)
