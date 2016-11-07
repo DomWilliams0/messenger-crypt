@@ -4,10 +4,11 @@ import urllib2
 import urllib
 import sys
 import json
-import operator
 
 import config
 import encryption
+
+CONFIG_CONTACTS = "contacts"
 
 def _format_id(user):
     return "%s <%s>" % (user['name'], user['email'])
@@ -20,7 +21,7 @@ def _format_user(user, shorten_key=False):
 
 def get_key(fbid):
     config.reload()
-    contacts = config.get_section("keys.contacts")
+    contacts = config.get_section(CONFIG_CONTACTS)
 
     return contacts.get(fbid, None) if contacts else None
 
@@ -51,7 +52,7 @@ def set_key(fbid, key_id, secret=False, raise_keyerror=False, raw_key=False):
 
     # save to contacts
     config.reload()
-    contacts = config.get_section("keys.contacts")
+    contacts = config.get_section(CONFIG_CONTACTS)
 
     # linking
     if key_id:
@@ -184,7 +185,7 @@ def self_handler(args):
         print "Unregistered secret key for %s" % action
 
 def list_handler(args):
-    contacts = config.get_section("keys.contacts")
+    contacts = config.get_section(CONFIG_CONTACTS)
     selfs = (contacts.pop("self-decrypt", None), contacts.pop("self-sign", None))
 
     if not contacts:

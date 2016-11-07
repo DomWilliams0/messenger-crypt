@@ -8,6 +8,7 @@ import gpgme
 import config
 import settings
 from constants import join_list
+import keys
 
 
 class GPGContext(object):
@@ -171,7 +172,8 @@ def encrypt_message(msg):
         missing_keys = []
 
         config.reload()
-        contacts = config.get_item("keys.contacts") or {}
+        # TODO add get_key(fbid) to keys to avoid this
+        contacts = config.get_item(keys.CONFIG_CONTACTS) or {}
         for r in msg.recipients:
             try:
                 user = contacts[r['fbid']]
