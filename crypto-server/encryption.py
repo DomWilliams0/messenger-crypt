@@ -204,6 +204,13 @@ def encrypt_message(msg):
                 msg.error = "Missing public key(s) for %s" % join_list(invalid_keys)
                 return
 
+            # add self
+            self_key, error = get_single_key(keys.get_secret_key()['key'])
+            if error:
+                msg.error = "Failed to get own public key: %s" % error[0].lower() + error[1:]
+                return
+            enc_keys.append(self_key)
+
     if pls_sign:
         # get signing key
         sign_key, error = _get_secret_key()
@@ -250,13 +257,16 @@ def encrypt_message_handler(msg):
 def get_single_key(keyid, secret=False):
     ret   = None
     error = None
+    key_str = "Secret key" if secret else "Public key"
 
     filter_revoked = config['settings.ignore-revoked']
     keys  = [k for k in GPGContext.INSTANCE.keylist(keyid, secret) if not (filter_revoked and k.revoked)]
+    if keyid is None:
+        error = "Null %s" % key_str.lower()
     if not keys:
-        error = "Key '%s' not found" % keyid
+        error = "%s '%s' not found" % (key_str, keyid)
     elif len(keys) != 1:
-        error = "Multiple keys found with id '%s', be more specific" % keyid
+        error = "Multiple %ss found with id '%s', be more specific" % (key_str.lower(), keyid)
     else:
         ret = keys[0]
 
