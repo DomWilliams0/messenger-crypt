@@ -60,8 +60,8 @@ class EncryptedMessage(object):
 
 
 def _get_secret_key():
-    seckey_id = config.get_item("keys.self")
-    return get_single_key(seckey_id, True)
+    key_user = keys.get_secret_key()
+    return get_single_key(key_user['key'], True) if key_user else None
 
 
 def decrypt_message(msg):
@@ -171,14 +171,11 @@ def encrypt_message(msg):
         enc_key_ids  = []
         missing_keys = []
 
-        config.reload()
-        # TODO add get_key(fbid) to keys to avoid this
-        contacts = config.get_item(keys.CONFIG_CONTACTS) or {}
         for r in msg.recipients:
-            try:
-                user = contacts[r['fbid']]
+            user = keys.get_key(r['fbid'])
+            if user is not None:
                 enc_key_ids.append(user['key'])
-            except KeyError:
+            else:
                 missing_keys.append(r)
 
         # validate

@@ -25,6 +25,9 @@ def get_key(fbid):
 
     return contacts.get(fbid, None) if contacts else None
 
+def get_secret_key():
+    return get_key("self-decrypt")
+
 # returns (key_user, error)
 def set_key(fbid, key_id, secret=False, raise_keyerror=False, raw_key=False):
     # linking
