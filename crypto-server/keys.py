@@ -25,8 +25,13 @@ def get_key(fbid):
 
     return contacts.get(fbid, None) if contacts else None
 
-def get_secret_key():
-    return get_key("self-decrypt")
+def get_signing_key():
+    sign = get_key("self-sign")
+    return sign if sign is not None else get_key("self-decrypt")
+
+def get_decryption_key():
+    decrypt = get_key("self-decrypt")
+    return decrypt if decrypt is not None else get_key("self-sign")
 
 # returns (key_user, error)
 def set_key(fbid, key_id, secret=False, raise_keyerror=False, raw_key=False):

@@ -24,6 +24,9 @@ class GPGContext(object):
     def __getattr__(self, attr):
         return getattr(self._ctx, attr)
 
+    def set_signing_key(self, key):
+        self._ctx.signers = [key]
+
 
 if GPGContext.INSTANCE is None:
     GPGContext.INSTANCE = GPGContext()
@@ -59,8 +62,8 @@ class EncryptedMessage(object):
         return self.__dict__
 
 
-def _get_secret_key():
-    key_user = keys.get_secret_key()
+def _get_secret_key(decrypting):
+    key_user = keys.get_decryption_key() if decrypting else keys.get_signing_key()
     return get_single_key(key_user['key'], True) if key_user else None
 
 
@@ -78,7 +81,7 @@ def decrypt_message(msg):
 
         if is_encrypted:
             # find decryption key
-            decrypt_key, error = _get_secret_key()
+            decrypt_key, error = _get_secret_key(True)
             if error:
                 msg.error = error
                 return
@@ -205,7 +208,7 @@ def encrypt_message(msg):
                 return
 
             # add self
-            self_key, error = get_single_key(keys.get_secret_key()['key'])
+            self_key, error = get_single_key(keys.get_decryption_key()['key'])
             if error:
                 msg.error = "Failed to get own public key: %s" % error[0].lower() + error[1:]
                 return
@@ -213,12 +216,12 @@ def encrypt_message(msg):
 
     if pls_sign:
         # get signing key
-        sign_key, error = _get_secret_key()
+        sign_key, error = _get_secret_key(False)
         if error:
             msg.error = error
             return
 
-        GPGContext.INSTANCE.signers = [sign_key]
+        GPGContext.INSTANCE.set_signing_key(sign_key)
 
     # off we go
     in_buf  = io.BytesIO(unquote(msg.message.encode("utf8")))
