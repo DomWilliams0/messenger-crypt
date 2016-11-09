@@ -58,66 +58,58 @@ function startPolling(pollTime) {
 function patchRequestSending() {
 
 	function overloadOpen() {
-		var orig = window.XMLHttpRequest.prototype.open;
+		var openOrig = window.XMLHttpRequest.prototype.open;
 		window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
 			if (method == "POST" && url.startsWith("/messaging/send")) {
-				this.interceptMe = true;
-
-				var origStateChange = this.onreadystatechange;
+				var stateChangeOrig = this.onreadystatechange;
 				this.onreadystatechange = function() {
 					if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
 						// TODO replace just-sent message with replaced message
 					}
 
-					origStateChange();
+					stateChangeOrig();
+				};
+
+				var sendOrig = this.send;
+				this.send = function(params) {
+
+					var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+					var request = this;
+					var args    = arguments;
+
+					getSettingValues(["block-files"], function(settings) {
+						// attachment
+						if (!json['body'] || json['has_attachment'] == "true") {
+							var blockFile = settings['block-files'];
+							if (blockFile && !window.BLOCKED_FILE_ALERT) {
+								window.BLOCKED_FILE_ALERT = true;
+								alertFileBlocked();
+								args = null;
+								// TODO make sure to block upload to upload.messenger.com
+							}
+
+							return sendOrig.apply(request, args);
+						}
+
+						transmit("GET", "state", null, function(state) {
+							var msg = {
+								message:    decodeURI(json['body']) + "\n",
+								recipients: state['participants'],
+								id:         state['thread']['id']
+							};
+
+							var requestContext = {
+								origSend:     sendOrig,
+								request:      request,
+								formDataJson: json
+							};
+							transmitForEncryption(msg, requestContext);
+						});
+					});
 				};
 			}
 
-			return orig.apply(this, arguments);
-		};
-	};
-
-	function overloadSend() {
-		var orig = window.XMLHttpRequest.prototype.send;
-		window.XMLHttpRequest.prototype.send = function(params) {
-			if (this.interceptMe) {
-
-				var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
-				var request = this;
-				var args    = arguments;
-
-				getSettingValues(["block-files"], function(settings) {
-					// attachment
-					if (!json['body'] || json['has_attachment'] == "true") {
-						var blockFile = settings['block-files'];
-						if (blockFile && !window.BLOCKED_FILE_ALERT) {
-							window.BLOCKED_FILE_ALERT = true;
-							alertFileBlocked();
-							args = null;
-							// TODO make sure to block upload to upload.messenger.com
-						}
-
-						return orig.apply(request, args);
-					}
-
-					transmit("GET", "state", null, function(state) {
-						var msg = {
-							message:    decodeURI(json['body']) + "\n",
-							recipients: state['participants'],
-							id:         state['thread']['id']
-						};
-
-						var requestContext = {
-							origSend:     orig,
-							request:      request,
-							formDataJson: json
-						};
-						transmitForEncryption(msg, requestContext);
-					});
-				});
-			}
-			else
-				return orig.apply(this, arguments);
+			return openOrig.apply(this, arguments);
 		};
 	};
 
@@ -143,7 +135,6 @@ function patchRequestSending() {
 	addFunc(transmitForEncryption, false);
 	addFunc(getConversationState, false);
 	addFunc(overloadOpen, true);
-	addFunc(overloadSend, true);
 };
 
 function startStatePolling(pollTime) {
