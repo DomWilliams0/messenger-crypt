@@ -64,7 +64,7 @@ class EncryptedMessage(object):
 
 def _get_secret_key(decrypting):
     key_user = keys.get_decryption_key() if decrypting else keys.get_signing_key()
-    return get_single_key(key_user['key'], True) if key_user else None
+    return get_single_key(key_user['key'], True) if key_user else (None, "Secret key not found")
 
 
 def decrypt_message(msg):
