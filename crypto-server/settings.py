@@ -46,10 +46,10 @@ _DEFAULT_SETTINGS_FULL = OrderedDict([
             True)
         ),
     ("block-files",
-        Setting("Block attachments and stickers",
-            "Block the sending of attachments and stickers, as their encryption is not currently supported",
+        Setting("Block attachments and images",
+            "Block the sending of attachments and images, as their encryption is not currently supported",
             SETTING_TYPE_BOOL,
-            False)
+            True)
         ),
     ("encrypt-key",
         Setting("Personal key",

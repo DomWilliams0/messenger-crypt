@@ -60,37 +60,24 @@ function patchRequestSending() {
 	function overloadOpen() {
 		var openOrig = window.XMLHttpRequest.prototype.open;
 		window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-			if (method == "POST" && url.startsWith("/messaging/send")) {
-				var stateChangeOrig = this.onreadystatechange;
-				this.onreadystatechange = function() {
-					if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
-						// TODO replace just-sent message with replaced message
-					}
-
-					stateChangeOrig();
-				};
-
+			if (method == "POST") {
 				var sendOrig = this.send;
-				this.send = function(params) {
 
-					var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
-					var request = this;
-					var args    = arguments;
-
-					getSettingValues(["block-files"], function(settings) {
-						// attachment
-						if (!json['body'] || json['has_attachment'] == "true") {
-							var blockFile = settings['block-files'];
-							if (blockFile && !window.BLOCKED_FILE_ALERT) {
-								window.BLOCKED_FILE_ALERT = true;
-								alertFileBlocked();
-								args = null;
-								// TODO make sure to block upload to upload.messenger.com
-							}
-
-							return sendOrig.apply(request, args);
+				// message intercepting
+				if (url.startsWith("/messaging/send")) {
+					var stateChangeOrig = this.onreadystatechange;
+					this.onreadystatechange = function() {
+						if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
+							// TODO replace just-sent message with replaced message
 						}
 
+						stateChangeOrig();
+					};
+
+					this.send = function(params) {
+
+						var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+						var request = this;
 						transmit("GET", "state", null, function(state) {
 							var msg = {
 								message:    decodeURI(json['body']) + "\n",
@@ -105,8 +92,27 @@ function patchRequestSending() {
 							};
 							transmitForEncryption(msg, requestContext);
 						});
-					});
-				};
+					};
+				}
+
+				// block file uploading
+				else if (url.startsWith("https://upload.messenger.com/ajax/mercury/upload.php")) {
+					var req = this;
+
+					this.send = function(params) {
+						var arg = arguments;
+						getSettingValues(["block-files"], function(settings) {
+							if (settings['block-files']) {
+								arg = null;
+								alertFileBlocked();
+								return;
+							}
+
+							return sendOrig.apply(req, arg);
+						});
+					};
+
+				}
 			}
 
 			return openOrig.apply(this, arguments);

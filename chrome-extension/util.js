@@ -78,5 +78,5 @@ function errorStateMissing() {
 }
 
 function alertFileBlocked() {
-	alert("File uploading and stickers are disabled in the settings, as their encryption is not yet supported. Disable this option at your own risk.");
+	alert("File and image uploading are disabled in the settings, as their encryption is not yet supported. Disable this option at your own risk.");
 }
