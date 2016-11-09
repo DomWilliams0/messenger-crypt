@@ -27,11 +27,11 @@ def get_key(fbid):
 
 def get_signing_key():
     sign = get_key("self-sign")
-    return sign if sign is not None else get_key("self-decrypt")
+    return sign if sign is not None else get_key("self-encrypt")
 
-def get_decryption_key():
-    decrypt = get_key("self-decrypt")
-    return decrypt if decrypt is not None else get_key("self-sign")
+def get_encryption_key():
+    encrypt = get_key("self-encrypt")
+    return encrypt if encrypt is not None else get_key("self-sign")
 
 # returns (key_user, error)
 def set_key(fbid, key_id, secret=False, raise_keyerror=False, raw_key=False):
@@ -162,8 +162,8 @@ def self_handler(args):
     both = which == "both"
     if both or which == "sign":
         contacts_to_set.append("self-sign")
-    if both or which == "decrypt":
-        contacts_to_set.append("self-decrypt")
+    if both or which == "encrypt":
+        contacts_to_set.append("self-encrypt")
 
     err = None
     success = False
@@ -184,17 +184,17 @@ def self_handler(args):
     # validation
     user, raw_key = user_rawkey
     if raw_key and which == "sign" and not raw_key.can_sign:
-        return "Secret key cannot be used to %s" % which
+        return "Given key cannot be used to %s" % which
 
-    action = "%sing" % which if not both else "both signing and decrypting"
+    action = "%sing" % which if not both else "both signing and encrypting"
     if key:
-        print "Registered secret key for %s: %s" % (action, _format_user(user))
+        print "Registered key for %s: %s" % (action, _format_user(user))
     else:
-        print "Unregistered secret key for %s" % action
+        print "Unregistered key for %s" % action
 
 def list_handler(args):
     contacts = config.get_section(CONFIG_CONTACTS)
-    selfs = (contacts.pop("self-decrypt", None), contacts.pop("self-sign", None))
+    selfs = (contacts.pop("self-encrypt", None), contacts.pop("self-sign", None))
 
     if not contacts:
         print "No linked contacts."
@@ -203,27 +203,27 @@ def list_handler(args):
             print "%-24s %s" % (k, _format_user(v))
     print
 
-    decrypt, sign = selfs
+    encrypt, sign = selfs
 
     print_pairs = []
 
     # both set
-    if decrypt and sign:
+    if encrypt and sign:
         # same key
-        if decrypt == sign:
-            print_pairs.append(("signing and decrypting", decrypt))
+        if encrypt == sign:
+            print_pairs.append(("signing and encrypting", encrypt))
 
         # different
         else:
-            print_pairs.append(("decrypting", decrypt))
+            print_pairs.append(("encrypting", encrypt))
             print_pairs.append(("signing", sign))
 
     # one key
-    elif decrypt != sign and (decrypt or sign):
-        set_verb = "decrypting" if decrypt else "signing"
-        not_set_verb = "decrypting" if not decrypt else "signing"
+    elif encrypt != sign and (encrypt or sign):
+        set_verb = "encrypting" if encrypt else "signing"
+        not_set_verb = "encrypting" if not encrypt else "signing"
 
-        print_pairs.append((set_verb, decrypt or sign))
+        print_pairs.append((set_verb, encrypt or sign))
         print_pairs.append((not_set_verb, "not explicitly set, so will use the key set for %s" % set_verb))
 
     if not print_pairs:
@@ -255,10 +255,10 @@ def parse_args():
 
     parser_self = subparsers.add_parser("self",
             help="Set your private keys to decrypt and sign incoming messages")
-    parser_self.add_argument("--which", "-w", nargs="?", choices=["sign", "decrypt", "both"], default="both",
+    parser_self.add_argument("--which", "-w", nargs="?", choices=["sign", "encrypt", "both"], default="both",
             help="Which secret key to set. Defaults to both.")
     parser_self.add_argument("seckey", nargs="?",
-            help="The new secret key which will be used to decrypt/sign messages. If left blank, the specified secret key is unlinked.")
+            help="The new secret key which will be used to encrypt/sign messages. If left blank, the specified secret key is unlinked.")
 
     parsed = vars(parser.parse_args())
     cmd = parsed.pop("subcommand", None)

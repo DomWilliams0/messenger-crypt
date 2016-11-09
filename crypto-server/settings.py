@@ -51,12 +51,12 @@ _DEFAULT_SETTINGS_FULL = OrderedDict([
             SETTING_TYPE_BOOL,
             False)
         ),
-    ("decrypt-key",
-        Setting("Decryption key",
+    ("encrypt-key",
+        Setting("Personal key",
             "The public and secret key to use for self-encryption and decryption",
             SETTING_TYPE_TEXT,
             None,
-            data={"key-id": "self-decrypt"})
+            data={"key-id": "self-encrypt"})
         ),
     ("signing-key",
         Setting("Secret signing key",

@@ -63,7 +63,7 @@ class EncryptedMessage(object):
 
 
 def _get_secret_key(decrypting):
-    key_user = keys.get_decryption_key() if decrypting else keys.get_signing_key()
+    key_user = keys.get_encryption_key() if decrypting else keys.get_signing_key()
     return get_single_key(key_user['key'], True) if key_user else (None, "Secret key not found")
 
 
@@ -208,10 +208,16 @@ def encrypt_message(msg):
                 return
 
             # add self
-            self_key, error = get_single_key(keys.get_decryption_key()['key'])
+            self_keyid = keys.get_encryption_key()
+            if self_keyid is None:
+                error = "Personal key not specified"
+            else:
+                self_key, error = get_single_key(self_keyid['key'])
+
             if error:
                 msg.error = "Failed to get own public key: %s" % error[0].lower() + error[1:]
                 return
+
             enc_keys.append(self_key)
 
     if pls_sign:
@@ -266,7 +272,7 @@ def get_single_key(keyid, secret=False):
     keys  = [k for k in GPGContext.INSTANCE.keylist(keyid, secret) if not (filter_revoked and k.revoked)]
     if keyid is None:
         error = "Null %s" % key_str.lower()
-    if not keys:
+    elif not keys:
         error = "%s '%s' not found" % (key_str, keyid)
     elif len(keys) != 1:
         error = "Multiple %ss found with id '%s', be more specific" % (key_str.lower(), keyid)
