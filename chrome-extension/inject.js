@@ -61,23 +61,19 @@ function patchRequestSending() {
 		var openOrig = window.XMLHttpRequest.prototype.open;
 		window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
 			if (method == "POST") {
+				var request  = this;
 				var sendOrig = this.send;
 
 				// message intercepting
 				if (url.startsWith("/messaging/send")) {
-					var stateChangeOrig = this.onreadystatechange;
-					this.onreadystatechange = function() {
-						if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
-							// TODO replace just-sent message with replaced message
+					request.send = function(params) {
+						var json = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+
+						// remove undefined messages
+						if (json['has_attachment'] != "false") {
+							json['body'] = "";
 						}
 
-						stateChangeOrig();
-					};
-
-					this.send = function(params) {
-
-						var json    = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
-						var request = this;
 						transmit("GET", "state", null, function(state) {
 							var msg = {
 								message:    decodeURI(json['body']) + "\n",
@@ -97,18 +93,16 @@ function patchRequestSending() {
 
 				// block file uploading
 				else if (url.startsWith("https://upload.messenger.com/ajax/mercury/upload.php")) {
-					var req = this;
-
-					this.send = function(params) {
+					request.send = function(params) {
 						var arg = arguments;
 						getSettingValues(["block-files"], function(settings) {
 							if (settings['block-files']) {
-								arg = null;
+								var key = arg[0].entries().next()['value'][0];
+								arg[0].set(key, {});
 								alertFileBlocked();
-								return;
 							}
 
-							return sendOrig.apply(req, arg);
+							return sendOrig.apply(request, arg);
 						});
 					};
 
