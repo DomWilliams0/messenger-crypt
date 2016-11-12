@@ -39,18 +39,30 @@ function setButtonState(b, newState) {
 	if (!newState) {
 		b.classList.remove("buttonEnabled");
 		b.classList.add("buttonDisabled");
-		b.value = "Don't " + b.value;
 	}
 	else {
 		b.classList.remove("buttonDisabled");
 		b.classList.add("buttonEnabled");
-		b.value = b.value.replace("Don't ", "")
 	}
 };
 
 function buttonPress(e) {
 	setButtonState(e.target);
 	updateState();
+};
+
+function updateStatus(encrypting, signing) {
+	var msg = "Messages will be ";
+	if (encrypting == signing) {
+		var prefix = encrypting ? "" : "un";
+		msg += prefix + "encrypted and " + prefix + "signed";
+	}
+
+	else {
+		msg += (encrypting ? "encrypted" : "signed");
+	}
+
+	document.getElementById("button-status").innerText = msg;
 };
 
 function resetKeyTextbox(textbox, value, tooltip, dontShorten) {
@@ -221,14 +233,18 @@ function onSettingCheckboxChange(e) {
 };
 
 function updateState() {
+	var enc = isButtonPressed(BUTTON_ENC);
+	var sig = isButtonPressed(BUTTON_SIG);
+
 	var newSettings = {
 		id:         META['convoKey'],
-		encryption: isButtonPressed(BUTTON_ENC),
-		signing:    isButtonPressed(BUTTON_SIG),
+		encryption: enc,
+		signing:    sig
 	};
 
 	transmit("POST", "convosettings", newSettings);
-	updateBadge(newSettings['encryption'], newSettings['signing']);
+	updateBadge(enc, sig);
+	updateStatus(enc, sig);
 };
 
 function clearPopup() {
@@ -287,6 +303,7 @@ function receiveState() {
 		setButtonState(BUTTON_SIG, signing);
 
 		updateBadge(encrypt, signing);
+		updateStatus(encrypt, signing);
 	}, clearPopup);
 
 	transmit("GET", "state", null, function(state) {
@@ -383,7 +400,7 @@ function initPopup() {
 
 	var buttons = [BUTTON_ENC, BUTTON_SIG];
 	for (var i = 0; i < buttons.length; i++) {
-		buttons[i].classList.add("button", "buttonOff");
+		buttons[i].classList.add("button");
 		buttons[i].addEventListener("click", buttonPress);
 	};
 
