@@ -12,52 +12,66 @@ function transmitForDecryption(messages) {
 				continue;
 			}
 
-			var success = !msg['error'];
+			var success   = !msg['error'];
+			var signer    = msg['signed_by'];
+			var decrypted = msg['decrypted'];
 
-			if (settings['message-colour']) {
-				element.parentNode.style.backgroundColor = success ? "#0f844d" : "#bd0e0e";
-				element.parentNode.style.color = "#fff";
+			var colour = null;
+
+			// create "temporarily" incredibly ugly status header
+			var statusElement = "<div>";
+
+			// decryption status
+			statusElement += "<b>";
+			if (!success) {
+				// failure
+				statusElement += msg['error'];
 			}
-
-			// create temporarily incredibly ugly status header
-			var statusElement = "";
-
-			if (settings['verbose-header']) {
-				statusElement = "<div>";
-
-				// decryption status
-				statusElement += "<b>";
-				if (!success) {
-					statusElement += msg['error'];
+			else {
+				var msgDesc = null;
+				if (decrypted) {
+					msgDesc = "Decrypted message";
+					colour  = "#0f844d";
 				}
 				else {
-					var msgDesc = msg['decrypted'] ? "Decrypted message" : "Verified message";
+					msgDesc = "Verified message";
+					colour  = "#0d7d8e";
+				}
 
-					// signing
-					var signer = msg['signed_by'];
-					if (signer) {
+				// signing
+				if (signer) {
 
-						// well signed
-						if(msg['valid_sig']) {
-							statusElement += msgDesc + " with good signature from " + signer;
-						}
-
-						// badly signed
-						else {
-							statusElement += msgDesc + " with BAD signature from " + signer;
-						}
+					// well signed
+					if(msg['valid_sig']) {
+						statusElement += msgDesc + " with good signature from " + signer;
 					}
 
-					// unsigned
+					// badly signed
 					else {
-						statusElement += "Decrypted unsigned message";
+						statusElement += msgDesc + " with BAD signature from " + signer;
+						colour = null;
 					}
 				}
-				statusElement += "</b></div>";
+
+				// unsigned
+				else {
+					statusElement += "Decrypted unsigned message";
+				}
+			}
+			statusElement += "</b></div>";
+
+			// error colour
+			if (colour == null) {
+				colour = "#bd0e0e";
 			}
 
-			// update message content
-			element.innerHTML = statusElement + msg.message;
+			// update message box
+			element.innerHTML = (settings['verbose-header'] ? statusElement : "") + msg.message;
+
+			if (settings['message-colour']) {
+				element.parentNode.style.backgroundColor = colour;
+				element.parentNode.style.color = "#fff";
+			}
 		}
 	};
 
