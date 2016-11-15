@@ -4,6 +4,7 @@ import json
 import ssl
 import sys
 import urlparse
+import threading
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 
@@ -69,7 +70,7 @@ def register_handler(path, post=None, get=None):
         _HANDLERS[(path, "GET")] = get_wrapper(get)
 
 
-class RequestHandler(BaseHTTPRequestHandler):
+class WebRequestHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', 'https://www.messenger.com')
@@ -98,6 +99,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             handler(self, args)
 
+class HelpRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+
+        try:
+            with open("help/help.html") as help_file:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(help_file.read())
+        except IOError as e:
+            self.send_error(500, message=e.strerror)
+
 class HTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
@@ -122,22 +134,27 @@ def register_handlers():
             get=settings.get_settings_handler)
 
 
-def start_server(port, certfile, keyfile):
+def start_server(port, handler, https, certfile=None, keyfile=None):
     addr = ("127.0.0.1", port)
-    httpd = HTTPServer(addr, RequestHandler)
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile=certfile, keyfile=keyfile, server_side=True)
+    httpd = HTTPServer(addr, handler)
 
-    print "Listening on %s:%d..." % addr
+    if https:
+        httpd.socket = ssl.wrap_socket(httpd.socket, certfile=certfile, keyfile=keyfile, server_side=True)
+
+    print "Starting server on %s://%s:%d..." % ("https" if https else "http", addr[0], addr[1])
     httpd.serve_forever()
 
 
 def main():
-    # start listening
+    # start help server
+    threading.Thread(target=start_server, args=[constants.HELP_PORT, HelpRequestHandler, False]).start()
+
+    # start web server
     certfile = config['tls-cert']
     keyfile  = config['tls-key']
 
     register_handlers()
-    start_server(constants.SERVER_PORT, certfile, keyfile)
+    start_server(constants.WEB_PORT, WebRequestHandler, True, certfile=certfile, keyfile=keyfile)
 
     return 0
 

@@ -1,5 +1,6 @@
 CONFIG_PATH = "config.json"
-SERVER_PORT = 50456
+HELP_PORT   = 50455
+WEB_PORT    = 50456
 
 
 def join_list(l):
