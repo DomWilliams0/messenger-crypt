@@ -31,6 +31,10 @@ def _get_state():
     return STATE
 
 _HANDLERS = {}
+
+def _register_handler(path, method, func):
+    _HANDLERS[(path, method)] = func
+
 def register_handler(path, post=None, get=None):
     def get_wrapper(func):
         def real_handler(req, args):
@@ -65,9 +69,9 @@ def register_handler(path, post=None, get=None):
         return real_handler
 
     if post:
-        _HANDLERS[(path, "POST")] = post_wrapper(post)
+        _register_handler(path, "POST", post_wrapper(post))
     if get:
-        _HANDLERS[(path, "GET")] = get_wrapper(get)
+        _register_handler(path, "GET", get_wrapper(get))
 
 
 class WebRequestHandler(BaseHTTPRequestHandler):
@@ -110,6 +114,11 @@ class HelpRequestHandler(BaseHTTPRequestHandler):
         except IOError as e:
             self.send_error(500, message=e.strerror)
 
+def redirect_to_help_server(req, args):
+    req.send_response(301)
+    req.send_header("Location", "http://%s:%d" % (req.client_address[0], constants.HELP_PORT))
+    req.end_headers()
+
 class HTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
@@ -132,6 +141,8 @@ def register_handlers():
     register_handler("settings",
             post=settings.update_settings_handler,
             get=settings.get_settings_handler)
+
+    _register_handler("", "GET", redirect_to_help_server)
 
 
 def start_server(port, handler, https, certfile=None, keyfile=None):
