@@ -1,6 +1,6 @@
 import io
 import json
-from threading import Lock
+import threading
 from urllib import quote_plus, unquote
 
 import gpgme
@@ -13,7 +13,7 @@ import keys
 
 class GPGContext(object):
     INSTANCE = None
-    LOCK     = Lock()
+    LOCK     = threading.Lock()
 
     def __init__(self):
         # create context
@@ -114,38 +114,38 @@ def decrypt_message(msg):
             msg.message = "-----BEGIN PGP MESSAGE-----\n...\n...\n-----END PGP MESSAGE-----"
             return
 
-    # /how/ many signatures?
-    if len(signing_sigs) > 1:
-        msg.error = "Multiple signatures? Surely you jest!"
-        return
-
-    # ensure correctly signed if actually signed
-    if signing_sigs:
-        sig       = signing_sigs[0]
-        fpr       = sig.fpr
-        signed_by = fpr[-8:]
-
-        # find key
-        signing_key, error = get_single_key(fpr)
-        if signing_key:
-            # find master key and uid
-            master_key = signing_key.subkeys[0]
-            uid = signing_key.uids[0]
-
-            # show master key if subkey used
-            if fpr != master_key.fpr:
-                signed_by = master_key.fpr[-8:]
-
-            signed_by = "%s (%s)" % (uid.name, signed_by)
-
-        msg.signed_by = signed_by
-
-        # invalid signature
-        if sig.status is not None:
-            msg.error = "Failed to verify signature by %s: %s" % (signed_by, sig.status.strerror)
+        # /how/ many signatures?
+        if len(signing_sigs) > 1:
+            msg.error = "Multiple signatures? Surely you jest!"
             return
 
-        msg.valid_sig = True
+        # ensure correctly signed if actually signed
+        if signing_sigs:
+            sig       = signing_sigs[0]
+            fpr       = sig.fpr
+            signed_by = fpr[-8:]
+
+            # find key
+            signing_key, error = get_single_key(fpr)
+            if signing_key:
+                # find master key and uid
+                master_key = signing_key.subkeys[0]
+                uid = signing_key.uids[0]
+
+                # show master key if subkey used
+                if fpr != master_key.fpr:
+                    signed_by = master_key.fpr[-8:]
+
+                signed_by = "%s (%s)" % (uid.name, signed_by)
+
+            msg.signed_by = signed_by
+
+            # invalid signature
+            if sig.status is not None:
+                msg.error = "Failed to verify signature by %s: %s" % (signed_by, sig.status.strerror)
+                return
+
+            msg.valid_sig = True
 
 
 def decrypt_message_handler(msg):
@@ -220,43 +220,44 @@ def encrypt_message(msg):
 
             enc_keys.append(self_key)
 
-    if pls_sign:
-        # get signing key
-        sign_key, error = _get_secret_key(False)
-        if error:
-            msg.error = error
-            return
+    with GPGContext.LOCK:
+        if pls_sign:
+            # get signing key
+            sign_key, error = _get_secret_key(False)
+            if error:
+                msg.error = error
+                return
 
-        GPGContext.INSTANCE.set_signing_key(sign_key)
+            GPGContext.INSTANCE.set_signing_key(sign_key)
 
-    # off we go
-    in_buf  = io.BytesIO(unquote(msg.message.encode("utf8")))
-    out_buf = io.BytesIO()
+        # off we go
+        in_buf  = io.BytesIO(unquote(msg.message.encode("utf8")))
+        out_buf = io.BytesIO()
 
-    try:
-        # encryption involved
-        if pls_encrypt:
+        try:
+            # encryption involved
+            if pls_encrypt:
 
-            # signing too
-            if pls_sign:
-                func = GPGContext.INSTANCE.encrypt_sign
+                # signing too
+                if pls_sign:
+                    func = GPGContext.INSTANCE.encrypt_sign
+                else:
+                    func = GPGContext.INSTANCE.encrypt
+
+                # returns list of signing keys if signed
+                signing_sigs = func(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
+
+            # only signing
             else:
-                func = GPGContext.INSTANCE.encrypt
+                signing_sigs = GPGContext.INSTANCE.sign(in_buf, out_buf, gpgme.SIG_MODE_CLEAR)
 
-            # returns list of signing keys if signed
-            signing_sigs = func(enc_keys, gpgme.ENCRYPT_ALWAYS_TRUST, in_buf, out_buf)
+            msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
+            msg.signed    = pls_sign and len(signing_sigs) == 1
+            msg.encrypted = pls_encrypt
 
-        # only signing
-        else:
-            signing_sigs = GPGContext.INSTANCE.sign(in_buf, out_buf, gpgme.SIG_MODE_CLEAR)
-
-        msg.message   = quote_plus(out_buf.getvalue().decode("utf8"))
-        msg.signed    = pls_sign and len(signing_sigs) == 1
-        msg.encrypted = pls_encrypt
-
-    except gpgme.GpgmeError as e:
-        msg.error = "Failed to encrypt: %s" % e.message.lower()
-        return
+        except gpgme.GpgmeError as e:
+            msg.error = "Failed to encrypt: %s" % e.message.lower()
+            return
 
 def encrypt_message_handler(msg):
     msg = EncryptedMessage(json.loads(msg))
