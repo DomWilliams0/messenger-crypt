@@ -5,6 +5,7 @@ import ssl
 import sys
 import urlparse
 import threading
+import signal
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 
@@ -122,6 +123,14 @@ def redirect_to_help_server(req, args):
 class HTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
+
+def register_signal_handlers():
+    def exit(signal, frame):
+        print "\nQuitting..."
+        sys.exit(0)
+    signal.signal(signal.SIGINT, exit)
+
+
 def register_handlers():
     register_handler("decrypt",
             post=encryption.decrypt_message_handler)
@@ -156,9 +165,17 @@ def start_server(port, handler, https, certfile=None, keyfile=None):
     httpd.serve_forever()
 
 
+def start_help_server():
+    t = threading.Thread(target=start_server, args=[constants.HELP_PORT, HelpRequestHandler, False])
+    t.setDaemon(True)
+    t.start()
+
+
 def main():
+    register_signal_handlers()
+
     # start help server
-    threading.Thread(target=start_server, args=[constants.HELP_PORT, HelpRequestHandler, False]).start()
+    start_help_server()
 
     # start web server
     certfile = config['tls-cert']
