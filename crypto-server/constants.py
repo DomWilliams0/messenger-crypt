@@ -1,4 +1,5 @@
 CONFIG_PATH = "config.json"
+HELP_ROOT   = "help"
 HELP_PORT   = 50455
 WEB_PORT    = 50456
 

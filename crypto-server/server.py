@@ -2,12 +2,14 @@
 
 import json
 import ssl
+import os
 import sys
 import urlparse
 import threading
 import signal
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
+from SimpleHTTPServer import SimpleHTTPRequestHandler
 
 import config
 import encryption
@@ -15,7 +17,9 @@ import settings
 import keys
 import constants
 
-STATE = ""
+STATE   = ""
+CWD     = os.getcwd()
+CWD_LCK = threading.Lock()
 
 def arg_dropper(func):
     def new_func(dummy):
@@ -104,16 +108,18 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         else:
             handler(self, args)
 
-class HelpRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
+class RestrictedSimpleHTTPRequestHandler(SimpleHTTPRequestHandler): # what a mouthful
 
-        try:
-            with open("help/help.html") as help_file:
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write(help_file.read())
-        except IOError as e:
-            self.send_error(500, message=e.strerror)
+    def translate_path(self, path):
+        with CWD_LCK:
+            os.chdir(constants.HELP_ROOT)
+            ret = SimpleHTTPRequestHandler.translate_path(self, path)
+            os.chdir(CWD)
+            return ret
+
+    def log_message(self, format, *args):
+        pass
+
 
 def redirect_to_help_server(req, args):
     req.send_response(301)
@@ -128,6 +134,7 @@ def register_signal_handlers():
     def exit(signal, frame):
         print "\nQuitting..."
         sys.exit(0)
+
     signal.signal(signal.SIGINT, exit)
 
 
@@ -166,7 +173,7 @@ def start_server(port, handler, https, certfile=None, keyfile=None):
 
 
 def start_help_server():
-    t = threading.Thread(target=start_server, args=[constants.HELP_PORT, HelpRequestHandler, False])
+    t = threading.Thread(target=start_server, args=[constants.HELP_PORT, RestrictedSimpleHTTPRequestHandler, False])
     t.setDaemon(True)
     t.start()
 
