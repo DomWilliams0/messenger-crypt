@@ -16,9 +16,10 @@ def _filterchained(d):
     return {k: v for k, v in d.items() if v is not None}
 
 
-SettingType = namedtuple("Setting", ["title", "description", "type", "value", "data"])
-def Setting(title, description, setting_type, value, data=None): return SettingType(title, description, setting_type, value, data)
+SettingType = namedtuple("Setting", ["title", "description", "type", "value", "browser", "data"])
+def Setting(title, description, setting_type, value, browser=True, data=None): return SettingType(title, description, setting_type, value, browser, data)
 SETTING_TYPE_TEXT = "TEXT"
+SETTING_TYPE_KEY  = "KEY"
 SETTING_TYPE_BOOL = "BOOL"
 
 _DEFAULT_CONVO_SETTINGS = {
@@ -54,17 +55,24 @@ _DEFAULT_SETTINGS_FULL = OrderedDict([
     ("encrypt-key",
         Setting("Personal key",
             "The public and secret key to use for self-encryption and decryption",
-            SETTING_TYPE_TEXT,
+            SETTING_TYPE_KEY,
             None,
             data={"key-id": "self-encrypt"})
         ),
     ("signing-key",
         Setting("Secret signing key",
             "Defaults to decryption key if not specified",
-            SETTING_TYPE_TEXT,
+            SETTING_TYPE_KEY,
             None,
             data={"key-id": "self-sign"})
         ),
+    ("tls-cert-dir",
+        Setting("Directory holding TLS certificates and keys",
+            "\"key.pem\" and \"cert.pem\" should be accessible in here",
+            SETTING_TYPE_TEXT,
+            None,
+            browser=False)
+        )
     ])
 
 _DEFAULT_SETTINGS = OrderedDict([(k, v.value) for k, v in _DEFAULT_SETTINGS_FULL.items()])
@@ -93,7 +101,6 @@ def get_convo_settings_handler(msg):
     return json.dumps(settings)
 
 
-# returns python booleans
 def get_convo_settings(convoID):
     config.reload()
     settings = config.get_section('conversations')
@@ -114,7 +121,7 @@ def get_settings_handler(msg):
                     _DEFAULT_SETTINGS_FULL[k].__dict__, ("key", k), ("value", v)
                     )
                 )
-            for k, v in settings_values.items()
+            for k, v in settings_values.items() if _DEFAULT_SETTINGS_FULL[k].browser
             ]
 
     return json.dumps(settings_descriptions)
@@ -135,7 +142,6 @@ def get_settings():
     merged = OrderedDict(_DEFAULT_SETTINGS)
     user_set = config.get_section('settings')
     merged.update(user_set)
-    # merged = {k: v for k, v in merged.items() if v is not None}
 
     return merged
 

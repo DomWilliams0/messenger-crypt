@@ -10,6 +10,12 @@ var CURRENT_TAB  = null;
 var UNLINK_STATE = false;
 var HOTKEY_ACCUM = [];
 
+var InputType  = Object.freeze({
+	TEXT: 1,
+	KEY : 2,
+	BOOL: 3
+});
+
 function onTabClick(e) {
 	var newTab = e.target;
 	var oldTab = CURRENT_TAB || newTab;
@@ -274,15 +280,18 @@ function receiveState() {
 			"</span>";
 	};
 
-	function createSettingEntry(setting, textField) {
+	function createSettingEntry(setting, type) {
+		var isText = type == InputType.TEXT || type == InputType.KEY;
+		var isKey  = type == InputType.KEY;
+
 		return "" +
-			"<div class=\"setting-deets" + (textField ? " setting-deets-textbox" : "") + "\">" +
+			"<div class=\"setting-deets" + (isText ? " setting-deets-textbox" : "") + "\">" +
 				"<span>" + setting['title'] + "</span>" +
 				"<br/>" +
 				"<span class=\"setting-desc\">" + setting['description'] + "</span>" +
 			"</div>" +
-			(textField ?
-			"<span class=\"participant-key settings-key\">" +
+			(isText ?
+			"<span class=\"" + (isKey ? "participant-key settings-key" : "") + "\">" +
 				"<input type=\"text\">" +
 			"</span>"
 				:
@@ -353,25 +362,18 @@ function receiveState() {
 		settings.forEach(function(x) {
 			var element = document.createElement("li");
 
-			var textField;
-			switch(x['type'])
-			{
-				case "BOOL":
-					textField = false;
-					break;
-				case "TEXT":
-					textField = true;
-					break;
-				default:
-					console.error("Invalid setting type '" + x['type'] + "'");
-					return;
+			debugger;
+			var type = InputType[x['type']];
+			if (!type) {
+				console.error("Invalid setting type '" + x['type'] + "'");
+				return;
 			}
-			element.innerHTML = createSettingEntry(x, textField);
 
+			element.innerHTML = createSettingEntry(x, type);
 			element.title = x['description'];
 
 			var inputField = element.getElementsByTagName("input")[0];
-			if (textField) {
+			if (type == InputType.KEY) {
 				var dummyFbid = x['data']['key-id'];
 				var dummy = {
 					fbid: dummyFbid
@@ -382,7 +384,8 @@ function receiveState() {
 					resetKeyTextbox(inputField, value['key'], value['str']);
 				});
 			}
-			else {
+
+			else if (type == InputType.BOOL) {
 				inputField.checked = x['value'];
 				inputField.onchange = onSettingCheckboxChange;
 			}
