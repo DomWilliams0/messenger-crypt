@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	chrome.runtime.sendMessage({action: "get_state"}, function(resp) {
 		if (!resp) {
 			setBadgeError();
-			alert("Could not fetch conversation state. This may be because this conversation is too old and does not appear in your top ~20 conversations. To fix this, send a normal message to bump it into your recent conversations, and refresh the page.");
+			errorConversationTooOld();
 			return;
 		}
 

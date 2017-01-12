@@ -75,6 +75,11 @@ function patchRequestSending() {
 						}
 
 						transmit("GET", "state", null, function(state) {
+							if (!state) {
+								errorConversationTooOld();
+								return;
+							}
+
 							var msg = {
 								message:    decodeURI(json['body']) + "\n",
 								recipients: state['participants'],

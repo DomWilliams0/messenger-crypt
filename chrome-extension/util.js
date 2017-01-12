@@ -77,6 +77,11 @@ function errorStateMissing() {
 
 }
 
+function errorConversationTooOld() {
+	alert("Could not fetch conversation state. This may be because this conversation is too old and does not appear in your top ~20 conversations. To fix this, send a normal message to bump it into your recent conversations, and refresh the page.");
+
+}
+
 function alertFileBlocked() {
 	alert("File and image uploading are disabled in the settings, as their encryption is not yet supported. Disable this option at your own risk.");
 }
