@@ -86,7 +86,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        msg = self.rfile.read(int(self.headers.getheader("content-length")))
+        msg = self.rfile.read(int(self.headers.getheader("content-length", 0)))
         self._get_going(msg)
 
     def do_GET(self):
