@@ -141,7 +141,7 @@ def register_handlers():
     _register_handler("", "GET", server_help.redirect_to_help_server)
 
 
-def start_server(port, handler, https, tls_dir=None):
+def create_server(port, handler, https, tls_dir=None):
     def check_exists(f, what):
         if not os.path.exists(f):
             print "Could not find %s at '%s'" % (what, f)
@@ -153,29 +153,31 @@ def start_server(port, handler, https, tls_dir=None):
 
     if https:
         if not check_exists(tls_dir, "TLS cert directory"):
-            return False
+            return
 
         certfile = os.path.join(tls_dir, "cert.pem")
         keyfile = os.path.join(tls_dir, "key.pem")
 
         if not check_exists(certfile, "TLS certificate") or not check_exists(keyfile, "TLS private key"):
-            return False
+            return
 
         httpd.socket = ssl.wrap_socket(httpd.socket, certfile=certfile, keyfile=keyfile, server_side=True)
 
-    print "Starting server on %s://%s:%d..." % ("https" if https else "http", addr[0], addr[1])
-    httpd.serve_forever()
+    print "Creating server on %s://%s:%d..." % ("https" if https else "http", addr[0], addr[1])
+    return httpd
 
 
 def start_crypto_server():
-    t = threading.Thread(target=start_server, args=[constants.WEB_PORT, WebRequestHandler, True, config['settings.tls-cert-dir']])
+    register_handlers()
+    httpd = create_server(constants.WEB_PORT, WebRequestHandler, True, config['settings.tls-cert-dir'])
+    t = threading.Thread(target=httpd.serve_forever, args=[])
     t.setDaemon(True)
     t.start()
+    return httpd
 
 
 def main():
     register_signal_handlers()
-    register_handlers()
 
     # start help server
     server_help.start_help_server()
