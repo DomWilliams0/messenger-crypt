@@ -2,14 +2,12 @@
 
 import json
 import ssl
-import os
 import sys
 import urlparse
-import threading
 import signal
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
-from SimpleHTTPServer import SimpleHTTPRequestHandler
+import server_help
 
 import config
 import encryption
@@ -17,9 +15,7 @@ import settings
 import keys
 import constants
 
-STATE   = ""
-CWD     = os.getcwd()
-CWD_LCK = threading.Lock()
+STATE = ""
 
 def arg_dropper(func):
     def new_func(dummy):
@@ -108,24 +104,6 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         else:
             handler(self, args)
 
-class RestrictedSimpleHTTPRequestHandler(SimpleHTTPRequestHandler): # what a mouthful
-
-    def translate_path(self, path):
-        with CWD_LCK:
-            os.chdir(constants.HELP_ROOT)
-            ret = SimpleHTTPRequestHandler.translate_path(self, path)
-            os.chdir(CWD)
-            return ret
-
-    def log_message(self, format, *args):
-        pass
-
-
-def redirect_to_help_server(req, args):
-    req.send_response(301)
-    req.send_header("Location", "http://%s:%d" % (req.client_address[0], constants.HELP_PORT))
-    req.end_headers()
-
 class HTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
@@ -158,7 +136,7 @@ def register_handlers():
             post=settings.update_settings_handler,
             get=settings.get_settings_handler)
 
-    _register_handler("", "GET", redirect_to_help_server)
+    _register_handler("", "GET", server_help.redirect_to_help_server)
 
 
 def start_server(port, handler, https, certfile=None, keyfile=None):
@@ -172,17 +150,11 @@ def start_server(port, handler, https, certfile=None, keyfile=None):
     httpd.serve_forever()
 
 
-def start_help_server():
-    t = threading.Thread(target=start_server, args=[constants.HELP_PORT, RestrictedSimpleHTTPRequestHandler, False])
-    t.setDaemon(True)
-    t.start()
-
-
 def main():
     register_signal_handlers()
 
     # start help server
-    start_help_server()
+    server_help.start_help_server()
 
     # start web server
     certfile = config['tls-cert']
