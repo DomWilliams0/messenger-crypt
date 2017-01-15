@@ -3,6 +3,8 @@
 import json
 import ssl
 import sys
+import os
+import threading
 import urlparse
 import signal
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
@@ -139,29 +141,44 @@ def register_handlers():
     _register_handler("", "GET", server_help.redirect_to_help_server)
 
 
-def start_server(port, handler, https, certfile=None, keyfile=None):
+def start_server(port, handler, https, tls_dir=None):
+    def check_exists(f, what):
+        if not os.path.exists(f):
+            print "Could not find %s at '%s'" % (what, f)
+            return False
+        return True
+
     addr = ("127.0.0.1", port)
     httpd = HTTPServer(addr, handler)
 
     if https:
+        if not check_exists(tls_dir, "TLS cert directory"):
+            return False
+
+        certfile = os.path.join(tls_dir, "cert.pem")
+        keyfile = os.path.join(tls_dir, "key.pem")
+
+        if not check_exists(certfile, "TLS certificate") or not check_exists(keyfile, "TLS private key"):
+            return False
+
         httpd.socket = ssl.wrap_socket(httpd.socket, certfile=certfile, keyfile=keyfile, server_side=True)
 
     print "Starting server on %s://%s:%d..." % ("https" if https else "http", addr[0], addr[1])
     httpd.serve_forever()
 
 
+def start_crypto_server():
+    t = threading.Thread(target=start_server, args=[constants.WEB_PORT, WebRequestHandler, True, config['settings.tls-cert-dir']])
+    t.setDaemon(True)
+    t.start()
+
+
 def main():
     register_signal_handlers()
+    register_handlers()
 
     # start help server
     server_help.start_help_server()
-
-    # start web server
-    certfile = config['tls-cert']
-    keyfile  = config['tls-key']
-
-    register_handlers()
-    start_server(constants.WEB_PORT, WebRequestHandler, True, certfile=certfile, keyfile=keyfile)
 
     return 0
 

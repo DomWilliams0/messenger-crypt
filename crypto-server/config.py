@@ -7,14 +7,9 @@ import constants
 
 
 class Config(object):
-    DEFAULT_VALUES = [
-            ("tls-cert", "../../certs/cert.pem"),
-            ("tls-key", "../../certs/key.pem")
-            ]
-
     def __init__(self, path):
         self._path = path
-        self.conf = dict(self.DEFAULT_VALUES)
+        self.conf = {}
 
         load = self._load()
         if load == False:

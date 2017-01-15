@@ -23,9 +23,7 @@ class RestrictedSimpleHTTPRequestHandler(SimpleHTTPRequestHandler): # what a mou
         print "post!"
 
 def start_help_server():
-    t = threading.Thread(target=server.start_server, args=[constants.HELP_PORT, RestrictedSimpleHTTPRequestHandler, False])
-    t.setDaemon(True)
-    t.start()
+    server.start_server(constants.HELP_PORT, RestrictedSimpleHTTPRequestHandler, False)
 
 
 def redirect_to_help_server(req, args):
