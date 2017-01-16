@@ -1,9 +1,11 @@
 import os
+import json
 import threading
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 
 import constants
 import server
+import config
 
 CWD     = os.getcwd()
 CWD_LCK = threading.Lock()
@@ -59,6 +61,31 @@ def handler_server(req, msg):
 
     req.send_response(200)
     req.end_headers()
+    return True
+
+def handler_tls(req, msg):
+    resp = 400
+
+    if msg:
+        msg = os.path.abspath(msg)
+        if os.path.exists(msg):
+            if not os.path.isdir(msg):
+                return
+        else:
+            os.makedirs(msg)
+            print "Creating %s" % msg
+
+        config['settings.tls-cert-dir'] = msg
+        config.save()
+        print "Updated TLS dir to '%s'" % msg
+        resp = 200
+
+    req.send_response(resp)
+    req.end_headers()
+
+    if msg:
+        req.wfile.write(msg)
+
     return True
 
 
