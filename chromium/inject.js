@@ -1,4 +1,4 @@
-var LAST_MESSAGE_ID = 0;
+var nextMessageID = 0;
 var backgroundPort;
 
 function formatElementID(id) {
@@ -24,8 +24,8 @@ function decryptMessages() {
 		// pgp message found
 		if (msg.message.startsWith("-----BEGIN PGP ")) {
 			// generate unique id
-			var msgID = LAST_MESSAGE_ID;
-			LAST_MESSAGE_ID += 1;
+			var msgID = nextMessageID;
+			nextMessageID += 1;
 
 			// mark element with id
 			msg["id"] = msgID;
@@ -275,53 +275,28 @@ function patchRequestSending() {
 		};
 	};
 
-	function addFunc(func, execute) {
+	function addExecutedFunction(func) {
 		var script = document.createElement("script");
-		if (execute) {
-			script.textContent = "(" + func + ")();";
-		}
-		else {
-			script.textContent = func.toString();
-		}
-
+		script.textContent = "(" + func + ")();";
+		(document.head||document.documentElement).appendChild(script);
+		script.remove();
+	};
+	function addNonExecutedFunctions(funcs) {
+		var script = document.createElement("script");
+		script.textContent = funcs.join("\n");
 		(document.head||document.documentElement).appendChild(script);
 		script.remove();
 	};
 
 	// inject functions into page
-	addFunc(overloadOpen, true);
-	addFunc(listenForModifiedMessages, true);
-	addFunc(regenerateState, false);
-	addFunc(getConversationState, false);
-	addFunc(transmitForEncryption, false);
-	addFunc(pausedStateInsert, false);
-};
-
-function startStatePolling(pollTime) {
-	var oldPath = null;
-	function hasPathChanged() {
-		var newPath = window.location.pathname.slice(3);
-		if (newPath != oldPath) {
-			oldPath = newPath;
-			return true;
-		}
-
-		return false;
-	};
-
-	function intervalCallback() {
-		if (hasPathChanged()) {
-			var newState = {
-				global: regenerateState(), // has to be run in content script context
-				convo:  oldPath
-			};
-
-			chrome.runtime.sendMessage({action: "set_state", data: newState}, function(resp) {});
-		};
-	};
-
-	// initalisation
-	setInterval(intervalCallback, pollTime);
+	addExecutedFunction(overloadOpen);
+	addExecutedFunction(listenForModifiedMessages);
+	addNonExecutedFunctions([
+		regenerateState,
+		getConversationState,
+		transmitForEncryption,
+		pausedStateInsert
+	]);
 };
 
 // open connection to background
@@ -350,9 +325,6 @@ window.addEventListener("load", function(e) {
 
 	// sent message interception and encryption
 	patchRequestSending();
-
-	// state polling
-	//startStatePolling(50);
 
 }, false);
 
