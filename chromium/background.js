@@ -3,7 +3,18 @@ var portNative = chrome.runtime.connectNative(name);
 
 // native comms
 portNative.onMessage.addListener(function(m) {
-	console.log("Got a message: " + m.message);
+	var what = m.what;
+	var content = m.content;
+	if (what === undefined || content === undefined) {
+		console.warn("Bad message from host");
+		return;
+	}
+
+	// decrypted messages
+	if (what === "decrypt") {
+		console.log("Received %d decrypted messages", content.length);
+	}
+
 });
 
 // content script comms
@@ -13,8 +24,6 @@ chrome.runtime.onConnect.addListener(function(portContent) {
 	}
 
 	portContent.onMessage.addListener(function(msg) {
-		var what = msg.what;
-		console.log("TODO: %s %o", what, msg.content);
-		// TODO send to native to decrypt/encrypt
+		portNative.postMessage(msg);
 	});
 });
