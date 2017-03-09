@@ -41,6 +41,7 @@ function decryptMessages() {
 	}
 };
 
+// runs in context of content script
 function transmitForDecryption(messages) {
 	// send directly to background
 	backgroundPort.postMessage({
@@ -49,8 +50,16 @@ function transmitForDecryption(messages) {
 	});
 }
 
+// runs in context of webpage
 function transmitForEncryption(message) {
-	// TODO transmit message to background, somehow
+	// post to content script, which forwards to background
+	window.postMessage({
+		type: "from-messenger",
+		message: {
+			what: "encrypt",
+			content: message
+		}
+	}, "*");
 }
 
 function startPolling(pollTime) {
@@ -171,10 +180,18 @@ function startStatePolling(pollTime) {
 	setInterval(intervalCallback, pollTime);
 };
 
-window.addEventListener("load", function(e) {
-	// open connection to background
-	backgroundPort = chrome.runtime.connect({name: "contentToBackground"});
+// open connection to background
+backgroundPort = chrome.runtime.connect({name: "contentToBackground"});
 
+// listen for messages to forward to background from page
+window.addEventListener("message", function(e) {
+	if (e.source == window && e.data.type === "from-messenger") {
+		var wrappedMessage = e.data.message;
+		backgroundPort.postMessage(wrappedMessage);
+	}
+}, false);
+
+window.addEventListener("load", function(e) {
 	// message decrypting
 	startPolling(500);
 
