@@ -42,11 +42,15 @@ function decryptMessages() {
 };
 
 function transmitForDecryption(messages) {
-	// send to background
+	// send directly to background
 	backgroundPort.postMessage({
 		what: "decrypt",
 		content: messages
 	});
+}
+
+function transmitForEncryption(message) {
+	// TODO transmit message to background, somehow
 }
 
 function startPolling(pollTime) {
@@ -83,73 +87,61 @@ function patchRequestSending() {
 							json['body'] = "";
 						}
 
-						transmit("GET", "state", null, function(state) {
-							if (!state) {
-								errorConversationTooOld();
-								return;
-							}
+						var convoId = window.location.pathname.slice(3);
+						var fullState = regenerateState(); // TODO cache this
+						var conversation = getConversationState(fullState, convoId);
 
-							var msg = {
-								message:    decodeURI(json['body']) + "\n",
-								recipients: state['participants'],
-								id:         state['thread']['id']
-							};
+						var message = {
+							message:    decodeURI(json['body']) + "\n",
+							recipients: conversation['participants'],
+							id:         conversation['thread']['id']
+						};
 
-							var requestContext = {
-								origSend:     sendOrig,
-								request:      request,
-								formDataJson: json
-							};
-							transmitForEncryption(msg, requestContext);
-						});
+						transmitForEncryption(message);
+
+						// TODO continue with original send()
 					};
 				}
 
 				// block file uploading
-				else if (url.startsWith("https://upload.messenger.com/ajax/mercury/upload.php")) {
-					request.send = function(params) {
-						var arg = arguments;
-						getSettingValues(["block-files"], function(settings) {
-							if (settings['block-files']) {
-								var key = arg[0].entries().next()['value'][0];
-								arg[0].set(key, {});
-								alert("No files for you!");
-								// alertFileBlocked();
-							}
+				// else if (url.startsWith("https://upload.messenger.com/ajax/mercury/upload.php")) {
+				// 	request.send = function(params) {
+				// 		var arg = arguments;
+				// 		getSettingValues(["block-files"], function(settings) {
+				// 			if (settings['block-files']) {
+				// 				var key = arg[0].entries().next()['value'][0];
+				// 				arg[0].set(key, {});
+				// 				alert("No files for you!");
+				//  				// alertFileBlocked();
+				// 			}
+				// 			return sendOrig.apply(request, arg);
+				// 		});
+				// 	};
+				// }
 
-							return sendOrig.apply(request, arg);
-						});
-					};
-
-				}
 			}
 
 			return openOrig.apply(this, arguments);
 		};
 	};
 
-	// function addFunc(func, execute) {
-	// 	var script = document.createElement("script");
-	// 	if (execute) {
-	// 		script.textContent = "(" + func + ")();";
-	// 	}
-	// 	else {
-	// 		script.textContent = func.toString();
-	// 	}
+	function addFunc(func, execute) {
+		var script = document.createElement("script");
+		if (execute) {
+			script.textContent = "(" + func + ")();";
+		}
+		else {
+			script.textContent = func.toString();
+		}
 
-	// 	(document.head||document.documentElement).appendChild(script);
-	// 	script.remove();
-	// };
+		(document.head||document.documentElement).appendChild(script);
+		script.remove();
+	};
 
-	// addFunc(getSettingValues, false);
-	// addFunc(alertFileBlocked, false);
-	// addFunc(transmit, false);
-	// addFunc(setBadgeState, false);
-	// addFunc(setBadgeError, false);
-	// addFunc(flattenJSON, false);
-	// addFunc(transmitForEncryption, false);
-	// addFunc(getConversationState, false);
-	// addFunc(overloadOpen, true);
+	addFunc(overloadOpen, true);
+	addFunc(regenerateState, false);
+	addFunc(getConversationState, false);
+	addFunc(transmitForEncryption, false);
 };
 
 function startStatePolling(pollTime) {
@@ -187,7 +179,7 @@ window.addEventListener("load", function(e) {
 	startPolling(500);
 
 	// sent message interception and encryption
-	//patchRequestSending();
+	patchRequestSending();
 
 	// state polling
 	//startStatePolling(50);

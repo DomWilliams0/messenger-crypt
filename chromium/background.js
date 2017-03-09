@@ -13,6 +13,8 @@ chrome.runtime.onConnect.addListener(function(portContent) {
 	}
 
 	portContent.onMessage.addListener(function(msg) {
+		var what = msg.what;
+		console.log("TODO: %s %o", what, msg.content);
 		// TODO send to native to decrypt/encrypt
 	});
 });
