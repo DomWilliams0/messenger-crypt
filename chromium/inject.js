@@ -50,6 +50,84 @@ function transmitForDecryption(messages) {
 	});
 }
 
+function recvAfterDecryption(messages) {
+	for (var i = 0; i < messages.length; i++) {
+		var msg = messages[i];
+
+		// find message element
+		var element = document.getElementById(formatElementID(msg['id']))
+
+		// no longer visible, oh well
+		if (!element) {
+			continue;
+		}
+
+		// TODO placeholder values
+		// var success   = !msg['error'];
+		// var signer    = msg['signed_by'];
+		// var decrypted = msg['decrypted'];
+		var success = true;
+		var signer = "Boris Johnson";
+		var valid_sig = true;
+		var decrypted = true;
+		var messageContent = msg['message'];
+
+		var colour = null;
+
+		// create "temporarily" incredibly ugly status header
+		var statusElement = "<div>";
+
+		// decryption status
+		statusElement += "<b>";
+		if (!success) {
+			// failure
+			statusElement += msg['error'];
+		}
+		else {
+			var msgDesc = null;
+			if (decrypted) {
+				msgDesc = "Decrypted message";
+				colour  = "#0f844d";
+			}
+			else {
+				msgDesc = "Verified message";
+				colour  = "#0d7d8e";
+			}
+
+			// signing
+			if (signer) {
+
+				// well signed
+				if(valid_sig) {
+					statusElement += msgDesc + " with good signature from " + signer;
+				}
+
+				// badly signed
+				else {
+					statusElement += msgDesc + " with BAD signature from " + signer;
+					colour = null;
+				}
+			}
+
+			// unsigned
+			else {
+				statusElement += "Decrypted unsigned message";
+			}
+		}
+		statusElement += "</b></div>";
+
+		// error colour
+		if (colour == null) {
+			colour = "#bd0e0e";
+		}
+
+		// update message box
+		element.innerHTML = statusElement + messageContent;
+		element.parentNode.style.backgroundColor = colour;
+		element.parentNode.style.color = "#fff";
+	}
+}
+
 // runs in context of webpage
 function transmitForEncryption(message) {
 	// post to content script, which forwards to background
@@ -190,6 +268,14 @@ window.addEventListener("message", function(e) {
 		backgroundPort.postMessage(wrappedMessage);
 	}
 }, false);
+
+// listen for responses from background
+backgroundPort.onMessage.addListener(function(msg) {
+	var what = msg.what;
+	if (what === "decrypt")
+		recvAfterDecryption(msg.content)
+});
+
 
 window.addEventListener("load", function(e) {
 	// message decrypting
