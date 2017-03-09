@@ -4,13 +4,7 @@ var portContent;
 
 // native comms
 portNative.onMessage.addListener(function(m) {
-	var what = m.what;
-
-	// decrypted messages
-	if (what === "decrypt") {
-		portContent.postMessage(m);
-	}
-
+	portContent.postMessage(m);
 });
 
 // content script comms
@@ -25,4 +19,8 @@ chrome.runtime.onConnect.addListener(function(port) {
 	portContent.onMessage.addListener(function(msg) {
 		portNative.postMessage(msg);
 	});
+});
+
+portNative.onDisconnect.addListener(function(e) {
+	console.log("Disconnected: %o", chrome.runtime.lastError);
 });

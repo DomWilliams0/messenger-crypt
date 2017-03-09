@@ -129,8 +129,25 @@ function recvAfterDecryption(messages) {
 }
 
 // runs in context of webpage
-function transmitForEncryption(message) {
-	// post to content script, which forwards to background
+function pausedStateInsert(pausedContext) {
+	// allocate id
+	var id = pausedStateInsert.nextID || 0;
+	pausedStateInsert.id += 1;
+
+	// store in lookup
+	if (!pausedStateInsert.lookup)
+		pausedStateInsert.lookup = {};
+	pausedStateInsert.lookup[id] = pausedContext;
+
+	return id;
+}
+
+// runs in context of webpage
+function transmitForEncryption(message, pausedContext) {
+	// append message ID to message and store paused context
+	message.pausedMessageID = pausedStateInsert(pausedContext);
+
+	// post message content to content script, which forwards to background
 	window.postMessage({
 		type: "from-messenger",
 		message: {
@@ -138,6 +155,47 @@ function transmitForEncryption(message) {
 			content: message
 		}
 	}, "*");
+}
+
+// runs in context of content script
+function recvAfterEncryption(message) {
+	window.postMessage({
+		type: "to-messenger",
+		message: message
+	}, "*");
+}
+
+// runs in context of webpage
+function listenForModifiedMessages() {
+	window.addEventListener("message", function(e) {
+		if (e.source == window && e.data.type === "to-messenger") {
+			var encryptedMessage = e.data.message;
+
+			// lookup paused request
+			var lookup = pausedStateInsert.lookup;
+			if (!lookup) {
+				console.error("Cannot unpause message request, but that is the least of your worries");
+				return;
+			}
+
+			var pausedContext = lookup[encryptedMessage.pausedMessageID];
+			if (!pausedContext) {
+				console.error("Unable to unpause message request");
+				return;
+			}
+
+			// TODO handle errors
+			// replace message body
+			var json = pausedContext.requestBody;
+			json.body = encryptedMessage.message;
+
+			// flatten json
+			var newArgs = [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
+
+			// continue request with real send function
+			pausedContext.originalSend.apply(pausedContext.requestInstance, newArgs);
+		}
+	}, false);
 }
 
 function startPolling(pollTime) {
@@ -179,12 +237,17 @@ function patchRequestSending() {
 						var conversation = getConversationState(fullState, convoId);
 
 						var message = {
-							message:    decodeURI(json['body']) + "\n",
+							message:    decodeURI(json['body']),
 							recipients: conversation['participants'],
 							id:         conversation['thread']['id']
 						};
 
-						transmitForEncryption(message);
+						var pausedContext = {
+							originalSend:     sendOrig,
+							requestInstance:  request,
+							requestBody:      json
+						};
+						transmitForEncryption(message, pausedContext);
 
 						// TODO continue with original send()
 					};
@@ -225,10 +288,13 @@ function patchRequestSending() {
 		script.remove();
 	};
 
+	// inject functions into page
 	addFunc(overloadOpen, true);
+	addFunc(listenForModifiedMessages, true);
 	addFunc(regenerateState, false);
 	addFunc(getConversationState, false);
 	addFunc(transmitForEncryption, false);
+	addFunc(pausedStateInsert, false);
 };
 
 function startStatePolling(pollTime) {
@@ -261,7 +327,7 @@ function startStatePolling(pollTime) {
 // open connection to background
 backgroundPort = chrome.runtime.connect({name: "contentToBackground"});
 
-// listen for messages to forward to background from page
+// listen for messages from webpage
 window.addEventListener("message", function(e) {
 	if (e.source == window && e.data.type === "from-messenger") {
 		var wrappedMessage = e.data.message;
@@ -274,8 +340,9 @@ backgroundPort.onMessage.addListener(function(msg) {
 	var what = msg.what;
 	if (what === "decrypt")
 		recvAfterDecryption(msg.content)
+	else if (what === "encrypt")
+		recvAfterEncryption(msg.content)
 });
-
 
 window.addEventListener("load", function(e) {
 	// message decrypting

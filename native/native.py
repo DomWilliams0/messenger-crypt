@@ -3,6 +3,7 @@
 import struct
 import sys
 import json
+import os
 
 def send_raw_message(msg, stream=sys.stdout):
     stream.write(struct.pack('I', len(msg)))
@@ -20,7 +21,7 @@ def main():
     enforce_binary()
 
     while True:
-        length_bin = sys.stdin.read(4).encode("utf-8")
+        length_bin = sys.stdin.read(4)
         if not length_bin:
             break
 
@@ -54,14 +55,29 @@ def handler_decrypt(content):
 
 
 def handler_encrypt(content):
-    pass
+    msg = content.get("message")
+    recipients = content.get("recipients")
+    convo = content.get("id")
+    if msg is None or recipients is None or convo is None:
+        return
+
+    # TODO lookup from settings with convo as key
+    to_encrypt = True
+    to_sign = True
+
+    # TODO actually encrypt/sign as needed
+    content["message"] = "Pretend this is encrypted(%s)" % msg
+
+    # TODO error handling
+
+    send_response("encrypt", content)
 
 
 def enforce_binary():
     # On Windows, the default I/O mode is O_TEXT. Set this to O_BINARY
     # to avoid unwanted modifications of the input/output streams.
     if sys.platform == "win32":
-      import os, msvcrt
+      import msvcrt
       msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
       msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
