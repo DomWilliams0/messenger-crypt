@@ -18,6 +18,9 @@
 			"matches": ["*://*.messenger.com/*"],
 			"js": ["messenger-re.js", "inject.js"]
 		}
+	],
 
-	]
+	"browser_action": {
+		"default_popup": "popup.html"
+	}
 }
