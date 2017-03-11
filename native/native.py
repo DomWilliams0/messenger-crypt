@@ -7,6 +7,7 @@ import urllib
 import os
 import config as conf
 import crypto
+import settings
 
 CONFIG_PATH = os.path.join(os.environ["HOME"], ".config/messenger_crypt.json")
 config = conf.Config(CONFIG_PATH)
@@ -22,6 +23,13 @@ def send_response(what, content):
         "content": content
     }))
 
+def enforce_binary():
+    # On Windows, the default I/O mode is O_TEXT. Set this to O_BINARY
+    # to avoid unwanted modifications of the input/output streams.
+    if sys.platform == "win32":
+      import msvcrt
+      msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+      msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
 def main():
     enforce_binary()
@@ -87,14 +95,15 @@ def handler_encrypt(content):
 
     send_response("encrypt", content)
 
+def handler_echo(content):
+    content["echo"] = "Right back at you!"
+    send_response("echo", content)
 
-def enforce_binary():
-    # On Windows, the default I/O mode is O_TEXT. Set this to O_BINARY
-    # to avoid unwanted modifications of the input/output streams.
-    if sys.platform == "win32":
-      import msvcrt
-      msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
-      msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+def handler_settings(content):
+    get = content.get("get", False)
+    if get:
+        response = settings.get_settings(config)
+        send_response("settings", response);
 
 if __name__ == "__main__":
     main()

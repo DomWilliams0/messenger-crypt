@@ -18,7 +18,14 @@ function updateKey(fbid, newValue, isSecret, callback) {
 
 // callback([{type, value, data, description} ...])
 function fetchSettings(callback) {
-
+	chrome.runtime.sendMessage({
+		what: "settings",
+		content: {
+			get: true,
+		}
+	}, function(resp) {
+		callback(resp);
+	});
 }
 
 function updateSetting(key, value) {

@@ -24,3 +24,14 @@ chrome.runtime.onConnect.addListener(function(port) {
 portNative.onDisconnect.addListener(function(e) {
 	console.log("Disconnected: %o", chrome.runtime.lastError);
 });
+
+// insta response
+chrome.runtime.onMessage.addListener(function(msg, sender, callback) {
+	chrome.runtime.sendNativeMessage(name, msg, function(resp) {
+		if (callback) {
+			callback(resp.content);
+		}
+	});
+
+	return Boolean(callback);
+});
