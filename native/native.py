@@ -3,6 +3,7 @@
 import struct
 import sys
 import json
+import urllib
 import os
 import config as conf
 import crypto
@@ -77,9 +78,11 @@ def handler_encrypt(content):
     to_sign = True
 
     # TODO actually encrypt/sign as needed
+    msg = urllib.unquote(msg)
+
     enc_result = crypto.encrypt(config, to_encrypt, to_sign,  msg, recipients)
     del content["message"]
-    content["ciphertext"] = enc_result.ciphertext
+    content["ciphertext"] = urllib.quote_plus(enc_result.ciphertext)
     content["error"] = enc_result.error
 
     send_response("encrypt", content)

@@ -1,7 +1,6 @@
 import config as conf
 import gpgme
 from io import BytesIO
-from urllib import quote_plus, unquote
 
 gpg = gpgme.Context()
 gpg.armor = True
@@ -172,7 +171,7 @@ def encrypt(config, to_encrypt, to_sign,  message, recipients):
         gpg.signers = [sign_key]
 
     # create buffers
-    buf_i = BytesIO(unquote(message.encode("utf8")))
+    buf_i = BytesIO(message.encode("utf8"))
     buf_o = BytesIO()
 
     try:
@@ -185,8 +184,7 @@ def encrypt(config, to_encrypt, to_sign,  message, recipients):
         else:
             signers = gpg.sign(buf_i, buf_o, gpgme.SIG_MODE_CLEAR)
 
-        # TODO move unquote/quote_plus out of crypto
-        result.ciphertext = quote_plus(buf_o.getvalue().decode("utf8"))
+        result.ciphertext = buf_o.getvalue().decode("utf8")
         result.is_signed = to_sign and len(signers) == 1
         result.is_encrypted = to_encrypt
 
