@@ -50,7 +50,9 @@ def main():
 
         handler = globals().get("handler_%s" % what)
         if handler:
-            handler(content)
+            response = handler(content)
+            if response:
+                send_response(what, response)
 
 def handler_decrypt(content):
     resp = []
@@ -71,7 +73,7 @@ def handler_decrypt(content):
 
         resp.append(message)
 
-    send_response("decrypt", resp)
+    return resp
 
 
 def handler_encrypt(content):
@@ -93,17 +95,17 @@ def handler_encrypt(content):
     content["ciphertext"] = urllib.quote_plus(enc_result.ciphertext)
     content["error"] = enc_result.error
 
-    send_response("encrypt", content)
+    return content
 
 def handler_echo(content):
     content["echo"] = "Right back at you!"
-    send_response("echo", content)
+    return content
 
 def handler_settings(content):
     get = content.get("get", False)
     if get:
         response = settings.get_browser_settings(config)
-        send_response("settings", response);
+        return response
 
 if __name__ == "__main__":
     main()
