@@ -23,13 +23,17 @@ function fetchSettings(callback) {
 		content: {
 			get: true,
 		}
-	}, function(resp) {
-		callback(resp);
-	});
+	}, callback);
 }
 
 function updateSetting(key, value) {
-
+	chrome.runtime.sendMessage({
+		what: "settings",
+		content: {
+			key: key,
+			value: value
+		}
+	});
 }
 
 function updateConversationSettings(id, enc, sig) {
@@ -273,13 +277,7 @@ function onParticipantsKeyPress(e) {
 
 function onSettingCheckboxChange(e) {
 	var checkbox = e.target;
-
-	var req = {
-		key: checkbox.value,
-		value: checkbox.checked
-	}
-
-	updateSetting(key, value)
+	updateSetting(checkbox.value, checkbox.checked)
 }
 
 function updateState() {

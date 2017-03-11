@@ -48,3 +48,5 @@ class Config(object):
 
         with open(self._path, "w") as f:
             json.dump(self.conf, f, indent=4)
+
+    reload = _load

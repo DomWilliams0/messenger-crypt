@@ -98,36 +98,8 @@ def get_convo_settings(convoID):
     response = settings.get(convoID, _DEFAULT_CONVO_SETTINGS)
     return response
 
-def get_settings_handler(msg):
-    settings_values = get_settings()
 
-    keys = msg.get("key", None)
-    if keys:
-        settings_values = OrderedDict((key, settings_values.get(key, None)) for key in keys if key in settings_values)
-
-    settings_descriptions = [
-            _filterchained(  # remove all None values
-                _putchained( # add key and value
-                    _DEFAULT_SETTINGS_FULL[k].__dict__, ("key", k), ("value", v)
-                    )
-                )
-            for k, v in settings_values.items() if _DEFAULT_SETTINGS_FULL[k].browser
-            ]
-
-    return json.dumps(settings_descriptions)
-
-def update_settings_handler(msg):
-    parsed = json.loads(msg)
-    settings = get_settings()
-    settings[parsed['key']] = parsed['value']
-
-    # remove Nones
-    settings = {k: v for k, v in settings.iteritems() if v is not None}
-
-    config.set_item('settings', settings)
-    config.save()
-
-def get_browser_settings(config):
+def get_settings(config, browser_only=False):
     # merge default and user settings
     config.reload()
     all = OrderedDict(_DEFAULT_SETTINGS)
@@ -139,6 +111,15 @@ def get_browser_settings(config):
                     _DEFAULT_SETTINGS_FULL[k].__dict__, ("key", k), ("value", v)
                     )
                 )
-                for k, v in all.items() if _DEFAULT_SETTINGS_FULL[k].browser
+                for k, v in all.items() if not (browser_only and not _DEFAULT_SETTINGS_FULL[k].browser)
             ]
 
+
+def get_browser_settings(config):
+    return get_settings(config, browser_only=True)
+
+def set_setting(config, key, value):
+    settings = config.get_section('settings')
+    settings[key] = value
+
+    config.write()

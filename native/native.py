@@ -107,5 +107,11 @@ def handler_settings(content):
         response = settings.get_browser_settings(config)
         return response
 
+    key = content.get("key")
+    val = content.get("value")
+
+    if key is not None and val is not None:
+        settings.set_setting(config, key, val)
+
 if __name__ == "__main__":
     main()
