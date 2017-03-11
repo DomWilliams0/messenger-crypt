@@ -1,0 +1,23 @@
+{
+	"manifest_version": 2,
+
+	"name": "Messenger Crypt",
+	"description": "Transparent GPG for Facebook Messenger",
+	"version": "0.2",
+
+	"permissions": [
+		"nativeMessaging"
+	],
+
+	"background": {
+		"page": "background.html"
+	},
+
+	"content_scripts": [
+		{
+			"matches": ["*://*.messenger.com/*"],
+			"js": ["messenger-re.js", "inject.js"]
+		}
+
+	]
+}
