@@ -62,15 +62,13 @@ function recvAfterDecryption(messages) {
 			continue;
 		}
 
-		// TODO placeholder values
-		// var success   = !msg['error'];
-		// var signer    = msg['signed_by'];
-		// var decrypted = msg['decrypted'];
-		var success = true;
-		var signer = "Boris Johnson";
-		var valid_sig = true;
-		var decrypted = true;
-		var messageContent = msg['message'];
+		var error = msg.error;
+
+		var signer = msg.signer;
+		var wellSigned = msg.good_sig;
+
+		var decrypted = msg.was_decrypted;
+		var messageContent = msg.plaintext;
 
 		var colour = null;
 
@@ -79,9 +77,9 @@ function recvAfterDecryption(messages) {
 
 		// decryption status
 		statusElement += "<b>";
-		if (!success) {
+		if (error) {
 			// failure
-			statusElement += msg['error'];
+			statusElement += error;
 		}
 		else {
 			var msgDesc = null;
@@ -97,8 +95,8 @@ function recvAfterDecryption(messages) {
 			// signing
 			if (signer) {
 
-				// well signed
-				if(valid_sig) {
+				// good signature
+				if (wellSigned) {
 					statusElement += msgDesc + " with good signature from " + signer;
 				}
 

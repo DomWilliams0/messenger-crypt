@@ -4,6 +4,11 @@ import struct
 import sys
 import json
 import os
+import config as conf
+import crypto
+
+CONFIG_PATH = os.path.join(os.environ["HOME"], ".config/messenger_crypt.json")
+config = conf.Config(CONFIG_PATH)
 
 def send_raw_message(msg, stream=sys.stdout):
     stream.write(struct.pack('I', len(msg)))
@@ -46,8 +51,14 @@ def handler_decrypt(content):
         if msg_id is None or msg is None:
             continue
 
-        # TODO actually decrypt
-        message["message"] = "A lovely decrypted message, #%d in fact" % msg_id
+        # decrypt
+        dec_result = crypto.decrypt(config, msg)
+        del message["message"]
+        message["error"] = dec_result.error
+        message["signer"] = dec_result.signer
+        message["good_sig"] = dec_result.good_sig
+        message["was_decrypted"] = dec_result.was_decrypted
+        message["plaintext"] = dec_result.plaintext
 
         resp.append(message)
 
