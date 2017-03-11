@@ -77,9 +77,10 @@ def handler_encrypt(content):
     to_sign = True
 
     # TODO actually encrypt/sign as needed
-    content["message"] = "Pretend this is encrypted(%s)" % msg
-
-    # TODO error handling
+    enc_result = crypto.encrypt(config, to_encrypt, to_sign,  msg, recipients)
+    del content["message"]
+    content["ciphertext"] = enc_result.ciphertext
+    content["error"] = enc_result.error
 
     send_response("encrypt", content)
 

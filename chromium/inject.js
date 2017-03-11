@@ -167,7 +167,7 @@ function recvAfterEncryption(message) {
 function listenForModifiedMessages() {
 	window.addEventListener("message", function(e) {
 		if (e.source == window && e.data.type === "to-messenger") {
-			var encryptedMessage = e.data.message;
+			var content = e.data.message;
 
 			// lookup paused request
 			var lookup = pausedStateInsert.lookup;
@@ -176,19 +176,30 @@ function listenForModifiedMessages() {
 				return;
 			}
 
-			var pausedContext = lookup[encryptedMessage.pausedMessageID];
+			var pausedContext = lookup[content.pausedMessageID];
 			if (!pausedContext) {
 				console.error("Unable to unpause message request");
 				return;
 			}
+			delete lookup[content.pausedMessageID];
 
-			// TODO handle errors
-			// replace message body
-			var json = pausedContext.requestBody;
-			json.body = encryptedMessage.message;
+			var newMessage = content.ciphertext;
+			var error = content.error;
+			var newArgs;
 
-			// flatten json
-			var newArgs = [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
+			// handle errors
+			if (error) {
+				alert("Failed to encrypt outgoing message: " + error);
+				newArgs = null; // block request
+			}
+			else {
+				// replace message body
+				var json = pausedContext.requestBody;
+				json.body = newMessage;
+
+				// flatten json
+				newArgs = [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
+			}
 
 			// continue request with real send function
 			pausedContext.originalSend.apply(pausedContext.requestInstance, newArgs);
