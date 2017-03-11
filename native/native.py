@@ -113,5 +113,20 @@ def handler_settings(content):
     if key is not None and val is not None:
         settings.set_setting(config, key, val)
 
+def handler_conversation(content):
+    get = content.get("get", False)
+    id = content.get("id")
+    if not id:
+        return
+
+    if get:
+        response = settings.get_conversation_settings(config, id)
+        return response
+
+    state = content.get("state")
+    if state:
+        settings.set_conversation_settings(config, id, state)
+
+
 if __name__ == "__main__":
     main()

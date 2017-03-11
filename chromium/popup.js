@@ -36,13 +36,28 @@ function updateSetting(key, value) {
 	});
 }
 
-function updateConversationSettings(id, enc, sig) {
-
-}
-
 // callback({encryption, signing})
 function fetchConversationSettings(id, callback) {
+	chrome.runtime.sendMessage({
+		what: "conversation",
+		content: {
+			get: true,
+			id: id
+		}
+	}, callback);
+}
 
+function updateConversationSettings(id, enc, sig) {
+	chrome.runtime.sendMessage({
+		what: "conversation",
+		content: {
+			id: id,
+			state: {
+				encryption: enc,
+				signing: sig
+			}
+		}
+	});
 }
 
 // callback({thread, participants})

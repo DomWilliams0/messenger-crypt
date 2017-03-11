@@ -28,10 +28,8 @@ portNative.onDisconnect.addListener(function(e) {
 // insta response
 chrome.runtime.onMessage.addListener(function(msg, sender, callback) {
 	chrome.runtime.sendNativeMessage(name, msg, function(resp) {
-		if (callback) {
-			callback(resp.content);
-		}
+		callback(resp.content);
 	});
 
-	return Boolean(callback);
+	return true;
 });

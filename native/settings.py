@@ -68,36 +68,25 @@ _DEFAULT_SETTINGS_FULL = OrderedDict([
 
 _DEFAULT_SETTINGS = OrderedDict([(k, v.value) for k, v in _DEFAULT_SETTINGS_FULL.items()])
 
-def update_convo_settings_handler(msg):
+
+def get_conversation_settings(config, id):
     config.reload()
     settings = config.get_section('conversations')
 
-    msg = json.loads(msg)
-    convoID = msg.pop("id")
-
-    if msg == _DEFAULT_CONVO_SETTINGS:
-        del settings[convoID]
-    else:
-        settings[convoID] = msg
-
-    config.save()
-
-
-def get_convo_settings_handler(msg):
-    convoID = msg['id'][0]
-    settings = get_convo_settings(convoID)
-
-    # convert to string format
-    return json.dumps(settings)
-
-
-def get_convo_settings(convoID):
-    config.reload()
-    settings = config.get_section('conversations')
-
-    response = settings.get(convoID, _DEFAULT_CONVO_SETTINGS)
+    response = settings.get(id, _DEFAULT_CONVO_SETTINGS)
     return response
 
+
+def set_conversation_settings(config, id, new):
+    config.reload()
+    settings = config.get_section('conversations')
+
+    if new == _DEFAULT_CONVO_SETTINGS:
+        del settings[id]
+    else:
+        settings[id] = new
+
+    config.write()
 
 def get_settings(config, browser_only=False):
     # merge default and user settings
