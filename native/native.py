@@ -102,7 +102,7 @@ def handler_echo(content):
 def handler_settings(content):
     get = content.get("get", False)
     if get:
-        response = settings.get_settings(config)
+        response = settings.get_browser_settings(config)
         send_response("settings", response);
 
 if __name__ == "__main__":
