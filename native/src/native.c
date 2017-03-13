@@ -1,6 +1,19 @@
 #include <stdio.h>
+#include "messaging.h"
 
-int main()
+int main(void)
 {
-	return 0;
+	int result;
+	while (1)
+	{
+		result = handle_single_message();
+
+		if (result != 0)
+		{
+#ifdef DEBUG
+			fprintf(stderr, "Bad message handling: %d\n", result);
+#endif
+		}
+	}
+  return 0;
 }

@@ -12,7 +12,7 @@ OBJS := $(addprefix $(OBJ)/,$(notdir $(SRCS:%.c=%.o)))
 
 TARGET = messenger_crypt_native
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags)
+CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags) -g
 LDFLAGS = $(shell gpgme-config --libs)
 
 VPATH=%.c $(SRC) $(LIB)/frozen
