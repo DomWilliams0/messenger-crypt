@@ -38,6 +38,7 @@ int handler_decrypt(struct json_token *content, struct handler_response *respons
 	decrypt(msg, &resp->result);
 	free(msg);
 
+	resp->msg_id = msg_id;
 	response->data = resp;
 	response->printer = decrypt_response_printer;
 

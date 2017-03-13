@@ -1,13 +1,13 @@
 #!/bin/bash
 
-set -x
 set -e
 
 NAME="ms.domwillia.messenger_crypt"
 DIR=$(pwd)
 
 MANIFEST_PATH="$DIR/native/manifest.json"
-BINARY_PATH="$DIR/native/native.py"
+BINARY_DIR="$DIR/native"
+BINARY_PATH="$BINARY_DIR/bin/messenger_crypt_native"
 
 # where
 # TODO other browsers and os than linux/chromium
@@ -22,8 +22,11 @@ MANIFEST=$MANIFEST_DIR/$NAME.json
 # what do
 if [[ "$1" = "uninstall" ]]; then
 	rm -f $MANIFEST
+	make -C $BINARY_DIR clean
 	echo Uninstalled from $MANIFEST
 else
+	make -C $BINARY_DIR
+
 	mkdir -p $MANIFEST_DIR
 	cp -f $MANIFEST_PATH $MANIFEST
 

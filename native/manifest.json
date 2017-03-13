@@ -1,0 +1,9 @@
+{
+	"name": "ms.domwillia.messenger_crypt",
+	"description": "Transparent GPG integration in Facebook Messenger",
+	"path": "$$BINARY_PATH$$",
+	"type": "stdio",
+	"allowed_origins": [
+		"chrome-extension://mcelfmlkiicbpmgmfjphphpablbeagjh/"
+	]
+}

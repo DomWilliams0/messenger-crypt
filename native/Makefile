@@ -12,7 +12,7 @@ OBJS := $(addprefix $(OBJ)/,$(notdir $(SRCS:%.c=%.o)))
 
 TARGET = messenger_crypt_native
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags) -g -DDEBUG
+CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags)
 LDFLAGS = $(shell gpgme-config --libs)
 
 VPATH=%.c $(SRC) $(LIB)/frozen
@@ -20,10 +20,10 @@ VPATH=%.c $(SRC) $(LIB)/frozen
 .PHONY: default
 default: $(TARGET)
 
-$(OBJ)/%.o : %.c
+$(OBJ)/%.o : %.c | build_dirs
 	$(CC) $(CFLAGS) -c $< -o $@ -c
 
-$(TARGET): $(OBJS) | build_dirs
+$(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(BIN)/$@
 
 .PHONY: clean

@@ -12,7 +12,10 @@ int main(void)
 		{
 #ifdef DEBUG
 			fprintf(stderr, "Bad message handling: %d\n", result);
+#else
+			break;
 #endif
+
 		}
 	}
   return 0;

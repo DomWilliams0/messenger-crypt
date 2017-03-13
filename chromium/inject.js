@@ -47,7 +47,7 @@ function transmitForDecryption(messages) {
 	for (var i = 0; i < messages.length; i++) {
 		backgroundPort.postMessage({
 			what: "decrypt",
-			content: message[i]
+			content: messages[i]
 		});
 	}
 }
@@ -58,7 +58,7 @@ function recvAfterDecryption(message) {
 
 	// no longer visible, oh well
 	if (!element) {
-		continue;
+		return;
 	}
 
 	var error = message.error;

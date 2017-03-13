@@ -7,60 +7,75 @@
 #include "messaging.h"
 #include "handler.h"
 
-#define MAX_MESSAGE_LENGTH (1024 * 1024)
+#define MAX_OUTGOING_SIZE (1024 * 1024)
 
-static char buffer[MAX_MESSAGE_LENGTH + 1];
+static char outgoing_buffer[MAX_OUTGOING_SIZE];
 
-static int handle_single_message_wrapped(char **what)
+static int handle_single_message_wrapped(char **buffer, char **what, struct handler_response *response)
 {
 	// read length
 	uint32_t length;
 	if (fread(&length, sizeof(length), 1, stdin) != 1)
 		return 1;
 
-	// read rest of message
-	if (fread(buffer, length, 1, stdin) != 1)
+	// allocate buffer
+	*buffer = calloc(length + 1, sizeof(char));
+	if (*buffer == NULL)
 		return 2;
-	buffer[length] = '\0';
+
+	// read rest of message
+	if (fread(*buffer, length, 1, stdin) != 1)
+		return 3;
 
 	// parse json
 	// TODO free me!
 	struct json_token content;
-	int parse_result = json_scanf(buffer, length,
+	int parse_result = json_scanf(*buffer, length,
 			"{what: %Q, content: %T}", what, &content);
 
 	if (parse_result != 2)
-		return 3;
+		return 4;
 
 	// find handler
 	handler_func handler = get_handler(*what);
 	if (handler == NULL)
-		return 4;
+		return 5;
 
-	struct handler_response response;
-	int result = handler(&content, &response);
+	int result = handler(&content, response);
 
 	if (result == 0)
 	{
-		// send response back
-		// TODO stdout
-		struct json_out out = JSON_OUT_FILE(stderr);
-		json_printf(&out, "{what: %Q, content: %M}", *what, response.printer, response.data);
-	}
+		struct json_out out_to_buffer = JSON_OUT_BUF(outgoing_buffer, MAX_OUTGOING_SIZE);
 
-	if (response.data != NULL)
-		free(response.data);
+		// proxy response through buffer to get length first
+		unsigned int real_size = json_printf(&out_to_buffer, "{what: %Q, content: %M}", *what,
+				response->printer, response->data);
+
+		// send size before payload
+		if (fwrite(&real_size, sizeof(real_size), 1, stdout) != 1)
+			return 6;
+
+		if (fwrite(outgoing_buffer, real_size, 1, stdout) != 1)
+			return 7;
+
+		fflush(stdout);
+	}
 
 	return 0;
 }
 
 int handle_single_message()
 {
-	char *what = NULL;
-	int ret = handle_single_message_wrapped(&what);
+	char *what = NULL, *buffer = NULL;
+	struct handler_response response = {0};
+	int ret = handle_single_message_wrapped(&what, &buffer, &response);
 
 	if (what != NULL)
 		free(what);
+	if (buffer != NULL)
+		free(buffer);
+	if (response.data != NULL)
+		free(response.data);
 
 	return ret;
 }
