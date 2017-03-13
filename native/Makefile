@@ -4,18 +4,20 @@ LIB = lib
 SRC = src
 INC = include
 
-MC_SRCS := $(shell find $(SRC) -type f -name '*.c')
-JSON_SRCS := $(LIB)/frozen/frozen.c
-
-SRCS = $(MC_SRCS) $(JSON_SRCS)
+SRCS := $(shell find $(SRC) -type f -name '*.c')
 OBJS := $(addprefix $(OBJ)/,$(notdir $(SRCS:%.c=%.o)))
 
-TARGET = messenger_crypt_native
+TARGET_NAME = messenger_crypt_native
+JSON_LIB_NAME = libfrozen.a
+
+TARGET = $(BIN)/$(TARGET_NAME)
+JSON_LIB = $(BIN)/$(JSON_LIB_NAME)
+
 CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags)
-LDFLAGS = $(shell gpgme-config --libs)
+LDFLAGS = $(shell gpgme-config --libs) -L$(BIN) -lfrozen
 
-VPATH=%.c $(SRC) $(LIB)/frozen
+VPATH=%.c $(SRC)
 
 .PHONY: default
 default: $(TARGET)
@@ -23,8 +25,12 @@ default: $(TARGET)
 $(OBJ)/%.o : %.c | build_dirs
 	$(CC) $(CFLAGS) -c $< -o $@ -c
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(BIN)/$@
+$(TARGET): $(OBJS) $(JSON_LIB)
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
+
+$(JSON_LIB):
+	$(CC) $(CLAGS) -fPIC $(LIB)/frozen/frozen.c -shared -o $@
+
 
 .PHONY: clean
 clean:
