@@ -141,7 +141,7 @@ function pausedStateInsert(pausedContext) {
 // runs in context of webpage
 function transmitForEncryption(message, pausedContext) {
 	// append message ID to message and store paused context
-	message.pausedMessageID = pausedStateInsert(pausedContext);
+	message["paused_request_id"] = pausedStateInsert(pausedContext);
 	message["recipient_count"] = message.recipients.length;
 
 	// post message content to content script, which forwards to background
@@ -175,12 +175,12 @@ function listenForModifiedMessages() {
 				return;
 			}
 
-			var pausedContext = lookup[content.pausedMessageID];
+			var pausedContext = lookup[content["paused_request_id"]];
 			if (!pausedContext) {
 				console.error("Unable to unpause message request");
 				return;
 			}
-			delete lookup[content.pausedMessageID];
+			delete lookup[content["paused_request_id"]];
 
 			var newMessage = content.ciphertext;
 			var error = content.error;

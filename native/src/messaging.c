@@ -61,7 +61,7 @@ static int handle_single_message_wrapped(char **buffer, char **what, struct hand
 		fflush(stdout);
 	}
 
-	return 0;
+	return result;
 }
 
 int handle_single_message()

@@ -26,12 +26,11 @@ int handler_encrypt(struct json_token *content, struct handler_response *respons
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
 
-	uint32_t conversation_id;
+	uint32_t conversation_id, recipient_count, paused_request_id;
 	char *plaintext;
-	uint32_t recipient_count;
 	if (json_scanf(content->ptr, content->len,
-				"{id: %d, message: %Q, recipient_count: %d}",
-				&conversation_id, &plaintext, &recipient_count) != 3)
+				"{id: %d, message: %Q, recipient_count: %d, paused_request_id: %d}",
+				&conversation_id, &plaintext, &recipient_count, &paused_request_id) != 4)
 		return 2;
 
 	struct recipient *recipients = calloc(recipient_count, sizeof(struct recipient));
@@ -55,6 +54,7 @@ int handler_encrypt(struct json_token *content, struct handler_response *respons
 	free(plaintext);
 	free(recipients);
 
+	resp->paused_request_id = paused_request_id;
 	response->data = resp;
 	response->printer = encrypt_response_printer;
 
