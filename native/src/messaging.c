@@ -11,7 +11,7 @@
 
 static char buffer[MAX_MESSAGE_LENGTH + 1];
 
-int handle_single_message()
+static int handle_single_message_wrapped(char **what)
 {
 	// read length
 	uint32_t length;
@@ -25,16 +25,15 @@ int handle_single_message()
 
 	// parse json
 	// TODO free me!
-	char *what;
 	struct json_token content;
 	int parse_result = json_scanf(buffer, length,
-			"{what: %Q, content: %T}", &what, &content);
+			"{what: %Q, content: %T}", what, &content);
 
 	if (parse_result != 2)
 		return 3;
 
 	// find handler
-	handler_func handler = get_handler(what);
+	handler_func handler = get_handler(*what);
 	if (handler == NULL)
 		return 4;
 
@@ -46,11 +45,22 @@ int handle_single_message()
 		// send response back
 		// TODO stdout
 		struct json_out out = JSON_OUT_FILE(stderr);
-		json_printf(&out, "{what: %Q, content: %M}", what, response.printer, response.data);
+		json_printf(&out, "{what: %Q, content: %M}", *what, response.printer, response.data);
 	}
 
 	if (response.data != NULL)
 		free(response.data);
 
 	return 0;
+}
+
+int handle_single_message()
+{
+	char *what = NULL;
+	int ret = handle_single_message_wrapped(&what);
+
+	if (what != NULL)
+		free(what);
+
+	return ret;
 }
