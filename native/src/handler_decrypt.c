@@ -4,14 +4,23 @@
 #include "encryption.h"
 #include "handler.h"
 
-static int export_decrypt_result(struct json_out *out_ctx, int msg_id, struct decrypt_result *result)
+struct decrypt_response
 {
-	return json_printf(out_ctx,
+	int msg_id;
+	struct decrypt_result result;
+};
+
+static int decrypt_response_printer(struct json_out *out, va_list *args)
+{
+	struct decrypt_response *response = va_arg(*args, struct decrypt_response *);
+	struct decrypt_result *result = &response->result;
+
+	return json_printf(out,
 			"{id: %d, error: %Q, signer: %Q, good_sig: %B, was_decrypted: %B, plaintext: %Q}",
-			msg_id, result->error, result->signer, result->good_sig, result->was_decrypted, result->plaintext);
+			response->msg_id, result->error, result->signer, result->good_sig, result->was_decrypted, result->plaintext);
 }
 
-int handler_decrypt(struct json_token *content, char **out)
+int handler_decrypt(struct json_token *content, struct handler_response *response)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
@@ -22,23 +31,15 @@ int handler_decrypt(struct json_token *content, char **out)
 				"{id: %d, message: %Q}", &msg_id, &msg) != 2)
 		return 2;
 
-	struct decrypt_result result;
-	decrypt(msg, &result);
-
-	// calculate size first
-	char null[1];
-	struct json_out null_out = JSON_OUT_BUF(null, 1);
-	int size = export_decrypt_result(&null_out, msg_id, &result);
-
-	// allocate real buffer and try again
-	*out = calloc(size + 1, sizeof(char));
-	if (*out == NULL)
+	struct decrypt_response *resp = calloc(1, sizeof(struct decrypt_response));
+	if (resp == NULL)
 		return 3;
 
-	struct json_out buf_out = JSON_OUT_BUF(*out, size+1);
-	if (export_decrypt_result(&buf_out, msg_id, &result) != size)
-		return 4;
-
+	decrypt(msg, &resp->result);
 	free(msg);
+
+	response->data = resp;
+	response->printer = decrypt_response_printer;
+
 	return 0;
 }

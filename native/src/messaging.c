@@ -38,17 +38,19 @@ int handle_single_message()
 	if (handler == NULL)
 		return 4;
 
-	char *response;
+	struct handler_response response;
 	int result = handler(&content, &response);
 
 	if (result == 0)
 	{
-		// TODO send response back
-		fprintf(stderr, "Response: %s\n", response);
+		// send response back
+		// TODO stdout
+		struct json_out out = JSON_OUT_FILE(stderr);
+		json_printf(&out, "{what: %Q, content: %M}", what, response.printer, response.data);
 	}
 
-	if (response != NULL)
-		free(response);
+	if (response.data != NULL)
+		free(response.data);
 
 	return 0;
 }
