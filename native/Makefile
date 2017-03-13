@@ -1,19 +1,20 @@
 OBJ = obj
 BIN = bin
-
-TARGET = messenger_crypt_native
+LIB = lib
 SRC = src
 INC = include
-LIB = $(LIB_DIR)/$(INC)
 
 SRCS := $(shell find $(SRC) -type f -name '*.c')
+SRCS += $(LIB)/frozen/frozen.c
+
 OBJS := $(addprefix $(OBJ)/,$(notdir $(SRCS:%.c=%.o)))
 
+TARGET = messenger_crypt_native
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -O0
+CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1
 LDFLAGS = -Wall
 
-VPATH=%.c $(SRC) $(LIB)
+VPATH=%.c $(SRC) $(LIB)/frozen
 
 .PHONY: default
 default: $(TARGET)
