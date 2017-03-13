@@ -44,86 +44,84 @@ function decryptMessages() {
 // runs in context of content script
 function transmitForDecryption(messages) {
 	// send directly to background
-	backgroundPort.postMessage({
-		what: "decrypt",
-		content: messages
-	});
+	for (var i = 0; i < messages.length; i++) {
+		backgroundPort.postMessage({
+			what: "decrypt",
+			content: message[i]
+		});
+	}
 }
 
-function recvAfterDecryption(messages) {
-	for (var i = 0; i < messages.length; i++) {
-		var msg = messages[i];
+function recvAfterDecryption(message) {
+	// find message element
+	var element = document.getElementById(formatElementID(message['id']))
 
-		// find message element
-		var element = document.getElementById(formatElementID(msg['id']))
+	// no longer visible, oh well
+	if (!element) {
+		continue;
+	}
 
-		// no longer visible, oh well
-		if (!element) {
-			continue;
-		}
+	var error = message.error;
 
-		var error = msg.error;
+	var signer = message.signer;
+	var wellSigned = message.good_sig;
 
-		var signer = msg.signer;
-		var wellSigned = msg.good_sig;
+	var decrypted = message.was_decrypted;
+	var messageContent = message.plaintext;
 
-		var decrypted = msg.was_decrypted;
-		var messageContent = msg.plaintext;
+	var colour = null;
 
-		var colour = null;
+	// create "temporarily" incredibly ugly status header
+	var statusElement = "<div>";
 
-		// create "temporarily" incredibly ugly status header
-		var statusElement = "<div>";
-
-		// decryption status
-		statusElement += "<b>";
-		if (error) {
-			// failure
-			statusElement += error;
+	// decryption status
+	statusElement += "<b>";
+	if (error) {
+		// failure
+		statusElement += error;
+	}
+	else {
+		var msgDesc = null;
+		if (decrypted) {
+			msgDesc = "Decrypted message";
+			colour  = "#0f844d";
 		}
 		else {
-			var msgDesc = null;
-			if (decrypted) {
-				msgDesc = "Decrypted message";
-				colour  = "#0f844d";
-			}
-			else {
-				msgDesc = "Verified message";
-				colour  = "#0d7d8e";
-			}
-
-			// signing
-			if (signer) {
-
-				// good signature
-				if (wellSigned) {
-					statusElement += msgDesc + " with good signature from " + signer;
-				}
-
-				// badly signed
-				else {
-					statusElement += msgDesc + " with BAD signature from " + signer;
-					colour = null;
-				}
-			}
-
-			// unsigned
-			else {
-				statusElement += "Decrypted unsigned message";
-			}
-		}
-		statusElement += "</b></div>";
-
-		// error colour
-		if (colour == null) {
-			colour = "#bd0e0e";
+			msgDesc = "Verified message";
+			colour  = "#0d7d8e";
 		}
 
-		// update message box
-		element.innerHTML = statusElement + messageContent;
-		element.parentNode.style.backgroundColor = colour;
-		element.parentNode.style.color = "#fff";
+		// signing
+		if (signer) {
+
+			// good signature
+			if (wellSigned) {
+				statusElement += msgDesc + " with good signature from " + signer;
+			}
+
+			// badly signed
+			else {
+				statusElement += msgDesc + " with BAD signature from " + signer;
+				colour = null;
+			}
+		}
+
+		// unsigned
+		else {
+			statusElement += "Decrypted unsigned message";
+		}
 	}
+	statusElement += "</b></div>";
+
+	// error colour
+	if (colour == null) {
+		colour = "#bd0e0e";
+	}
+
+	// update message box
+	element.innerHTML = statusElement + messageContent;
+	element.parentNode.style.backgroundColor = colour;
+	element.parentNode.style.color = "#fff";
 }
 
 // runs in context of webpage
@@ -144,6 +142,7 @@ function pausedStateInsert(pausedContext) {
 function transmitForEncryption(message, pausedContext) {
 	// append message ID to message and store paused context
 	message.pausedMessageID = pausedStateInsert(pausedContext);
+	message["recipient_count"] = message.recipients.length;
 
 	// post message content to content script, which forwards to background
 	window.postMessage({
