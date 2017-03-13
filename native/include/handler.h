@@ -29,6 +29,7 @@ typedef int (*handler_func)(struct json_token *, struct handler_response *);
 handler_func get_handler(const char * const what);
 
 int handler_decrypt(struct json_token *content, struct handler_response *response);
+int handler_encrypt(struct json_token *content, struct handler_response *response);
 
 
 #endif

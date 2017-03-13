@@ -11,3 +11,10 @@ void decrypt(char *ciphertext, struct decrypt_result *result)
 }
 
 
+void encrypt(char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result)
+{
+	result->is_signed = 0;
+	result->is_encrypted = 0;
+	result->ciphertext = "No encrypted message here";
+	result->error = NULL;
+}

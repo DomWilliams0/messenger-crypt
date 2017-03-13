@@ -10,6 +10,22 @@ struct decrypt_result
 	char *plaintext;
 };
 
+struct encrypt_result
+{
+	char *error;
+	char *ciphertext;
+	int is_signed;
+	int is_encrypted;
+};
+
+struct recipient
+{
+	char *fbid;
+	char *name;
+};
+
 void decrypt(char *ciphertext, struct decrypt_result *result);
+
+void encrypt(char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result);
 
 #endif
