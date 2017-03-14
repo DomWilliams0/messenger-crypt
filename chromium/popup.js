@@ -52,6 +52,7 @@ function updateConversationSettings(id, enc, sig) {
 	chrome.runtime.sendMessage({
 		what: "conversation",
 		content: {
+			get: false,
 			id: id,
 			state: {
 				encryption: enc,

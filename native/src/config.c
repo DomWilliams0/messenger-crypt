@@ -18,6 +18,11 @@
 #define MAX_CONFIG_PATH_LEN (256)
 #define RAW_CONFIG_PATH "$HOME/.config/messenger_crypt.conf"
 
+static struct conversation_state default_conversation = {
+	.encryption = 0,
+	.signing = 0
+};
+
 struct config_context
 {
 	config_t config;
@@ -147,8 +152,8 @@ static const char *get_section(enum config_section section)
 	{
 		case SECTION_SETTINGS:
 			return "settings";
-		case SECTION_CONVERSATIONS:
-			return "conversations";
+		case SECTION_CONVERSATION:
+			return "conversation";
 		case SECTION_KEYS:
 			return "keys";
 		default:
@@ -265,4 +270,70 @@ int config_parse_key(const char *s, enum setting_key *key_out)
 	}
 
 	return 1;
+}
+
+void config_get_conversation(struct config_context *ctx, char *id, struct conversation_state *out)
+{
+	const char *section_path = get_section(SECTION_CONVERSATION);
+	config_setting_t *section = config_lookup(&ctx->config, section_path);
+	int set_defaults = 1;
+
+	if (section != NULL)
+	{
+		config_setting_t *s = config_setting_get_member(section, id);
+		if (s != NULL)
+		{
+			out->encryption = config_setting_get_bool(config_setting_get_member(s, "encryption"));
+			out->signing = config_setting_get_bool(config_setting_get_member(s, "signing"));
+			set_defaults = 0;
+		}
+	}
+
+	if (set_defaults == 1)
+		*out = default_conversation;
+}
+
+int config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value)
+{
+	// TODO extract common functionality from {s,g}et_{settings,conversation,key}
+	const char *section_path = get_section(SECTION_CONVERSATION);
+	config_setting_t *section = config_lookup(&ctx->config, section_path);
+
+	if (section == NULL)
+	{
+		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
+		if (section == NULL)
+			return 1;
+	}
+
+	config_setting_t *s = config_setting_get_member(section, id);
+	config_setting_t *enc, *sig;
+	if (s == NULL)
+	{
+		s = config_setting_add(section, id, CONFIG_TYPE_GROUP);
+		if (s == NULL)
+			return 2;
+
+	}
+
+	enc = config_setting_lookup(s, "encryption");
+	sig = config_setting_lookup(s, "signing");
+	if (enc == NULL || sig == NULL)
+	{
+		enc = config_setting_add(s, "encryption", CONFIG_TYPE_BOOL);
+		sig = config_setting_add(s, "signing", CONFIG_TYPE_BOOL);
+		if (enc == NULL || sig == NULL)
+			return 3;
+	}
+
+	int result = config_setting_set_bool(enc, value->encryption) == CONFIG_TRUE &&
+		config_setting_set_bool(sig, value->signing) == CONFIG_TRUE;
+
+	if (result != CONFIG_TRUE)
+		return 4;
+
+	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
+		return 5;
+
+	return 0;
 }

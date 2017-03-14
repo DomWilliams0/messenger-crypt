@@ -5,7 +5,7 @@ static handler_func handler_lookup[HANDLER_LAST] = {
 	[DECRYPT] = handler_decrypt,
 	[ENCRYPT] = handler_encrypt,
 	[SETTINGS] = handler_settings,
-	NULL
+	[CONVERSATION] = handler_conversation,
 };
 
 static const char * const handle_strings[HANDLER_LAST] = {

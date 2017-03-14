@@ -9,7 +9,7 @@ void config_ctx_destroy(struct config_context *ctx);
 enum config_section
 {
 	SECTION_SETTINGS,
-	SECTION_CONVERSATIONS,
+	SECTION_CONVERSATION,
 	SECTION_KEYS
 };
 
@@ -48,12 +48,17 @@ struct setting_key_instance
 	struct setting_value default_value;
 };
 
+struct conversation_state
+{
+	int encryption;
+	int signing;
+};
+
 const char *config_get_key_string(enum setting_key key);
 
 const char *config_get_type_string(enum setting_type type);
 
 void config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out);
-// TODO config_get_conversation_settings
 // TODO config_get_key
 
 int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value);
@@ -61,5 +66,9 @@ int config_set_setting(struct config_context *ctx, enum setting_key key, struct 
 struct setting_key_instance const *config_get_all(struct config_context *ctx);
 
 int config_parse_key(const char *s, enum setting_key *key_out);
+
+void config_get_conversation(struct config_context *ctx, char *id, struct conversation_state *out);
+
+int config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value);
 
 #endif
