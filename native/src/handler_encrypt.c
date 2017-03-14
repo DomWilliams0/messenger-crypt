@@ -50,8 +50,13 @@ int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct h
 		return 5;
 
 	encrypt(plaintext, recipients, recipient_count, &resp->result);
-	free(plaintext);
+	for (unsigned int i = 0; i < recipient_count; ++i)
+	{
+		free(recipients[i].fbid);
+		free(recipients[i].name);
+	}
 	free(recipients);
+	free(plaintext);
 
 	resp->paused_request_id = paused_request_id;
 	response->data = resp;
