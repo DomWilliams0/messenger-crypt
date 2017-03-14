@@ -4,6 +4,7 @@
 struct mc_context
 {
 	struct config_context *config;
+	struct crypto_context *crypto;
 };
 
 int context_init(struct mc_context *ctx);

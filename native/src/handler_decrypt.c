@@ -35,7 +35,7 @@ int handler_decrypt(struct mc_context *ctx, struct json_token *content, struct h
 	if (resp == NULL)
 		return 3;
 
-	decrypt(msg, &resp->result);
+	decrypt(ctx->crypto, msg, &resp->result);
 	free(msg);
 
 	resp->msg_id = msg_id;

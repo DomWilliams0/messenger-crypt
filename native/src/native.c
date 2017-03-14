@@ -2,6 +2,7 @@
 #include "messaging.h"
 #include "native.h"
 #include "config.h"
+#include "encryption.h"
 
 int context_init(struct mc_context *ctx)
 {
@@ -9,6 +10,9 @@ int context_init(struct mc_context *ctx)
 	if (ctx->config == NULL)
 		return 1;
 
+	ctx->crypto = crypto_ctx_create();
+	if (ctx->crypto == NULL)
+		return 2;
 
 	return 0;
 }

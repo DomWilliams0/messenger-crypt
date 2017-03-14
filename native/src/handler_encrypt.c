@@ -49,7 +49,7 @@ int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct h
 	if (resp == NULL)
 		return 5;
 
-	encrypt(plaintext, recipients, recipient_count, &resp->result);
+	encrypt(ctx->crypto, plaintext, recipients, recipient_count, &resp->result);
 	for (unsigned int i = 0; i < recipient_count; ++i)
 	{
 		free(recipients[i].fbid);
