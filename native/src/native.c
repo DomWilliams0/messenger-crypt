@@ -20,6 +20,7 @@ int context_init(struct mc_context *ctx)
 void context_destroy(struct mc_context *ctx)
 {
 	config_ctx_destroy(ctx->config);
+	crypto_ctx_destroy(ctx->crypto);
 }
 
 int main(void)
