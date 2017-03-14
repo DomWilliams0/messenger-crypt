@@ -28,15 +28,6 @@ struct setting_value
 	} value;
 };
 
-struct setting_key_instance
-{
-	const char *key;
-	const char *title;
-	const char *description;
-	enum setting_type type;
-	struct setting_value default_value;
-};
-
 enum setting_key
 {
 	SETTING_VERBOSE_HEADER = 0,
@@ -47,10 +38,25 @@ enum setting_key
 	SETTING_LAST
 };
 
+struct setting_key_instance
+{
+	enum setting_key key;
+	const char *title;
+	const char *description;
+	enum setting_type type;
+	struct setting_value default_value;
+};
+
+const char *config_get_key_string(enum setting_key key);
+
+const char *config_get_type_string(enum setting_type type);
+
 void config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out);
 // TODO config_get_conversation_settings
 // TODO config_get_key
 
 int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value);
+
+struct setting_key_instance const *config_get_all(struct config_context *ctx);
 
 #endif

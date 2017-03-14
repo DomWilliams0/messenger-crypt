@@ -4,8 +4,8 @@
 
 #include "config.h"
 
-#define INIT_SETTING(setting_key, key, title, desc, type, default_val) do { \
-	ctx->settings[setting_key] = (struct setting_key_instance) { \
+#define INIT_SETTING(key, title, desc, type, default_val) do { \
+	ctx->settings[key] = (struct setting_key_instance) { \
 		key, title, desc, type, default_val \
 	}; \
 	} \
@@ -58,7 +58,6 @@ struct config_context *config_ctx_create()
 
 	INIT_SETTING(
 			SETTING_IGNORE_REVOKED,
-			"ignore-revoked",
 			"Ignore revoked keys",
 			"Don't use revoked public keys for encryption",
 			SETTING_BOOL,
@@ -66,7 +65,6 @@ struct config_context *config_ctx_create()
 			);
 	INIT_SETTING(
 			SETTING_VERBOSE_HEADER,
-			"verbose-header",
 			"Show verbose message status",
 			"Show decryption and signature status above every GPG message",
 			SETTING_BOOL,
@@ -74,7 +72,6 @@ struct config_context *config_ctx_create()
 			);
 	INIT_SETTING(
 			SETTING_MESSAGE_COLOUR,
-			"message-colour",
 			"Enable message colours",
 			"Indicate decryption and verification success by changing the colour of PGP messages",
 			SETTING_BOOL,
@@ -82,7 +79,6 @@ struct config_context *config_ctx_create()
 			);
 	INIT_SETTING(
 			SETTING_BLOCK_FILES,
-			"block-files",
 			"Block attachments and images",
 			"Block the sending of attachments and images, as their encryption is not currently supported",
 			SETTING_BOOL,
@@ -99,6 +95,36 @@ void config_ctx_destroy(struct config_context *ctx)
 
 	config_destroy(&ctx->config);
 	free(ctx);
+}
+
+const char *config_get_key_string(enum setting_key key)
+{
+	switch(key)
+	{
+		case SETTING_IGNORE_REVOKED:
+			return "ignore-revoked";
+		case SETTING_VERBOSE_HEADER:
+			return "verbose-header";
+		case SETTING_MESSAGE_COLOUR:
+			return "message-colour";
+		case SETTING_BLOCK_FILES:
+			return "block-files";
+		default:
+			return "";
+	}
+}
+
+const char *config_get_type_string(enum setting_type type)
+{
+	switch (type)
+	{
+		case SETTING_TEXT:
+			return "TEXT";
+		case SETTING_BOOL:
+			return "BOOL";
+		default:
+			return "";
+	}
 }
 
 static int get_type(enum setting_type type)
@@ -159,7 +185,7 @@ void config_get_setting(struct config_context *ctx, enum setting_key key, struct
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section != NULL)
 	{
-		config_setting_t *s = config_setting_get_member(section, instance->key);
+		config_setting_t *s = config_setting_get_member(section, config_get_key_string(key));
 		if (s != NULL)
 		{
 			if (get(s, instance->type, out) == CONFIG_TRUE)
@@ -186,12 +212,14 @@ int config_set_setting(struct config_context *ctx, enum setting_key key, struct 
 		if (section == NULL)
 			return 1;
 	}
-	config_setting_t *s = config_setting_get_member(section, instance->key);
+
+	const char *key_string = config_get_key_string(instance->key);
+	config_setting_t *s = config_setting_get_member(section, key_string);
 	int key_type = get_type(instance->type);
 
 	if (s == NULL)
 	{
-		s = config_setting_add(section, instance->key, key_type);
+		s = config_setting_add(section, key_string, key_type);
 		if (s == NULL)
 			return 2;
 	}
@@ -216,4 +244,9 @@ int config_set_setting(struct config_context *ctx, enum setting_key key, struct 
 		return 5;
 
 	return 0;
+}
+
+struct setting_key_instance const *config_get_all(struct config_context *ctx)
+{
+	return ctx->settings;
 }

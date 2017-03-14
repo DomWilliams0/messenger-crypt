@@ -31,6 +31,7 @@ handler_func get_handler(const char * const what);
 
 int handler_decrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+int handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 
 
 #endif

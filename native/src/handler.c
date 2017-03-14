@@ -4,7 +4,7 @@
 static handler_func handler_lookup[HANDLER_LAST] = {
 	[DECRYPT] = handler_decrypt,
 	[ENCRYPT] = handler_encrypt,
-	NULL,
+	[SETTINGS] = handler_settings,
 	NULL
 };
 
