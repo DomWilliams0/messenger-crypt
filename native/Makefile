@@ -29,7 +29,7 @@ $(TARGET): $(OBJS) $(JSON_LIB)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
 
 $(JSON_LIB):
-	$(CC) $(CLAGS) -fPIC $(LIB)/frozen/frozen.c -shared -o $@
+	$(CC) $(CFLAGS) -fPIC $(LIB)/frozen/frozen.c -shared -o $@
 
 
 .PHONY: clean
