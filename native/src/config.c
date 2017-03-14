@@ -1,3 +1,4 @@
+#include <wordexp.h>
 #include <stdlib.h>
 #include <libconfig.h>
 
@@ -13,15 +14,34 @@
 #define VALUE_BOOL(val) (struct setting_value) { .value = {.bool = val } }
 #define VALUE_TEXT(val) (struct setting_value) { .value = {.text = val } }
 
-#define MAX_PATH_LEN (128)
-
+#define MAX_CONFIG_PATH_LEN (256)
+#define RAW_CONFIG_PATH "$HOME/.config/messenger_crypt.conf"
 
 struct config_context
 {
 	config_t config;
+	const char *path;
+	wordexp_t path_exp;
 	struct setting_key_instance settings[SETTING_LAST];
 };
 
+static void parse_path(wordexp_t *exp, const char **out)
+{
+	// TODO WARNING: not fully tested, only currently works with a single expansion
+	wordexp_t wexp;
+	int result = wordexp(RAW_CONFIG_PATH, &wexp, 0);
+
+	// uh oh
+	if (result != 0 || wexp.we_wordc != 1)
+	{
+		*out = "/tmp/messenger_crypt.conf";
+		return;
+	}
+
+	// freed at the end with wordfree
+	*out = wexp.we_wordv[0];
+	*exp = wexp;
+}
 
 struct config_context *config_ctx_create()
 {
@@ -31,8 +51,10 @@ struct config_context *config_ctx_create()
 
 	config_init(&ctx->config);
 
+	parse_path(&ctx->path_exp, &ctx->path);
+
 	// failure ignored, defaults will be used
-	config_read_file(&ctx->config, CONFIG_PATH);
+	config_read_file(&ctx->config, ctx->path);
 
 	INIT_SETTING(
 			SETTING_IGNORE_REVOKED,
@@ -72,6 +94,9 @@ struct config_context *config_ctx_create()
 
 void config_ctx_destroy(struct config_context *ctx)
 {
+	if (ctx->path_exp.we_wordc > 0)
+		wordfree(&ctx->path_exp);
+
 	config_destroy(&ctx->config);
 	free(ctx);
 }
@@ -169,7 +194,7 @@ int config_set_setting(struct config_context *ctx, enum setting_key key, struct 
 	if (result != CONFIG_TRUE)
 		return 4;
 
-	if (config_write_file(&ctx->config, CONFIG_PATH) != CONFIG_TRUE)
+	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
 		return 5;
 
 	return 0;
