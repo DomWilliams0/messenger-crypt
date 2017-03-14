@@ -15,7 +15,7 @@ JSON_LIB = $(BIN)/$(JSON_LIB_NAME)
 
 CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags)
-LDFLAGS = $(shell gpgme-config --libs) -L$(BIN) -lfrozen
+LDFLAGS = $(shell gpgme-config --libs) -L$(BIN) -lfrozen -lconfig
 
 VPATH=%.c $(SRC)
 
