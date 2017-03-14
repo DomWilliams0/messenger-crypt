@@ -2,6 +2,7 @@
 #define MC_HANDLER_H
 
 #include <stdarg.h>
+#include "native.h"
 
 enum handler_type
 {
@@ -23,13 +24,13 @@ struct handler_response
 };
 
 struct json_token;
-typedef int (*handler_func)(struct json_token *, struct handler_response *);
+typedef int (*handler_func)(struct mc_context *, struct json_token *, struct handler_response *);
 
 
 handler_func get_handler(const char * const what);
 
-int handler_decrypt(struct json_token *content, struct handler_response *response);
-int handler_encrypt(struct json_token *content, struct handler_response *response);
+int handler_decrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 
 
 #endif

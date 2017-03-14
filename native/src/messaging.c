@@ -11,7 +11,7 @@
 
 static char outgoing_buffer[MAX_OUTGOING_SIZE];
 
-static int handle_single_message_wrapped(char **buffer, char **what, struct handler_response *response)
+static int handle_single_message_wrapped(struct mc_context *ctx, char **buffer, char **what, struct handler_response *response)
 {
 	// read length
 	uint32_t length;
@@ -41,7 +41,7 @@ static int handle_single_message_wrapped(char **buffer, char **what, struct hand
 	if (handler == NULL)
 		return 5;
 
-	int result = handler(&content, response);
+	int result = handler(ctx, &content, response);
 
 	if (result == 0)
 	{
@@ -64,11 +64,11 @@ static int handle_single_message_wrapped(char **buffer, char **what, struct hand
 	return result;
 }
 
-int handle_single_message()
+int handle_single_message(struct mc_context *ctx)
 {
 	char *what = NULL, *buffer = NULL;
 	struct handler_response response = {0};
-	int ret = handle_single_message_wrapped(&what, &buffer, &response);
+	int ret = handle_single_message_wrapped(ctx, &what, &buffer, &response);
 
 	if (what != NULL)
 		free(what);

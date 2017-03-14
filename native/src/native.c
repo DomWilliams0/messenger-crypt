@@ -29,7 +29,7 @@ int main(void)
 	int result;
 	while (1)
 	{
-		result = handle_single_message();
+		result = handle_single_message(&ctx);
 
 		if (result != 0)
 		{
@@ -42,5 +42,8 @@ int main(void)
 
 		}
 	}
-  return 0;
+
+	context_destroy(&ctx);
+
+	return 0;
 }

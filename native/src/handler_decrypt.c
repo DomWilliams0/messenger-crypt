@@ -20,7 +20,7 @@ static int decrypt_response_printer(struct json_out *out, va_list *args)
 			response->msg_id, result->error, result->signer, result->good_sig, result->was_decrypted, result->plaintext);
 }
 
-int handler_decrypt(struct json_token *content, struct handler_response *response)
+int handler_decrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
