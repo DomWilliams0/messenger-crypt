@@ -28,7 +28,6 @@ static int handle_single_message_wrapped(struct mc_context *ctx, char **buffer, 
 		return 3;
 
 	// parse json
-	// TODO free me!
 	struct json_token content;
 	int parse_result = json_scanf(*buffer, length,
 			"{what: %Q, content: %T}", what, &content);

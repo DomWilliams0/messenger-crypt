@@ -124,7 +124,6 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	result->was_decrypted = is_encrypted;
 
 	// copy plaintext
-	// TODO possible to avoid cloning ?
 	size_t plaintext_len;
 	*gpg_plaintext = gpgme_data_release_and_get_mem(buf_o, &plaintext_len);
 	result->plaintext = *gpg_plaintext;
@@ -150,7 +149,6 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 			}
 		}
 
-		// TODO free me!
 		gpgrt_asprintf(who_formatted, "%s (%s)", who_name, who_fpr);
 		result->signer = *who_formatted;
 
