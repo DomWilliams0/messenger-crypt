@@ -18,7 +18,6 @@ static int encrypt_response_printer(struct json_out *out, va_list *args)
 	return json_printf(out,
 			"{paused_request_id: %d,  error: %Q, ciphertext: %Q}",
 			response->paused_request_id, result->error, result->ciphertext);
-	return 0;
 }
 
 int handler_encrypt(struct json_token *content, struct handler_response *response)
