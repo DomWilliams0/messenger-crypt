@@ -114,6 +114,22 @@ static int get_type(enum setting_type type)
 	}
 }
 
+static const char *get_section(enum config_section section)
+{
+	switch (section)
+	{
+		case SECTION_SETTINGS:
+			return "settings";
+		case SECTION_CONVERSATIONS:
+			return "conversations";
+		case SECTION_KEYS:
+			return "keys";
+		default:
+			return "invalid-section-oh-my-god"; // why would this ever happen?
+												// famous last words
+	}
+}
+
 static int get(struct config_setting_t *s, enum setting_type type, struct setting_value *out)
 {
 	int success = CONFIG_TRUE;
@@ -138,8 +154,9 @@ static int get(struct config_setting_t *s, enum setting_type type, struct settin
 void config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out)
 {
 	struct setting_key_instance *instance = &ctx->settings[key];
+	const char *section_path = get_section(SECTION_SETTINGS);
 
-	config_setting_t *section = config_lookup(&ctx->config, "settings");
+	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section != NULL)
 	{
 		config_setting_t *s = config_setting_get_member(section, instance->key);
@@ -160,11 +177,12 @@ void config_get_setting(struct config_context *ctx, enum setting_key key, struct
 int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value)
 {
 	struct setting_key_instance *instance = &ctx->settings[key];
+	const char *section_path = get_section(SECTION_SETTINGS);
 
-	config_setting_t *section = config_lookup(&ctx->config, "settings");
+	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section == NULL)
 	{
-		section = config_setting_add(config_root_setting(&ctx->config), "settings", CONFIG_TYPE_GROUP);
+		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
 		if (section == NULL)
 			return 1;
 	}

@@ -6,6 +6,13 @@ struct config_context;
 struct config_context *config_ctx_create();
 void config_ctx_destroy(struct config_context *ctx);
 
+enum config_section
+{
+	SECTION_SETTINGS,
+	SECTION_CONVERSATIONS,
+	SECTION_KEYS
+};
+
 enum setting_type
 {
 	SETTING_TEXT = 0,
