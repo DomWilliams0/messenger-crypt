@@ -83,7 +83,8 @@ static enum setting_type to_setting_type(enum json_token_type type)
 	}
 }
 
-int handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+static int handler_settings_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
+		char **key, struct setting_value *value, enum setting_type *setting_type)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
@@ -107,50 +108,53 @@ int handler_settings(struct mc_context *ctx, struct json_token *content, struct 
 
 		response->data = resp;
 		response->printer = settings_response_printer;
-		return 0;
 	}
 	else
 	{
-		char *key;
 		struct json_token value_token;
 		if (json_scanf(content->ptr, content->len,
-					"{key: %Q, value: %T}", &key, &value_token) != 2)
+					"{key: %Q, value: %T}", key, &value_token) != 2)
 			return 4;
 
-		int error = 5;
-		struct setting_value value;
-		enum setting_type s_type = SETTING_TYPE_LAST;
 		enum setting_key s_key;
-		if (config_parse_key(key, &s_key) == 0)
-		{
-			error = 6;
+		enum setting_type s_type = SETTING_TYPE_LAST;
+		*setting_type = s_type;
+		if (config_parse_key(*key, &s_key) != 0)
+			return 5;
 
-			s_type = (config_get_all(ctx->config) + s_key)->type;
-			if (to_setting_type(value_token.type) == s_type)
-			{
-				error = 7;
-				char fmt[] = "%X";
-				fmt[1] = get_fmt_char(s_type);
-				if (json_scanf(value_token.ptr, value_token.len, fmt, &value.value) == 1)
-				{
-					int config_error = config_set_setting(ctx->config, s_key, &value);
-					if (config_error == 0)
-						error = 0;
-					else
-						error += config_error;
-				}
-			}
+		s_type = (config_get_all(ctx->config) + s_key)->type;
+		if (to_setting_type(value_token.type) != s_type)
+			return 6;
 
-		}
+		char fmt[] = "%X";
+		fmt[1] = get_fmt_char(s_type);
+		if (json_scanf(value_token.ptr, value_token.len, fmt, &value->value) != 1)
+			return 7;
 
-		free(key);
-		if (s_type == SETTING_TEXT && value.value.text != NULL)
-			free((char *)value.value.text);
+		int config_error = config_set_setting(ctx->config, s_key, value);
+		if (config_error != 0)
+			return 7 + config_error;
 
 		response->data = NULL;
 		response->printer = NULL;
-
-		return error;
 	}
 
+	return 0;
+}
+
+int handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+{
+	char *key = NULL;
+	struct setting_value value = {0};
+	enum setting_type setting_type = SETTING_TYPE_LAST;
+
+	int result = handler_settings_wrapper(ctx, content, response, &key, &value, &setting_type);
+
+	if (key != NULL)
+		free(key);
+	if (setting_type == SETTING_TEXT && value.value.text != NULL)
+		free((char *)value.value.text);
+
+
+	return result;
 }
