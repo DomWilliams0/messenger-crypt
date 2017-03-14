@@ -16,7 +16,8 @@ enum config_section
 enum setting_type
 {
 	SETTING_TEXT = 0,
-	SETTING_BOOL
+	SETTING_BOOL,
+	SETTING_TYPE_LAST,
 };
 
 struct setting_value
@@ -58,5 +59,7 @@ void config_get_setting(struct config_context *ctx, enum setting_key key, struct
 int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value);
 
 struct setting_key_instance const *config_get_all(struct config_context *ctx);
+
+int config_parse_key(const char *s, enum setting_key *key_out);
 
 #endif

@@ -30,6 +30,7 @@ function updateSetting(key, value) {
 	chrome.runtime.sendMessage({
 		what: "settings",
 		content: {
+			get: false,
 			key: key,
 			value: value
 		}

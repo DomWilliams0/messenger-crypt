@@ -43,7 +43,7 @@ static int handle_single_message_wrapped(struct mc_context *ctx, char **buffer, 
 
 	int result = handler(ctx, &content, response);
 
-	if (result == 0)
+	if (result == 0 && response->data && response->printer)
 	{
 		struct json_out out_to_buffer = JSON_OUT_BUF(outgoing_buffer, MAX_OUTGOING_SIZE);
 

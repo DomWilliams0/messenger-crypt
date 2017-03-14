@@ -1,4 +1,5 @@
 #include <wordexp.h>
+#include <string.h>
 #include <stdlib.h>
 #include <libconfig.h>
 
@@ -249,4 +250,19 @@ int config_set_setting(struct config_context *ctx, enum setting_key key, struct 
 struct setting_key_instance const *config_get_all(struct config_context *ctx)
 {
 	return ctx->settings;
+}
+
+int config_parse_key(const char *s, enum setting_key *key_out)
+{
+	for (int i = 0; i < SETTING_LAST; ++i)
+	{
+		const char *str = config_get_key_string(i);
+		if (strcmp(s, str) == 0)
+		{
+			*key_out = i;
+			return 0;
+		}
+	}
+
+	return 1;
 }
