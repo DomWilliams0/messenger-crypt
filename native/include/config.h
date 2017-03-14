@@ -42,8 +42,10 @@ enum setting_key
 	SETTING_LAST
 };
 
-int config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out);
+void config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out);
 // TODO config_get_conversation_settings
 // TODO config_get_key
+
+int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value);
 
 #endif

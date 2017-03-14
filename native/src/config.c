@@ -13,6 +13,8 @@
 #define VALUE_BOOL(val) (struct setting_value) { .value = {.bool = val } }
 #define VALUE_TEXT(val) (struct setting_value) { .value = {.text = val } }
 
+#define MAX_PATH_LEN (128)
+
 
 struct config_context
 {
@@ -74,32 +76,101 @@ void config_ctx_destroy(struct config_context *ctx)
 	free(ctx);
 }
 
-static int get(struct config_context *ctx, const char *path, enum setting_type type, struct setting_value *out)
+static int get_type(enum setting_type type)
 {
-	switch(type)
+	switch (type)
 	{
 		case SETTING_TEXT:
-			return config_lookup_string(&ctx->config, path, &out->value.text);
+			return CONFIG_TYPE_STRING;
 		case SETTING_BOOL:
-			return config_lookup_bool(&ctx->config, path, &out->value.bool);
+			return CONFIG_TYPE_BOOL;
 		default:
-			return CONFIG_FALSE;
+			return CONFIG_TYPE_NONE;
 	}
 }
 
-int config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out)
+static int get(struct config_setting_t *s, enum setting_type type, struct setting_value *out)
 {
-	char key_path[128] = {0};
-	struct setting_key_instance *setting = &ctx->settings[key];
-
-	if (snprintf(key_path, 128, "settings.%s", setting->key) <= 0)
-		return 1;
-
-	if (get(ctx, key_path, setting->type, out) != CONFIG_TRUE)
+	int success = CONFIG_TRUE;
+	switch(type)
 	{
-		// default
-		*out = setting->default_value;
+		case SETTING_TEXT:
+			out->value.text = config_setting_get_string(s);
+			if (out->value.text == NULL)
+				success = CONFIG_FALSE;
+			break;
+		case SETTING_BOOL:
+			out->value.bool = config_setting_get_bool(s);
+			break;
+		default:
+			success = CONFIG_FALSE;
+			break;
 	}
+
+	return success;
+}
+
+void config_get_setting(struct config_context *ctx, enum setting_key key, struct setting_value *out)
+{
+	struct setting_key_instance *instance = &ctx->settings[key];
+
+	config_setting_t *section = config_lookup(&ctx->config, "settings");
+	if (section != NULL)
+	{
+		config_setting_t *s = config_setting_get_member(section, instance->key);
+		if (s != NULL)
+		{
+			if (get(s, instance->type, out) == CONFIG_TRUE)
+			{
+				// true value found
+				return;
+			}
+		}
+	}
+
+	// default
+	*out = instance->default_value;
+}
+
+int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value)
+{
+	struct setting_key_instance *instance = &ctx->settings[key];
+
+	config_setting_t *section = config_lookup(&ctx->config, "settings");
+	if (section == NULL)
+	{
+		section = config_setting_add(config_root_setting(&ctx->config), "settings", CONFIG_TYPE_GROUP);
+		if (section == NULL)
+			return 1;
+	}
+	config_setting_t *s = config_setting_get_member(section, instance->key);
+	int key_type = get_type(instance->type);
+
+	if (s == NULL)
+	{
+		s = config_setting_add(section, instance->key, key_type);
+		if (s == NULL)
+			return 2;
+	}
+
+	int result;
+	switch(instance->type)
+	{
+		case SETTING_BOOL:
+			result = config_setting_set_bool(s, value->value.bool);
+			break;
+		case SETTING_TEXT:
+			result = config_setting_set_string(s, value->value.text);
+			break;
+		default:
+			return 3;
+	}
+
+	if (result != CONFIG_TRUE)
+		return 4;
+
+	if (config_write_file(&ctx->config, CONFIG_PATH) != CONFIG_TRUE)
+		return 5;
 
 	return 0;
 }
