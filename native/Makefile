@@ -17,6 +17,11 @@ CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -I$(INC) -I$(LIB) -O1 $(shell gpgme-config --cflags)
 LDFLAGS = $(shell gpgme-config --libs) -L$(BIN) -lfrozen -lconfig
 
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	CFLAGS += -O0 -g -DDEBUG
+endif
+
 VPATH=%.c $(SRC)
 
 .PHONY: default
