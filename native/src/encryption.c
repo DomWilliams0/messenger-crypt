@@ -142,10 +142,13 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 		strncpy(who_fpr,sig->fpr  + (strlen(sig->fpr) - FINGERPRINT_LEN), FINGERPRINT_LEN);
 		who_fpr[FINGERPRINT_LEN] = '\0';
 
-		if (sig->key != NULL)
+		// lookup key
+		gpgme_key_t signing_key;
+		err = gpgme_get_key(ctx->gpg, sig->fpr, &signing_key, 0);
+		if (err == GPG_ERR_NO_ERROR)
 		{
 			// get augmented whois
-			gpgme_user_id_t uid = sig->key->uids;
+			gpgme_user_id_t uid = signing_key->uids;
 			if (uid != NULL)
 			{
 				who_name = uid->name;
@@ -154,6 +157,8 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 
 		gpgrt_asprintf(who_formatted, "%s (%s)", who_name, who_fpr);
 		result->signer = *who_formatted;
+
+		gpgme_key_unref(signing_key);
 
 		// bad
 		if (sig->status != GPG_ERR_NO_ERROR)
