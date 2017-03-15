@@ -74,7 +74,15 @@ int handle_single_message(struct mc_context *ctx)
 	if (buffer != NULL)
 		free(buffer);
 	if (response.data != NULL)
+	{
 		free(response.data);
+
+		if (response.data_allocd != NULL && response.freer != NULL)
+		{
+			response.freer(response.data_allocd);
+			free(response.data_allocd);
+		}
+	}
 
 	return ret;
 }

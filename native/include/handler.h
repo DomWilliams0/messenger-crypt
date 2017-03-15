@@ -21,6 +21,10 @@ struct handler_response
 {
 	void *data;
 	response_printer printer;
+
+	// extra data to free
+	void *data_allocd;
+	void (*freer)(void *);
 };
 
 struct json_token;

@@ -15,6 +15,14 @@ struct decrypt_result
 	char *plaintext;
 };
 
+struct decrypt_extra_allocation
+{
+	char *input_buffer;
+	char *output_buffer;
+	char *gpg_plaintext;
+	char *who_formatted;
+};
+
 struct encrypt_result
 {
 	char *error;
@@ -29,7 +37,9 @@ struct recipient
 	char *name;
 };
 
-void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result);
+void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc);
+
+void decrypt_free_extra_allocations(void *);
 
 void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result);
 
