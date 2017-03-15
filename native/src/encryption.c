@@ -53,6 +53,7 @@ void crypto_ctx_destroy(struct crypto_context *ctx)
 	free(ctx);
 }
 
+// outputs are set to return value of strncmp (i.e. 0 == success)
 static void detect_message(const char *msg, int *is_just_signed, int *is_encrypted)
 {
 	const char *signed_prefix    = "-----BEGIN PGP SIGNED";
@@ -71,7 +72,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	detect_message(ciphertext, &is_just_signed, &is_encrypted);
 
 	// nothing to do
-	if (!is_just_signed && !is_encrypted)
+	if (is_just_signed != 0 && is_encrypted != 0)
 		return;
 
 	gpgme_error_t err;
@@ -83,7 +84,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	DO_SAFE(gpgme_data_new(&buf_o));
 
 	// just verify
-	if (is_just_signed)
+	if (is_just_signed == 0)
 	{
 		// dummy message in case of failure
 		result->plaintext = dummy_signed;
@@ -121,12 +122,13 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 			sigs = verify->signatures;
 	}
 
-	result->was_decrypted = is_encrypted;
+	result->was_decrypted = is_encrypted == 0 ? 1 : 0; // convert to standard boolean
 
 	// copy plaintext
 	size_t plaintext_len;
 	*gpg_plaintext = gpgme_data_release_and_get_mem(buf_o, &plaintext_len);
 	result->plaintext = *gpg_plaintext;
+	result->plaintext[plaintext_len] = '\0';
 	buf_o = NULL;
 
 	// validate signatures
@@ -137,7 +139,8 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 
 		char who_fpr[FINGERPRINT_LEN + 1];
 		char *who_name = "Unknown";
-		strncpy(who_fpr + (strlen(sig->fpr) - FINGERPRINT_LEN), sig->fpr, FINGERPRINT_LEN);
+		strncpy(who_fpr,sig->fpr  + (strlen(sig->fpr) - FINGERPRINT_LEN), FINGERPRINT_LEN);
+		who_fpr[FINGERPRINT_LEN] = '\0';
 
 		if (sig->key != NULL)
 		{
