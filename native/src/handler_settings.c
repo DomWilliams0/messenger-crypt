@@ -38,7 +38,7 @@ static int setting_printer(struct json_out *out, va_list *args)
 
 	return json_printf(out, fmt,
 			config_get_key_string(s->key), s->title, s->description,
-			config_get_type_string(s->type), value->value
+			config_get_type_string(value->type), value->value
 			);
 }
 
@@ -84,7 +84,7 @@ static enum setting_type to_setting_type(enum json_token_type type)
 }
 
 static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
-		char **key, struct setting_value *value, enum setting_type *setting_type)
+		char **key, struct setting_value *value)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
@@ -118,11 +118,11 @@ static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token
 
 		enum setting_key s_key;
 		enum setting_type s_type = SETTING_TYPE_LAST;
-		*setting_type = s_type;
 		if (config_parse_key(*key, &s_key) != 0)
 			return 5;
 
 		s_type = (config_get_all(ctx->config) + s_key)->type;
+		value->type = s_type;
 		if (to_setting_type(value_token.type) != s_type)
 			return 6;
 
@@ -146,13 +146,12 @@ RESULT handler_settings(struct mc_context *ctx, struct json_token *content, stru
 {
 	char *key = NULL;
 	struct setting_value value = {0};
-	enum setting_type setting_type = SETTING_TYPE_LAST;
 
-	RESULT result = handler_settings_wrapper(ctx, content, response, &key, &value, &setting_type);
+	RESULT result = handler_settings_wrapper(ctx, content, response, &key, &value);
 
 	if (key != NULL)
 		free(key);
-	if (setting_type == SETTING_TEXT && value.value.text != NULL)
+	if (value.type == SETTING_TEXT && value.value.text != NULL)
 		free((char *)value.value.text);
 
 

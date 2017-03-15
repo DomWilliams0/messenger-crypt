@@ -12,8 +12,8 @@
 	} \
 	while (0)
 
-#define VALUE_BOOL(val) (struct setting_value) { .value = {.bool = val } }
-#define VALUE_TEXT(val) (struct setting_value) { .value = {.text = val } }
+#define VALUE_BOOL(val) (struct setting_value) { .type = SETTING_BOOL, .value = {.bool = val } }
+#define VALUE_TEXT(val) (struct setting_value) { .type = SETTING_TEXT, .value = {.text = val } }
 
 #define MAX_CONFIG_PATH_LEN (256)
 #define RAW_CONFIG_PATH "$HOME/.config/messenger_crypt.conf"
@@ -162,21 +162,22 @@ static const char *get_section(enum config_section section)
 	}
 }
 
-static int get(struct config_setting_t *s, enum setting_type type, struct setting_value *out)
+static int populate_value(struct config_setting_t *s, struct setting_value *value)
 {
 	int success = CONFIG_TRUE;
-	switch(type)
+	switch(value->type)
 	{
 		case SETTING_TEXT:
-			out->value.text = config_setting_get_string(s);
-			if (out->value.text == NULL)
+			value->value.text = config_setting_get_string(s);
+			if (value->value.text == NULL)
 				success = CONFIG_FALSE;
 			break;
 		case SETTING_BOOL:
-			out->value.bool = config_setting_get_bool(s);
+			value->value.bool = config_setting_get_bool(s);
 			break;
 		default:
 			success = CONFIG_FALSE;
+			value->value.text = NULL; // zero
 			break;
 	}
 
@@ -188,13 +189,15 @@ void config_get_setting(struct config_context *ctx, enum setting_key key, struct
 	struct setting_key_instance *instance = &ctx->settings[key];
 	const char *section_path = get_section(SECTION_SETTINGS);
 
+	out->type = instance->type;
+
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section != NULL)
 	{
 		config_setting_t *s = config_setting_get_member(section, config_get_key_string(key));
 		if (s != NULL)
 		{
-			if (get(s, instance->type, out) == CONFIG_TRUE)
+			if (populate_value(s, out) == CONFIG_TRUE)
 			{
 				// true value found
 				return;

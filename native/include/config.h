@@ -24,6 +24,7 @@ enum setting_type
 
 struct setting_value
 {
+	enum setting_type type;
 	union
 	{
 		const char *text;
