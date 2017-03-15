@@ -28,7 +28,6 @@ struct crypto_context *crypto_ctx_create()
 	if (ctx == NULL)
 		return ctx;
 
-
 	gpgme_check_version(NULL);
 
 	if (gpgme_new(&ctx->gpg) != GPG_ERR_NO_ERROR)
@@ -46,26 +45,28 @@ void crypto_ctx_destroy(struct crypto_context *ctx)
 	free(ctx);
 }
 
-// outputs are set to return value of strncmp (i.e. 0 == success)
-static void detect_message(const char *msg, int *is_just_signed, int *is_encrypted)
+static void detect_message(const char *msg, BOOL *is_just_signed, BOOL *is_encrypted)
 {
 	const char *signed_prefix    = "-----BEGIN PGP SIGNED";
 	const char *encrypted_prefix = "-----BEGIN PGP MESSAGE";
 	const int prefix_len = strlen(signed_prefix);
 
-	*is_just_signed = strncmp(msg, signed_prefix, prefix_len);
-	*is_encrypted = strncmp(msg, encrypted_prefix, prefix_len);
+	BOOL sig = (strncmp(msg, signed_prefix, prefix_len) == 0);
+	BOOL enc = (strncmp(msg, encrypted_prefix, prefix_len) == 0);
+
+	*is_just_signed = sig;
+	*is_encrypted = enc;
 }
 
 static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result,
 		gpgme_data_t *buf_i, gpgme_data_t *buf_o, char **gpg_plaintext, char **who_formatted)
 {
 	// what do
-	int is_just_signed, is_encrypted;
+	BOOL is_just_signed, is_encrypted;
 	detect_message(ciphertext, &is_just_signed, &is_encrypted);
 
 	// nothing to do
-	if (is_just_signed != 0 && is_encrypted != 0)
+	if (!is_just_signed && !is_encrypted)
 		return;
 
 	gpgme_error_t err;
@@ -76,7 +77,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	DO_SAFE(gpgme_data_new(buf_o));
 
 	// just verify
-	if (is_just_signed == 0)
+	if (is_just_signed)
 	{
 		// dummy message in case of failure
 		result->plaintext = dummy_signed;
@@ -114,7 +115,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 			sigs = verify->signatures;
 	}
 
-	result->was_decrypted = is_encrypted == 0 ? 1 : 0; // convert to standard boolean
+	result->was_decrypted = is_encrypted;
 
 	// copy plaintext
 	size_t plaintext_len;
@@ -159,14 +160,14 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 			return;
 		}
 
-		result->good_sig = 1;
+		result->good_sig = TRUE;
 	}
 }
 
 void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc)
 {
-	result->good_sig = 0;
-	result->was_decrypted = 0;
+	result->good_sig = FALSE;
+	result->was_decrypted = FALSE;
 	result->signer = "";
 	result->plaintext = "";
 	result->error = NULL;
@@ -199,8 +200,8 @@ void decrypt_free_extra_allocations(void *data)
 
 void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result)
 {
-	result->is_signed = 0;
-	result->is_encrypted = 0;
+	result->is_signed = FALSE;
+	result->is_encrypted = FALSE;
 	result->ciphertext = "No encrypted message here";
 	result->error = NULL;
 }

@@ -1,6 +1,8 @@
 #ifndef MC_ENCRYPTION_H
 #define MC_ENCRYPTION_H
 
+#include "bool.h"
+
 struct crypto_context;
 
 struct crypto_context *crypto_ctx_create();
@@ -10,8 +12,8 @@ struct decrypt_result
 {
 	const char *error;
 	char *signer;
-	int good_sig;
-	int was_decrypted;
+	BOOL good_sig;
+	BOOL was_decrypted;
 	char *plaintext;
 };
 
@@ -27,8 +29,8 @@ struct encrypt_result
 {
 	char *error;
 	char *ciphertext;
-	int is_signed;
-	int is_encrypted;
+	BOOL is_signed;
+	BOOL is_encrypted;
 };
 
 struct recipient

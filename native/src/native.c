@@ -4,7 +4,7 @@
 #include "config.h"
 #include "encryption.h"
 
-int context_init(struct mc_context *ctx)
+RESULT context_init(struct mc_context *ctx)
 {
 	ctx->config = config_ctx_create();
 	if (ctx->config == NULL)
@@ -14,7 +14,7 @@ int context_init(struct mc_context *ctx)
 	if (ctx->crypto == NULL)
 		return 2;
 
-	return 0;
+	return SUCCESS;
 }
 
 void context_destroy(struct mc_context *ctx)
@@ -26,12 +26,12 @@ void context_destroy(struct mc_context *ctx)
 int main(void)
 {
 	struct mc_context ctx;
-	int init_result = context_init(&ctx);
+	RESULT init_result = context_init(&ctx);
 	if (init_result != 0)
 		return init_result;
 
 
-	int result;
+	RESULT result;
 	while (1)
 	{
 		result = handle_single_message(&ctx);

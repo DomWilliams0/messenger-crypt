@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include "native.h"
+#include "bool.h"
 
 enum handler_type
 {
@@ -28,15 +29,15 @@ struct handler_response
 };
 
 struct json_token;
-typedef int (*handler_func)(struct mc_context *, struct json_token *, struct handler_response *);
+typedef RESULT (*handler_func)(struct mc_context *, struct json_token *, struct handler_response *);
 
 
 handler_func get_handler(const char * const what);
 
-int handler_decrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
-int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
-int handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
-int handler_conversation(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+RESULT handler_decrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+RESULT handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+RESULT handler_conversation(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 
 
 #endif

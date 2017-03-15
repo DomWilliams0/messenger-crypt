@@ -67,28 +67,28 @@ struct config_context *config_ctx_create()
 			"Ignore revoked keys",
 			"Don't use revoked public keys for encryption",
 			SETTING_BOOL,
-			VALUE_BOOL(1)
+			VALUE_BOOL(TRUE)
 			);
 	INIT_SETTING(
 			SETTING_VERBOSE_HEADER,
 			"Show verbose message status",
 			"Show decryption and signature status above every GPG message",
 			SETTING_BOOL,
-			VALUE_BOOL(1)
+			VALUE_BOOL(TRUE)
 			);
 	INIT_SETTING(
 			SETTING_MESSAGE_COLOUR,
 			"Enable message colours",
 			"Indicate decryption and verification success by changing the colour of PGP messages",
 			SETTING_BOOL,
-			VALUE_BOOL(1)
+			VALUE_BOOL(TRUE)
 			);
 	INIT_SETTING(
 			SETTING_BLOCK_FILES,
 			"Block attachments and images",
 			"Block the sending of attachments and images, as their encryption is not currently supported",
 			SETTING_BOOL,
-			VALUE_BOOL(1)
+			VALUE_BOOL(TRUE)
 			);
 
 	return ctx;
@@ -206,7 +206,7 @@ void config_get_setting(struct config_context *ctx, enum setting_key key, struct
 	*out = instance->default_value;
 }
 
-int config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value)
+RESULT config_set_setting(struct config_context *ctx, enum setting_key key, struct setting_value *value)
 {
 	struct setting_key_instance *instance = &ctx->settings[key];
 	const char *section_path = get_section(SECTION_SETTINGS);
@@ -249,7 +249,7 @@ int config_set_setting(struct config_context *ctx, enum setting_key key, struct 
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
 		return 5;
 
-	return 0;
+	return SUCCESS;
 }
 
 struct setting_key_instance const *config_get_all(struct config_context *ctx)
@@ -257,7 +257,7 @@ struct setting_key_instance const *config_get_all(struct config_context *ctx)
 	return ctx->settings;
 }
 
-int config_parse_key(const char *s, enum setting_key *key_out)
+RESULT config_parse_key(const char *s, enum setting_key *key_out)
 {
 	for (int i = 0; i < SETTING_LAST; ++i)
 	{
@@ -265,7 +265,7 @@ int config_parse_key(const char *s, enum setting_key *key_out)
 		if (strcmp(s, str) == 0)
 		{
 			*key_out = i;
-			return 0;
+			return SUCCESS;
 		}
 	}
 
@@ -276,7 +276,7 @@ void config_get_conversation(struct config_context *ctx, char *id, struct conver
 {
 	const char *section_path = get_section(SECTION_CONVERSATION);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
-	int set_defaults = 1;
+	BOOL set_defaults = TRUE;
 
 	if (section != NULL)
 	{
@@ -285,15 +285,15 @@ void config_get_conversation(struct config_context *ctx, char *id, struct conver
 		{
 			out->encryption = config_setting_get_bool(config_setting_get_member(s, "encryption"));
 			out->signing = config_setting_get_bool(config_setting_get_member(s, "signing"));
-			set_defaults = 0;
+			set_defaults = FALSE;
 		}
 	}
 
-	if (set_defaults == 1)
+	if (set_defaults)
 		*out = default_conversation;
 }
 
-int config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value)
+RESULT config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value)
 {
 	// TODO extract common functionality from {s,g}et_{settings,conversation,key}
 	const char *section_path = get_section(SECTION_CONVERSATION);
@@ -335,5 +335,5 @@ int config_set_conversation(struct config_context *ctx, char *id, struct convers
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
 		return 5;
 
-	return 0;
+	return SUCCESS;
 }

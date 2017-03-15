@@ -11,7 +11,7 @@
 
 static char outgoing_buffer[MAX_OUTGOING_SIZE];
 
-static int handle_single_message_wrapped(struct mc_context *ctx, char **buffer, char **what, struct handler_response *response)
+static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffer, char **what, struct handler_response *response)
 {
 	// read length
 	uint32_t length;
@@ -40,9 +40,9 @@ static int handle_single_message_wrapped(struct mc_context *ctx, char **buffer, 
 	if (handler == NULL)
 		return 5;
 
-	int result = handler(ctx, &content, response);
+	RESULT result = handler(ctx, &content, response);
 
-	if (result == 0 && response->data && response->printer)
+	if (result == SUCCESS && response->data && response->printer)
 	{
 		struct json_out out_to_buffer = JSON_OUT_BUF(outgoing_buffer, MAX_OUTGOING_SIZE);
 
@@ -63,11 +63,11 @@ static int handle_single_message_wrapped(struct mc_context *ctx, char **buffer, 
 	return result;
 }
 
-int handle_single_message(struct mc_context *ctx)
+RESULT handle_single_message(struct mc_context *ctx)
 {
 	char *what = NULL, *buffer = NULL;
 	struct handler_response response = {0};
-	int ret = handle_single_message_wrapped(ctx, &what, &buffer, &response);
+	RESULT ret = handle_single_message_wrapped(ctx, &what, &buffer, &response);
 
 	if (what != NULL)
 		free(what);

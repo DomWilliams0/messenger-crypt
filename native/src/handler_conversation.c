@@ -20,7 +20,7 @@ static int conversation_printer(struct json_out *out, va_list *args)
 			);
 }
 
-static int handler_conversation_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
+static RESULT handler_conversation_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
 		char **id)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
@@ -52,13 +52,13 @@ static int handler_conversation_wrapper(struct mc_context *ctx, struct json_toke
 		config_set_conversation(ctx->config, *id, &new_state);
 	}
 
-	return 0;
+	return SUCCESS;
 }
 
-int handler_conversation(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+RESULT handler_conversation(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
 	char *id = NULL;
-	int ret = handler_conversation_wrapper(ctx, content, response, &id);
+	RESULT ret = handler_conversation_wrapper(ctx, content, response, &id);
 
 	if (id != NULL)
 		free(id);

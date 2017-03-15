@@ -20,7 +20,7 @@ static int encrypt_response_printer(struct json_out *out, va_list *args)
 			response->paused_request_id, result->error, result->ciphertext);
 }
 
-int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
@@ -62,5 +62,5 @@ int handler_encrypt(struct mc_context *ctx, struct json_token *content, struct h
 	response->data = resp;
 	response->printer = encrypt_response_printer;
 
-	return 0;
+	return SUCCESS;
 }

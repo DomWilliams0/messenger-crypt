@@ -83,13 +83,13 @@ static enum setting_type to_setting_type(enum json_token_type type)
 	}
 }
 
-static int handler_settings_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
+static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
 		char **key, struct setting_value *value, enum setting_type *setting_type)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
 		return 1;
 
-	int get;
+	BOOL get;
 	if (json_scanf(content->ptr, content->len,"{get: %B}", &get) != 1)
 		return 2;
 
@@ -139,16 +139,16 @@ static int handler_settings_wrapper(struct mc_context *ctx, struct json_token *c
 		response->printer = NULL;
 	}
 
-	return 0;
+	return SUCCESS;
 }
 
-int handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+RESULT handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
 	char *key = NULL;
 	struct setting_value value = {0};
 	enum setting_type setting_type = SETTING_TYPE_LAST;
 
-	int result = handler_settings_wrapper(ctx, content, response, &key, &value, &setting_type);
+	RESULT result = handler_settings_wrapper(ctx, content, response, &key, &value, &setting_type);
 
 	if (key != NULL)
 		free(key);
