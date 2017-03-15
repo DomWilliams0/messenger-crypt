@@ -13,33 +13,15 @@ struct settings_response
 	unsigned int setting_count;
 };
 
-static char get_fmt_char(enum setting_type type)
-{
-	switch(type)
-	{
-		case SETTING_TEXT:
-			return 'Q';
-		case SETTING_BOOL:
-			return 'B';
-		default:
-			return ' '; // invalid
-	}
-}
-
 static int setting_printer(struct json_out *out, va_list *args)
 {
-	char fmt[] = "{key: %Q, title: %Q, description: %Q, type: %Q, value: %X}";
-	const int index = strlen(fmt) - 2;
-
 	struct setting_key_instance *s = va_arg(*args, struct setting_key_instance *);
 	struct setting_value *value = va_arg(*args, struct setting_value *);
 
-	fmt[index] = get_fmt_char(s->type);
-
-	return json_printf(out, fmt,
+	return json_printf(out,
+			"{key: %Q, title: %Q, description: %Q, type: %Q, value: %M}",
 			config_get_key_string(s->key), s->title, s->description,
-			config_get_type_string(value->type), value->value
-			);
+			config_get_type_string(value->type), json_value_printer, value);
 }
 
 static int settings_response_printer(struct json_out *out, va_list *args)
@@ -126,9 +108,7 @@ static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token
 		if (to_setting_type(value_token.type) != s_type)
 			return 6;
 
-		char fmt[] = "%X";
-		fmt[1] = get_fmt_char(s_type);
-		if (json_scanf(value_token.ptr, value_token.len, fmt, &value->value) != 1)
+		if (json_scanf(value_token.ptr, value_token.len, "%M", json_value_scanner, value) != 1)
 			return 7;
 
 		int config_error = config_set_setting(ctx->config, s_key, value);

@@ -4,6 +4,7 @@
 #include <libconfig.h>
 
 #include "config.h"
+#include "frozen/frozen.h"
 
 #define INIT_SETTING(key, title, desc, type, default_val) do { \
 	ctx->settings[key] = (struct setting_key_instance) { \
@@ -339,4 +340,32 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 		return 5;
 
 	return SUCCESS;
+}
+
+int json_value_printer(struct json_out *out, va_list *args)
+{
+	struct setting_value *value = va_arg(*args, struct setting_value *);
+	switch(value->type)
+	{
+		case SETTING_BOOL:
+			return json_printf(out, "%B", value->value.bool);
+		case SETTING_TEXT:
+			return json_printf(out, "%Q", value->value.text);
+		default:
+			return 0;
+	}
+}
+
+void json_value_scanner(const char *str, int len, void *value)
+{
+	struct setting_value *v = ( struct setting_value *)value;
+	switch(v->type)
+	{
+		case SETTING_BOOL:
+			json_scanf(str, len, "%B", &v->value.bool);
+			break;
+		case SETTING_TEXT:
+			json_scanf(str, len, "%Q", &v->value.text);
+			break;
+	}
 }

@@ -1,6 +1,7 @@
 #ifndef MC_CONFIG_H
 #define MC_CONFIG_H
 
+#include <stdarg.h>
 #include "bool.h"
 
 struct config_context;
@@ -8,6 +9,7 @@ struct config_context;
 struct config_context *config_ctx_create();
 void config_ctx_destroy(struct config_context *ctx);
 
+// TODO can this be private?
 enum config_section
 {
 	SECTION_SETTINGS,
@@ -73,5 +75,9 @@ RESULT config_parse_key(const char *s, enum setting_key *key_out);
 void config_get_conversation(struct config_context *ctx, char *id, struct conversation_state *out);
 
 RESULT config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value);
+
+struct json_out;
+int json_value_printer(struct json_out *out, va_list *args);
+void json_value_scanner(const char *str, int len, void *value);
 
 #endif
