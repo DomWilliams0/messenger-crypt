@@ -9,18 +9,11 @@ struct config_context;
 struct config_context *config_ctx_create();
 void config_ctx_destroy(struct config_context *ctx);
 
-// TODO can this be private?
-enum config_section
-{
-	SECTION_SETTINGS,
-	SECTION_CONVERSATION,
-	SECTION_KEYS
-};
-
 enum setting_type
 {
 	SETTING_TEXT = 0,
 	SETTING_BOOL,
+	SETTING_CONTACT,
 	SETTING_TYPE_LAST,
 };
 
@@ -59,6 +52,13 @@ struct conversation_state
 	BOOL signing;
 };
 
+struct contact
+{
+	const char *name;
+	const char *email;
+	const char *key_fpr;
+};
+
 const char *config_get_key_string(enum setting_key key);
 
 const char *config_get_type_string(enum setting_type type);
@@ -75,6 +75,11 @@ RESULT config_parse_key(const char *s, enum setting_key *key_out);
 void config_get_conversation(struct config_context *ctx, char *id, struct conversation_state *out);
 
 RESULT config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value);
+
+// memory management is handled by libconfig
+RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact *out);
+
+RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *value);
 
 struct json_out;
 int json_value_printer(struct json_out *out, va_list *args);

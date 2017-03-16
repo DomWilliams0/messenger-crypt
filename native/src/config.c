@@ -32,6 +32,13 @@ struct config_context
 	struct setting_key_instance settings[SETTING_LAST];
 };
 
+enum config_section
+{
+	SECTION_SETTINGS,
+	SECTION_CONVERSATION,
+	SECTION_CONTACT
+};
+
 static void parse_path(wordexp_t *exp, const char **out)
 {
 	// TODO WARNING: not fully tested, only currently works with a single expansion
@@ -155,8 +162,8 @@ static const char *get_section(enum config_section section)
 			return "settings";
 		case SECTION_CONVERSATION:
 			return "conversation";
-		case SECTION_KEYS:
-			return "keys";
+		case SECTION_CONTACT:
+			return "contacts";
 		default:
 			return "invalid-section-oh-my-god"; // why would this ever happen?
 												// famous last words
@@ -321,20 +328,103 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	}
 
 	enc = config_setting_lookup(s, "encryption");
-	sig = config_setting_lookup(s, "signing");
-	if (enc == NULL || sig == NULL)
-	{
+	if (enc == NULL)
 		enc = config_setting_add(s, "encryption", CONFIG_TYPE_BOOL);
+
+	sig = config_setting_lookup(s, "signing");
+	if (sig == NULL)
 		sig = config_setting_add(s, "signing", CONFIG_TYPE_BOOL);
-		if (enc == NULL || sig == NULL)
-			return 3;
-	}
 
 	int result = config_setting_set_bool(enc, value->encryption) == CONFIG_TRUE &&
 		config_setting_set_bool(sig, value->signing) == CONFIG_TRUE;
 
 	if (result != CONFIG_TRUE)
 		return 4;
+
+	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
+		return 5;
+
+	return SUCCESS;
+}
+
+RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact *out)
+{
+	const char *section_path = get_section(SECTION_CONTACT);
+	config_setting_t *section = config_lookup(&ctx->config, section_path);
+	if (section == NULL)
+		return 1;
+
+	config_setting_t *contact = config_setting_get_member(section, fbid);
+	if (contact == NULL)
+		return 2;
+
+	config_setting_t *name = config_setting_lookup(contact, "name");
+	config_setting_t *email = config_setting_lookup(contact, "email");
+	config_setting_t *fpr = config_setting_lookup(contact, "fpr");
+
+	if (
+			config_setting_lookup_string(name, "name", &out->name) != CONFIG_TRUE ||
+			config_setting_lookup_string(email, "email", &out->email) != CONFIG_TRUE ||
+			config_setting_lookup_string(fpr, "fpr", &out->key_fpr) != CONFIG_TRUE
+	   )
+		return 3;
+
+	return SUCCESS;
+}
+
+// TODO use this in all getters/setters
+static config_setting_t *add_field(config_setting_t *parent, const char *name, int type)
+{
+	config_setting_t *s= config_setting_lookup(parent, name);
+	if (s == NULL)
+		s = config_setting_add(parent,name, type);
+
+	return s;
+}
+
+RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *value)
+{
+	const char *section_path = get_section(SECTION_CONTACT);
+	config_setting_t *section = config_lookup(&ctx->config, section_path);
+	BOOL removing = value->key_fpr == NULL || value->name == NULL || value->email == NULL;
+
+	if (section == NULL)
+	{
+		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
+		if (section == NULL)
+			return 1;
+	}
+
+	config_setting_t *contact = config_setting_get_member(section, id);
+	if (contact == NULL)
+	{
+		// our work is already done
+		if (removing)
+			return SUCCESS;
+
+		contact = config_setting_add(section, id, CONFIG_TYPE_GROUP);
+		if (contact == NULL)
+			return 2;
+	}
+
+	RESULT result;
+	if (removing)
+	{
+		result = config_setting_remove(section, id) == CONFIG_TRUE ? SUCCESS : 3;
+	}
+	else
+	{
+		config_setting_t *name = add_field(contact, "name", CONFIG_TYPE_STRING);
+		config_setting_t *email = add_field(contact, "email", CONFIG_TYPE_STRING);
+		config_setting_t *fpr = add_field(contact, "fpr", CONFIG_TYPE_STRING);
+
+		if (
+				config_setting_set_string(name, value->name) != CONFIG_TRUE ||
+				config_setting_set_string(email, value->email) != CONFIG_TRUE ||
+				config_setting_set_string(fpr, value->key_fpr) != CONFIG_TRUE
+		   )
+			return 4;
+	}
 
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
 		return 5;
