@@ -64,6 +64,10 @@ struct config_context *config_ctx_create()
 		return ctx;
 
 	config_init(&ctx->config);
+	config_set_options(&ctx->config,
+			CONFIG_OPTION_OPEN_BRACE_ON_SEPARATE_LINE |
+			CONFIG_OPTION_COLON_ASSIGNMENT_FOR_GROUPS |
+			CONFIG_OPTION_COLON_ASSIGNMENT_FOR_NON_GROUPS);
 
 	parse_path(&ctx->path_exp, &ctx->path);
 
