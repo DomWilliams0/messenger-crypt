@@ -23,9 +23,6 @@ static int decrypt_response_printer(struct json_out *out, va_list *args)
 static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
 		struct decrypt_response *resp, char **msg)
 {
-	if (content->type != JSON_TYPE_OBJECT_END)
-		return ERROR_BAD_CONTENT;
-
 	uint32_t msg_id;
 	if (json_scanf(content->ptr, content->len,
 				"{id: %d, message: %Q}", &msg_id, msg) != 2)

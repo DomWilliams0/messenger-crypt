@@ -24,9 +24,6 @@ static int conversation_printer(struct json_out *out, va_list *args)
 static RESULT handler_conversation_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
 		char **id)
 {
-	if (content->type != JSON_TYPE_OBJECT_END)
-		return ERROR_BAD_CONTENT;
-
 	int get;
 	if (json_scanf(content->ptr, content->len,"{get: %B, id: %Q}", &get, id) != 2)
 		return ERROR_BAD_CONTENT;

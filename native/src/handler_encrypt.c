@@ -23,9 +23,6 @@ static int encrypt_response_printer(struct json_out *out, va_list *args)
 
 RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
-	if (content->type != JSON_TYPE_OBJECT_END)
-		return ERROR_BAD_CONTENT;
-
 	uint32_t conversation_id, recipient_count, paused_request_id;
 	char *plaintext;
 	if (json_scanf(content->ptr, content->len,

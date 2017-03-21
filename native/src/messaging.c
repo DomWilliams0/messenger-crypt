@@ -36,6 +36,9 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 	if (parse_result != 2)
 		return ERROR_BAD_CONTENT;
 
+	if (content.type != JSON_TYPE_OBJECT_END)
+		return ERROR_BAD_CONTENT;
+
 	// find handler
 	handler_func handler = get_handler(*what);
 	if (handler == NULL)
