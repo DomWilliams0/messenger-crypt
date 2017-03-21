@@ -1,7 +1,7 @@
 #ifndef MC_NATIVE_H
 #define MC_NATIVE_H
 
-#include "bool.h"
+#include "error.h"
 
 struct mc_context
 {

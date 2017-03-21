@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "error.h"
 #include "frozen/frozen.h"
 #include "messaging.h"
 #include "handler.h"
@@ -16,16 +17,16 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 	// read length
 	uint32_t length;
 	if (fread(&length, sizeof(length), 1, stdin) != 1)
-		return 1;
+		return ERROR_IO;
 
 	// allocate buffer
 	*buffer = calloc(length + 1, sizeof(char));
 	if (*buffer == NULL)
-		return 2;
+		return ERROR_IO;
 
 	// read rest of message
 	if (fread(*buffer, length, 1, stdin) != 1)
-		return 3;
+		return ERROR_IO;
 
 	// parse json
 	struct json_token content;
@@ -33,12 +34,12 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 			"{what: %Q, content: %T}", what, &content);
 
 	if (parse_result != 2)
-		return 4;
+		return ERROR_BAD_CONTENT;
 
 	// find handler
 	handler_func handler = get_handler(*what);
 	if (handler == NULL)
-		return 5;
+		return ERROR_NOT_IMPLEMENTED;
 
 	RESULT result = handler(ctx, &content, response);
 
@@ -52,10 +53,10 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 
 		// send size before payload
 		if (fwrite(&real_size, sizeof(real_size), 1, stdout) != 1)
-			return 6;
+			return ERROR_IO;
 
 		if (fwrite(outgoing_buffer, real_size, 1, stdout) != 1)
-			return 7;
+			return ERROR_IO;
 
 		fflush(stdout);
 	}

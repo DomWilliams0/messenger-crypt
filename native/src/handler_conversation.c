@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "frozen/frozen.h"
+#include "error.h"
 #include "native.h"
 #include "handler.h"
 #include "config.h"
@@ -24,17 +25,17 @@ static RESULT handler_conversation_wrapper(struct mc_context *ctx, struct json_t
 		char **id)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
-		return 1;
+		return ERROR_BAD_CONTENT;
 
 	int get;
 	if (json_scanf(content->ptr, content->len,"{get: %B, id: %Q}", &get, id) != 2)
-		return 2;
+		return ERROR_BAD_CONTENT;
 
 	if (get)
 	{
 		struct conversation_response *resp = calloc(1, sizeof(struct conversation_response));
 		if (resp == NULL)
-			return 3;
+			return ERROR_MEMORY;
 
 		config_get_conversation(ctx->config, *id, &resp->state);
 
@@ -47,7 +48,7 @@ static RESULT handler_conversation_wrapper(struct mc_context *ctx, struct json_t
 		if (json_scanf(content->ptr, content->len,
 					"{state: {encryption: %B, signing: %B}}",
 					&new_state.encryption, &new_state.signing) != 2)
-			return 4;
+			return ERROR_BAD_CONTENT;
 
 		config_set_conversation(ctx->config, *id, &new_state);
 	}

@@ -2,10 +2,11 @@
 #define MC_ENCRYPTION_H
 
 #include "bool.h"
+#include "error.h"
 
 struct crypto_context;
 
-struct crypto_context *crypto_ctx_create();
+RESULT crypto_ctx_create(struct crypto_context **out);
 void crypto_ctx_destroy(struct crypto_context *ctx);
 
 struct decrypt_result

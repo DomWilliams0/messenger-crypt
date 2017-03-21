@@ -6,13 +6,15 @@
 
 RESULT context_init(struct mc_context *ctx)
 {
-	ctx->config = config_ctx_create();
-	if (ctx->config == NULL)
-		return 1;
+	int err;
+	if ((err = config_ctx_create(&ctx->config)) != SUCCESS)
+		return err;
 
-	ctx->crypto = crypto_ctx_create();
-	if (ctx->crypto == NULL)
-		return 2;
+	if ((err = crypto_ctx_create(&ctx->crypto)) != SUCCESS)
+	{
+		config_ctx_destroy(ctx->config);
+		return err;
+	}
 
 	return SUCCESS;
 }
@@ -27,7 +29,7 @@ int main(void)
 {
 	struct mc_context ctx;
 	RESULT init_result = context_init(&ctx);
-	if (init_result != 0)
+	if (init_result != SUCCESS)
 		return init_result;
 
 
@@ -36,7 +38,7 @@ int main(void)
 	{
 		result = handle_single_message(&ctx);
 
-		if (result != 0)
+		if (result != SUCCESS)
 		{
 #ifdef DEBUG
 			fprintf(stderr, "Bad message handling: %d\n", result);

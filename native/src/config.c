@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <libconfig.h>
 
+#include "error.h"
 #include "config.h"
 #include "frozen/frozen.h"
 
@@ -57,11 +58,11 @@ static void parse_path(wordexp_t *exp, const char **out)
 	*exp = wexp;
 }
 
-struct config_context *config_ctx_create()
+RESULT config_ctx_create(struct config_context **out)
 {
 	struct config_context *ctx = calloc(1, sizeof(struct config_context));
 	if (ctx == NULL)
-		return ctx;
+		return ERROR_MEMORY;
 
 	config_init(&ctx->config);
 	config_set_options(&ctx->config,
@@ -103,7 +104,8 @@ struct config_context *config_ctx_create()
 			VALUE_BOOL(TRUE)
 			);
 
-	return ctx;
+	*out = ctx;
+	return SUCCESS;
 }
 
 void config_ctx_destroy(struct config_context *ctx)
@@ -231,7 +233,7 @@ RESULT config_set_setting(struct config_context *ctx, enum setting_key key, stru
 	{
 		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
 		if (section == NULL)
-			return 1;
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
 	const char *key_string = config_get_key_string(instance->key);
@@ -242,7 +244,7 @@ RESULT config_set_setting(struct config_context *ctx, enum setting_key key, stru
 	{
 		s = config_setting_add(section, key_string, key_type);
 		if (s == NULL)
-			return 2;
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
 	int result;
@@ -255,14 +257,14 @@ RESULT config_set_setting(struct config_context *ctx, enum setting_key key, stru
 			result = config_setting_set_string(s, value->value.text);
 			break;
 		default:
-			return 3;
+			return ERROR_NOT_IMPLEMENTED;
 	}
 
 	if (result != CONFIG_TRUE)
-		return 4;
+		return ERROR_CONFIG_KEY_CREATION;
 
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
-		return 5;
+		return ERROR_CONFIG_WRITE;
 
 	return SUCCESS;
 }
@@ -318,7 +320,7 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	{
 		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
 		if (section == NULL)
-			return 1;
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
 	config_setting_t *s = config_setting_get_member(section, id);
@@ -327,8 +329,7 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	{
 		s = config_setting_add(section, id, CONFIG_TYPE_GROUP);
 		if (s == NULL)
-			return 2;
-
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
 	enc = config_setting_lookup(s, "encryption");
@@ -343,10 +344,10 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 		config_setting_set_bool(sig, value->signing) == CONFIG_TRUE;
 
 	if (result != CONFIG_TRUE)
-		return 4;
+		return ERROR_CONFIG_KEY_CREATION;
 
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
-		return 5;
+		return ERROR_CONFIG_WRITE;
 
 	return SUCCESS;
 }
@@ -356,11 +357,11 @@ RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact
 	const char *section_path = get_section(SECTION_CONTACT);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section == NULL)
-		return 1;
+		return ERROR_CONFIG_KEY_MISSING;
 
 	config_setting_t *contact = config_setting_get_member(section, fbid);
 	if (contact == NULL)
-		return 2;
+		return ERROR_CONFIG_KEY_MISSING;
 
 	config_setting_t *name = config_setting_lookup(contact, "name");
 	config_setting_t *email = config_setting_lookup(contact, "email");
@@ -371,7 +372,7 @@ RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact
 			config_setting_lookup_string(email, "email", &out->email) != CONFIG_TRUE ||
 			config_setting_lookup_string(fpr, "fpr", &out->key_fpr) != CONFIG_TRUE
 	   )
-		return 3;
+		return ERROR_CONFIG_KEY_MISSING;
 
 	return SUCCESS;
 }
@@ -396,7 +397,7 @@ RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *
 	{
 		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
 		if (section == NULL)
-			return 1;
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
 	config_setting_t *contact = config_setting_get_member(section, id);
@@ -408,13 +409,13 @@ RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *
 
 		contact = config_setting_add(section, id, CONFIG_TYPE_GROUP);
 		if (contact == NULL)
-			return 2;
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
-	RESULT result;
 	if (removing)
 	{
-		result = config_setting_remove(section, id) == CONFIG_TRUE ? SUCCESS : 3;
+		if (config_setting_remove(section, id) != CONFIG_TRUE)
+			return ERROR_CONFIG_KEY_MISSING;
 	}
 	else
 	{
@@ -427,11 +428,11 @@ RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *
 				config_setting_set_string(email, value->email) != CONFIG_TRUE ||
 				config_setting_set_string(fpr, value->key_fpr) != CONFIG_TRUE
 		   )
-			return 4;
+			return ERROR_CONFIG_KEY_CREATION;
 	}
 
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
-		return 5;
+		return ERROR_CONFIG_WRITE;
 
 	return SUCCESS;
 }

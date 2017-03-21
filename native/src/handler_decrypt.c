@@ -24,16 +24,16 @@ static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token 
 		struct decrypt_response *resp, char **msg)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
-		return 1;
+		return ERROR_BAD_CONTENT;
 
 	uint32_t msg_id;
 	if (json_scanf(content->ptr, content->len,
 				"{id: %d, message: %Q}", &msg_id, msg) != 2)
-		return 2;
+		return ERROR_BAD_CONTENT;
 
 	struct decrypt_extra_allocation *alloc = calloc(1, sizeof(struct decrypt_extra_allocation));
 	if (alloc == NULL)
-		return 3;
+		return ERROR_MEMORY;
 
 	decrypt(ctx->crypto, *msg, &resp->result, alloc);
 
@@ -52,7 +52,7 @@ RESULT handler_decrypt(struct mc_context *ctx, struct json_token *content, struc
 	char *msg;
 	struct decrypt_response *resp = calloc(1, sizeof(struct decrypt_response));
 	if (resp == NULL)
-		return 10;
+		return ERROR_MEMORY;
 
 	RESULT ret = handler_decrypt_wrapper(ctx, content, response, resp, &msg);
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <gpgme.h>
 
+#include "error.h"
 #include "encryption.h"
 
 #define FINGERPRINT_LEN (8)
@@ -22,21 +23,21 @@ struct crypto_context
 	gpgme_ctx_t gpg;
 };
 
-struct crypto_context *crypto_ctx_create()
+RESULT crypto_ctx_create(struct crypto_context **out)
 {
 	struct crypto_context *ctx = calloc(1, sizeof(struct crypto_context));
 	if (ctx == NULL)
-		return ctx;
+		return ERROR_MEMORY;
 
 	gpgme_check_version(NULL);
 
 	if (gpgme_new(&ctx->gpg) != GPG_ERR_NO_ERROR)
 	{
 		free(ctx);
-		return NULL;
+		return ERROR_MEMORY;
 	}
 
-	return ctx;
+	*out = ctx;
 }
 
 void crypto_ctx_destroy(struct crypto_context *ctx)

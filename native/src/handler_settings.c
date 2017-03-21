@@ -4,6 +4,7 @@
 #include "native.h"
 #include "handler.h"
 #include "config.h"
+#include "error.h"
 
 struct settings_response
 {
@@ -69,17 +70,17 @@ static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token
 		char **key, struct setting_value *value)
 {
 	if (content->type != JSON_TYPE_OBJECT_END)
-		return 1;
+		return ERROR_BAD_CONTENT;
 
 	BOOL get;
 	if (json_scanf(content->ptr, content->len,"{get: %B}", &get) != 1)
-		return 2;
+		return ERROR_BAD_CONTENT;
 
 	if (get)
 	{
 		struct settings_response *resp = calloc(1, sizeof(struct settings_response));
 		if (resp == NULL)
-			return 3;
+			return ERROR_MEMORY;
 
 		resp->settings = config_get_all(ctx->config);
 		resp->setting_count = SETTING_LAST;
@@ -96,24 +97,25 @@ static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token
 		struct json_token value_token;
 		if (json_scanf(content->ptr, content->len,
 					"{key: %Q, value: %T}", key, &value_token) != 2)
-			return 4;
+			return ERROR_BAD_CONTENT;
 
 		enum setting_key s_key;
+		int err;
 		enum setting_type s_type = SETTING_TYPE_LAST;
-		if (config_parse_key(*key, &s_key) != 0)
-			return 5;
+		if ((err = config_parse_key(*key, &s_key)) != SUCCESS)
+			return err;
 
 		s_type = (config_get_all(ctx->config) + s_key)->type;
 		value->type = s_type;
 		if (to_setting_type(value_token.type) != s_type)
-			return 6;
+			return ERROR_BAD_CONTENT;
 
 		if (json_scanf(value_token.ptr, value_token.len, "%M", json_value_scanner, value) != 1)
-			return 7;
+			return ERROR_BAD_CONTENT;
 
 		int config_error = config_set_setting(ctx->config, s_key, value);
-		if (config_error != 0)
-			return 7 + config_error;
+		if (config_error != SUCCESS)
+			return config_error;
 
 		response->data = NULL;
 		response->printer = NULL;

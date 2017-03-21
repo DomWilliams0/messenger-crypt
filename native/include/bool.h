@@ -3,7 +3,4 @@
 
 typedef enum { FALSE = 0, TRUE } BOOL;
 
-typedef int RESULT;
-#define SUCCESS (0)
-
 #endif

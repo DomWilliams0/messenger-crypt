@@ -3,10 +3,11 @@
 
 #include <stdarg.h>
 #include "bool.h"
+#include "error.h"
 
 struct config_context;
 
-struct config_context *config_ctx_create();
+RESULT config_ctx_create(struct config_context **out);
 void config_ctx_destroy(struct config_context *ctx);
 
 enum setting_type
