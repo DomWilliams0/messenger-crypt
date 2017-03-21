@@ -21,13 +21,13 @@ static int encrypt_response_printer(struct json_out *out, va_list *args)
 			response->paused_request_id, result->error, result->ciphertext);
 }
 
-RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+static RESULT handler_encrypt_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
+		char **plaintext, struct encrypt_response *resp)
 {
 	uint32_t conversation_id, recipient_count, paused_request_id;
-	char *plaintext;
 	if (json_scanf(content->ptr, content->len,
 				"{id: %d, message: %Q, recipient_count: %d, paused_request_id: %d}",
-				&conversation_id, &plaintext, &recipient_count, &paused_request_id) != 4)
+				&conversation_id, plaintext, &recipient_count, &paused_request_id) != 4)
 		return ERROR_BAD_CONTENT;
 
 	struct recipient *recipients = calloc(recipient_count, sizeof(struct recipient));
@@ -43,22 +43,33 @@ RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struc
 			continue;
 	}
 
-	struct encrypt_response *resp = calloc(1, sizeof(struct encrypt_response));
-	if (resp == NULL)
-		return ERROR_MEMORY;
-
-	encrypt(ctx->crypto, plaintext, recipients, recipient_count, &resp->result);
+	encrypt(ctx->crypto, *plaintext, recipients, recipient_count, &resp->result);
 	for (unsigned int i = 0; i < recipient_count; ++i)
 	{
 		free(recipients[i].fbid);
 		free(recipients[i].name);
 	}
 	free(recipients);
-	free(plaintext);
 
 	resp->paused_request_id = paused_request_id;
 	response->data = resp;
 	response->printer = encrypt_response_printer;
 
 	return SUCCESS;
+
+}
+
+RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
+{
+	struct encrypt_response *resp = calloc(1, sizeof(struct encrypt_response));
+	if (resp == NULL)
+		return ERROR_MEMORY;
+
+	char *plaintext = NULL;;
+	RESULT ret = handler_encrypt_wrapper(ctx, content, response, &plaintext, resp);
+
+	if (plaintext != NULL)
+		free(plaintext);
+
+	return ret;
 }

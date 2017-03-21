@@ -21,16 +21,12 @@ static int decrypt_response_printer(struct json_out *out, va_list *args)
 }
 
 static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
-		struct decrypt_response *resp, char **msg)
+		struct decrypt_response *resp, struct decrypt_extra_allocation *alloc, char **msg)
 {
 	uint32_t msg_id;
 	if (json_scanf(content->ptr, content->len,
 				"{id: %d, message: %Q}", &msg_id, msg) != 2)
 		return ERROR_BAD_CONTENT;
-
-	struct decrypt_extra_allocation *alloc = calloc(1, sizeof(struct decrypt_extra_allocation));
-	if (alloc == NULL)
-		return ERROR_MEMORY;
 
 	decrypt(ctx->crypto, *msg, &resp->result, alloc);
 
@@ -46,12 +42,19 @@ static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token 
 
 RESULT handler_decrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
-	char *msg;
 	struct decrypt_response *resp = calloc(1, sizeof(struct decrypt_response));
 	if (resp == NULL)
 		return ERROR_MEMORY;
 
-	RESULT ret = handler_decrypt_wrapper(ctx, content, response, resp, &msg);
+	struct decrypt_extra_allocation *alloc = calloc(1, sizeof(struct decrypt_extra_allocation));
+	if (alloc == NULL)
+	{
+		free(resp);
+		return ERROR_MEMORY;
+	}
+
+	char *msg;
+	RESULT ret = handler_decrypt_wrapper(ctx, content, response, resp, alloc, &msg);
 
 	if (msg != NULL)
 		free(msg);
