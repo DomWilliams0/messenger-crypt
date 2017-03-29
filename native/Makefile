@@ -37,6 +37,9 @@ $(JSON_LIB):
 	$(CC) $(CFLAGS) $(LIB)/frozen/frozen.c -c -o $(OBJ)/frozen.o
 	ar rcs $@ $(OBJ)/frozen.o
 
+.PHONY: tests
+tests:
+	@python2 tests/tests.py
 
 .PHONY: clean
 clean:
