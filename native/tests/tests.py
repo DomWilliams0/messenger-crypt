@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+import errno
 import sys
 import subprocess
 import io
@@ -9,15 +10,10 @@ import json
 # declare all test modules here
 import tests_protocol
 
+failed_suite = False
+
 class ProcessInstance(object):
     EXE_PATH = "../bin/messenger_crypt_native" # TODO ooer
-
-    def __init__(self):
-        try:
-            self.p = subprocess.Popen(self.EXE_PATH, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-        except OSError as e:
-            sys.stderr.write("Failed to start process: %s\n" % e)
-            sys.exit(1)
 
     # req is json
     def send_request(self, req):
@@ -35,10 +31,34 @@ class ProcessInstance(object):
 
     # req is a filelike object
     def _send(self, req):
-        req.seek(0)
-        resp = self.p.communicate(req.read())
-        return resp[0]
+        try:
+            req.seek(0)
+            proc = subprocess.Popen(self.EXE_PATH, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            resp = proc.communicate(req.read())
 
+            # bad exit code
+            if proc.poll() != 0:
+                return None
+
+            return resp[0]
+        except OSError as e:
+            sys.stderr.write("Failed to start process: %s\n" % e)
+            sys.exit(1)
+
+
+    def do_assert(self, what, input, expected_out, send_raw=False):
+        send_func = self.send_raw_request if send_raw else self.send_request
+        sys.stdout.write("%s ... " % what)
+        resp = send_func(input)
+        if resp != expected_out:
+            sys.stdout.write("FAIL\n")
+            sys.stdout.flush()
+            global failed_suite
+            failed_suite = True
+            return
+
+        sys.stdout.write("PASS\n")
+        sys.stdout.flush()
 
 def _get_tests(what):
     import types
@@ -71,12 +91,16 @@ def run_tests(what):
             continue
 
         sys.stdout.write("----- BEGIN TEST SUITE '%s'\n" % name)
-        success = entry(instance)
 
-        if success is True:
+        global failed_suite
+        failed_suite = False
+
+        entry(instance)
+
+        if failed_suite is False:
             pass_count += 1
 
-        sys.stdout.write("===== %s TEST SUITE '%s'\n\n" % ("PASS" if success else "FAIL", name))
+        sys.stdout.write("===== %s TEST SUITE '%s'\n\n" % ("FAIL" if failed_suite else "PASS", name))
 
     sys.stdout.write("Passed %d/%d tests\n" % (pass_count, len(tests)))
     sys.exit(0 if pass_count == len(tests) else 3)
