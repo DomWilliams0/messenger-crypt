@@ -25,9 +25,11 @@ class ProcessInstance(object):
 
         return self._send(out)
 
-    # req is a string
+    # req is a string or filelike object
     def send_raw_request(self, req):
-        return self._send(io.BytesIO(req))
+        if isinstance(req, str):
+            req = io.BytesIO(req)
+        return self._send(req)
 
     # req is a filelike object
     def _send(self, req):
@@ -49,6 +51,7 @@ class ProcessInstance(object):
     def do_assert(self, what, input, expected_out, send_raw=False):
         send_func = self.send_raw_request if send_raw else self.send_request
         sys.stdout.write("%s ... " % what)
+        sys.stdout.flush()
         resp = send_func(input)
         if resp != expected_out:
             sys.stdout.write("FAIL\n")
