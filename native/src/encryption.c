@@ -38,6 +38,7 @@ RESULT crypto_ctx_create(struct crypto_context **out)
 	}
 
 	*out = ctx;
+	return SUCCESS;
 }
 
 void crypto_ctx_destroy(struct crypto_context *ctx)
