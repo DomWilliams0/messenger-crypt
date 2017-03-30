@@ -105,7 +105,7 @@ def run_tests(what):
 
         sys.stdout.write("===== %s TEST SUITE '%s'\n\n" % ("FAIL" if failed_suite else "PASS", name))
 
-    sys.stdout.write("Passed %d/%d tests\n" % (pass_count, len(tests)))
+    sys.stdout.write("Passed %d/%d test suites\n" % (pass_count, len(tests)))
     sys.exit(0 if pass_count == len(tests) else 3)
 
 
