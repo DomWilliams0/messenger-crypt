@@ -39,7 +39,7 @@ $(JSON_LIB):
 
 .PHONY: tests
 tests:
-	@python2 tests/tests.py
+	@cd tests; python2 tests.py
 
 .PHONY: clean
 clean:
