@@ -9,6 +9,7 @@ import json
 
 # declare all test modules here
 import tests_protocol
+import tests_settings
 
 failed_suite = False
 
@@ -48,12 +49,15 @@ class ProcessInstance(object):
             sys.exit(1)
 
 
-    def do_assert(self, what, input, expected_out, send_raw=False):
+    def do_assert(self, what, input, predicate, send_raw=False):
         send_func = self.send_raw_request if send_raw else self.send_request
         sys.stdout.write("%s ... " % what)
         sys.stdout.flush()
         resp = send_func(input)
-        if resp != expected_out:
+        if not send_raw and len(resp) > 0:
+            resp = json.loads(resp[4:])
+
+        if not predicate(input, resp):
             sys.stdout.write("FAIL\n")
             sys.stdout.flush()
             global failed_suite
