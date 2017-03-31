@@ -10,6 +10,7 @@ import json
 # declare all test modules here
 import tests_protocol
 import tests_settings
+import tests_contacts
 
 failed_suite = False
 
