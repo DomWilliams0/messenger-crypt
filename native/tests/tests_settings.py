@@ -1,10 +1,3 @@
-import struct
-import io
-import json
-
-def test_invalid(process):
-    pass
-
 def settings_checker(input, resp):
     try:
         content = resp["content"]
