@@ -11,6 +11,7 @@ enum handler_type
 	ENCRYPT,
 	SETTINGS,
 	CONVERSATION,
+	CONTACTS,
 
 	HANDLER_LAST
 };
@@ -38,6 +39,7 @@ RESULT handler_decrypt(struct mc_context *ctx, struct json_token *content, struc
 RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 RESULT handler_settings(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 RESULT handler_conversation(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
+RESULT handler_contacts(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 
 
 #endif

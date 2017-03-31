@@ -8,7 +8,13 @@ var hotkeyAcc = [];
 
 // callback({{fbid0: key, ...}})
 function fetchKeys(fbids, callback) {
-
+	chrome.runtime.sendMessage({
+		what: "contacts",
+		content: {
+			get: true,
+			fbids: fbids
+		}
+	}, callback);
 }
 
 // callback({error, key, user, user_id})

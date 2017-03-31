@@ -19,13 +19,13 @@ def test_set_n_get(process):
     process.do_assert("Missing contact", get_msg, fail_check)
 
     set_msg = dict(get_msg)
-    set_msg["content"] = { "get": False, "fbid": TEST_FBID, "contact": TEST_KEY, secret: False }
-    process.send_request(msg)
+    set_msg["content"] = { "get": False, "fbid": TEST_FBID, "contact": TEST_KEY, "secret": False }
+    process.send_request(set_msg)
 
     process.do_assert("Set valid contact", get_msg, success_check)
 
-    set_msg["content"] = { "get": False, "fbid": TEST_FBID, "contact": None, secret: False }
-    process.send_request(msg)
+    set_msg["content"] = { "get": False, "fbid": TEST_FBID, "contact": None, "secret": False }
+    process.send_request(set_msg)
 
     process.do_assert("Remove contact", get_msg, fail_check)
 

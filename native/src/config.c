@@ -37,7 +37,7 @@ enum config_section
 {
 	SECTION_SETTINGS,
 	SECTION_CONVERSATION,
-	SECTION_CONTACT
+	SECTION_CONTACTS
 };
 
 static void parse_path(wordexp_t *exp, const char **out)
@@ -168,7 +168,7 @@ static const char *get_section(enum config_section section)
 			return "settings";
 		case SECTION_CONVERSATION:
 			return "conversation";
-		case SECTION_CONTACT:
+		case SECTION_CONTACTS:
 			return "contacts";
 		default:
 			return "invalid-section-oh-my-god"; // why would this ever happen?
@@ -354,7 +354,7 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 
 RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact *out)
 {
-	const char *section_path = get_section(SECTION_CONTACT);
+	const char *section_path = get_section(SECTION_CONTACTS);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section == NULL)
 		return ERROR_CONFIG_KEY_MISSING;
@@ -368,9 +368,9 @@ RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact
 	config_setting_t *fpr = config_setting_lookup(contact, "fpr");
 
 	if (
-			config_setting_lookup_string(name, "name", &out->name) != CONFIG_TRUE ||
-			config_setting_lookup_string(email, "email", &out->email) != CONFIG_TRUE ||
-			config_setting_lookup_string(fpr, "fpr", &out->key_fpr) != CONFIG_TRUE
+			(out->name = config_setting_get_string(name)) == NULL ||
+			(out->email = config_setting_get_string(email)) == NULL ||
+			(out->key_fpr = config_setting_get_string(fpr)) == NULL
 	   )
 		return ERROR_CONFIG_KEY_MISSING;
 
@@ -389,7 +389,7 @@ static config_setting_t *add_field(config_setting_t *parent, const char *name, i
 
 RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *value)
 {
-	const char *section_path = get_section(SECTION_CONTACT);
+	const char *section_path = get_section(SECTION_CONTACTS);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	BOOL removing = value->key_fpr == NULL || value->name == NULL || value->email == NULL;
 
@@ -461,6 +461,8 @@ void json_value_scanner(const char *str, int len, void *value)
 			break;
 		case SETTING_TEXT:
 			json_scanf(str, len, "%Q", &v->value.text);
+			break;
+		default:
 			break;
 	}
 }
