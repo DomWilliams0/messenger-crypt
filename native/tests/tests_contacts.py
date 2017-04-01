@@ -8,7 +8,7 @@ def fail_check(input, resp):
 
 def success_check(input, resp):
     content = resp["content"]
-    fbid = content.get(TEST_KEY, None)
+    fbid = content.get(TEST_FBID, None)
     return fbid and fbid["name"] == TEST_NAME
 
 
@@ -19,7 +19,7 @@ def test_set_n_get(process):
     process.do_assert("Missing contact", get_msg, fail_check)
 
     set_msg = dict(get_msg)
-    set_msg["content"] = { "get": False, "fbid": TEST_FBID, "contact": TEST_KEY, "secret": False }
+    set_msg["content"] = { "get": False, "fbid": TEST_FBID, "key": TEST_KEY, "secret": False }
     process.send_request(set_msg)
 
     process.do_assert("Set valid contact", get_msg, success_check)

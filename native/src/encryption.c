@@ -207,3 +207,46 @@ void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *reci
 	result->ciphertext = "No encrypted message here";
 	result->error = NULL;
 }
+
+void get_encryption_key_free(struct get_key_result *result)
+{
+	gpgme_key_t key = (gpgme_key_t)result->extra_allocs;
+	if (key != NULL)
+	{
+		gpgme_key_unref(key);
+		result->extra_allocs = NULL;
+	}
+}
+
+void get_encryption_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result)
+{
+	gpgme_key_t out_key;
+	gpgme_error_t err_value = gpgme_get_key(ctx->gpg, key, &out_key, secret); // TODO this isn't very fuzzy
+	gpgme_err_code_t err = gpgme_err_code(err_value);
+	if (err == GPG_ERR_NO_ERROR)
+	{
+		result->error = NULL;
+		result->full_fpr = out_key->fpr;
+
+		gpgme_user_id_t uid = out_key->uids;
+		result->name = uid->name;
+		result->email = uid->email;
+
+		result->extra_allocs = (void*)out_key;
+	}
+	else if (err == GPG_ERR_INV_VALUE)
+	{
+		result->error = "Key not found";
+		result->serious_error = FALSE;
+	}
+	else if (err == GPG_ERR_AMBIGUOUS_NAME)
+	{
+		result->error = "Multiple keys found, be more specific";
+		result->serious_error = FALSE;
+	}
+	else
+	{
+		result->error = gpgme_strerror(err);
+		result->serious_error = TRUE;
+	}
+}

@@ -18,6 +18,8 @@ const char *error_get_message(int err)
 			return "Unexpected message content";
 		case ERROR_IO:
 			return "Browser IO";
+		case ERROR_GPG:
+			return "GPGme";
 		default:
 			return "Unknown error code";
 	}

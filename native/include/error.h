@@ -11,6 +11,7 @@ typedef int RESULT;
 #define ERROR_NOT_IMPLEMENTED     (0x1004)
 #define ERROR_BAD_CONTENT         (0x1005)
 #define ERROR_IO                  (0x1006)
+#define ERROR_GPG                 (0x1007)
 
 const char *error_get_message(int err);
 

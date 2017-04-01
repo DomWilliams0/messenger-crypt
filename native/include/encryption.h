@@ -40,10 +40,26 @@ struct recipient
 	char *name;
 };
 
+// do not manually free any of these
+struct get_key_result
+{
+	const char *error;
+	BOOL serious_error; // not ambigious/invalid key error
+
+	char *full_fpr;
+	char *name;
+	char *email;
+
+	void *extra_allocs;
+};
+
 void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc);
 
 void decrypt_free_extra_allocations(void *);
 
 void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result);
+
+void get_encryption_key_free(struct get_key_result *result);
+void get_encryption_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result);
 
 #endif

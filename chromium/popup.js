@@ -17,9 +17,17 @@ function fetchKeys(fbids, callback) {
 	}, callback);
 }
 
-// callback({error, key, user, user_id})
-function updateKey(fbid, newValue, isSecret, callback) {
-
+// callback({error, key, name, email})
+function updateKey(fbid, newKey, isSecret, callback) {
+	chrome.runtime.sendMessage({
+		what: "contacts",
+		content: {
+			get: false,
+			fbid: fbid,
+			key: newKey,
+			secret: isSecret
+		}
+	}, callback);
 }
 
 // callback([{type, value, data, description} ...])
