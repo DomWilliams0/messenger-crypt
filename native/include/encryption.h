@@ -60,6 +60,6 @@ void decrypt_free_extra_allocations(void *);
 void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result);
 
 void get_key_free(struct get_key_result *result);
-void get_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result);
+void get_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result, BOOL ignore_revoked);
 
 #endif

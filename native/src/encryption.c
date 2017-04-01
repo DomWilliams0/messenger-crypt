@@ -3,6 +3,7 @@
 #include <gpgme.h>
 
 #include "error.h"
+#include "config.h"
 #include "encryption.h"
 
 #define FINGERPRINT_LEN (8)
@@ -218,7 +219,31 @@ void get_key_free(struct get_key_result *result)
 	}
 }
 
-static RESULT get_key_fuzzy(gpgme_ctx_t ctx, char *key, gpgme_key_t *out, BOOL secret)
+static gpgme_error_t get_next_key(gpgme_ctx_t ctx, gpgme_key_t *out, BOOL ignore_revoked)
+{
+	gpgme_error_t err;
+	gpgme_key_t tmp_key;
+	while (TRUE)
+	{
+		// success
+		if ((err = gpgme_op_keylist_next(ctx, &tmp_key)) == GPG_ERR_NO_ERROR)
+		{
+			// check revoked status
+			if (ignore_revoked && tmp_key->revoked)
+			{
+				// next!
+				gpgme_key_unref(tmp_key);
+				continue;
+			}
+
+			*out = tmp_key;
+		}
+
+		return err;
+	}
+}
+
+static RESULT get_key_fuzzy(gpgme_ctx_t ctx, char *key, gpgme_key_t *out, BOOL secret, BOOL ignore_revoked)
 {
 	gpgme_error_t err;
 
@@ -227,7 +252,7 @@ static RESULT get_key_fuzzy(gpgme_ctx_t ctx, char *key, gpgme_key_t *out, BOOL s
 		return ERROR_GPG; // could not start searching
 
 	// get first
-	if ((err = gpgme_op_keylist_next(ctx, out)) != GPG_ERR_NO_ERROR)
+	if ((err = get_next_key(ctx, out, ignore_revoked)) != GPG_ERR_NO_ERROR)
 	{
 		gpgme_op_keylist_end(ctx);
 		return ERROR_GPG_INVALID_KEY; // could not find any matching keys
@@ -235,7 +260,7 @@ static RESULT get_key_fuzzy(gpgme_ctx_t ctx, char *key, gpgme_key_t *out, BOOL s
 
 	// get second
 	gpgme_key_t dummy;
-	if ((err = gpgme_op_keylist_next(ctx, &dummy)) == GPG_ERR_NO_ERROR)
+	if ((err = get_next_key(ctx, &dummy, ignore_revoked)) == GPG_ERR_NO_ERROR)
 	{
 		gpgme_key_unref(dummy);
 		gpgme_op_keylist_end(ctx);
@@ -247,10 +272,10 @@ static RESULT get_key_fuzzy(gpgme_ctx_t ctx, char *key, gpgme_key_t *out, BOOL s
 	return SUCCESS;
 }
 
-void get_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result)
+void get_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result, BOOL ignore_revoked)
 {
-	gpgme_key_t out_key;
-	RESULT err = get_key_fuzzy(ctx->gpg, key, &out_key, secret);
+	gpgme_key_t out_key = NULL;
+	RESULT err = get_key_fuzzy(ctx->gpg, key, &out_key, secret, ignore_revoked);
 	result->extra_allocs = out_key;
 	if (err == SUCCESS)
 	{
