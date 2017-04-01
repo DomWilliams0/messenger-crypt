@@ -12,6 +12,47 @@
 
 static char outgoing_buffer[MAX_OUTGOING_SIZE];
 
+static int error_printer(struct json_out *out, va_list *args)
+{
+	RESULT *r = va_arg(*args, RESULT *);
+	return json_printf(out, "{error: %Q}", error_get_message(*r));
+}
+
+static RESULT send_response(RESULT result, char *what, struct handler_response *response)
+{
+	BOOL is_success = result == SUCCESS;
+
+	// no response to send
+	if (is_success && (response->data == NULL || response->printer == NULL))
+		return SUCCESS;
+
+	response_printer printer = response->printer;
+	void *data = response->data;
+
+	// new error response
+	if (!is_success)
+	{
+		printer = error_printer;
+		data = &result;
+	}
+
+	struct json_out out_to_buffer = JSON_OUT_BUF(outgoing_buffer, MAX_OUTGOING_SIZE);
+
+	// proxy response through buffer to get length first
+	unsigned int real_size = json_printf(&out_to_buffer, "{what: %Q, content: %M}",
+			what, printer, data);
+
+	// send size before payload
+	if (fwrite(&real_size, sizeof(real_size), 1, stdout) != 1)
+		return ERROR_IO;
+
+	if (fwrite(outgoing_buffer, real_size, 1, stdout) != 1)
+		return ERROR_IO;
+
+	fflush(stdout);
+	return SUCCESS;
+}
+
 static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffer, char **what, struct handler_response *response)
 {
 	// read length
@@ -45,26 +86,7 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 		return ERROR_NOT_IMPLEMENTED;
 
 	RESULT result = handler(ctx, &content, response);
-
-	if (result == SUCCESS && response->data && response->printer)
-	{
-		struct json_out out_to_buffer = JSON_OUT_BUF(outgoing_buffer, MAX_OUTGOING_SIZE);
-
-		// proxy response through buffer to get length first
-		unsigned int real_size = json_printf(&out_to_buffer, "{what: %Q, content: %M}", *what,
-				response->printer, response->data);
-
-		// send size before payload
-		if (fwrite(&real_size, sizeof(real_size), 1, stdout) != 1)
-			return ERROR_IO;
-
-		if (fwrite(outgoing_buffer, real_size, 1, stdout) != 1)
-			return ERROR_IO;
-
-		fflush(stdout);
-	}
-
-	return result;
+	return send_response(result, *what, response);
 }
 
 RESULT handle_single_message(struct mc_context *ctx)
