@@ -21,22 +21,25 @@ struct contact_fetch_response
 struct contact_update_response
 {
 	const char *error;
-	struct contact contact;
+	struct get_key_result result;
 };
 
 static int contact_update_printer(struct json_out *out, va_list *args)
 {
 	struct contact_update_response *resp = va_arg(*args, struct contact_update_response *);
 
-	return json_printf(out, "{error: %Q, key: %Q, name: %Q, email: %Q}",
-			resp->error, resp->contact.key_fpr, resp->contact.name, resp->contact.email);
+	int len = json_printf(out, "{error: %Q, key: %Q, name: %Q, email: %Q}",
+			resp->error, resp->result.full_fpr, resp->result.name, resp->result.email);
+
+	get_key_free(&resp->result);
+
+	return len;
 }
 
 static RESULT update_contact(struct mc_context *ctx, struct json_token *content, struct contact_update_response *resp)
 {
 	char *fbid, *new_key = NULL;
 	BOOL secret;
-	struct get_key_result key = {0};
 
 	int json_count = json_scanf(content->ptr, content->len, "{fbid: %Q, key: %Q, secret: %B}", &fbid, &new_key, &secret);
 	if (json_count != 2 && json_count != 3) // null doesnt count
@@ -45,25 +48,27 @@ static RESULT update_contact(struct mc_context *ctx, struct json_token *content,
 	// fetch key if setting
 	if (new_key != NULL)
 	{
-		get_encryption_key(ctx->crypto, new_key, secret, &key);
-		if (key.error != NULL)
+		get_key(ctx->crypto, new_key, secret, &resp->result);
+		if (resp->result.error != NULL)
 		{
-			resp->error = key.error;
+			resp->error = resp->result.error;
 			free(fbid);
 			free(new_key);
-			return key.serious_error ? ERROR_GPG : SUCCESS; // success -> error is passed to browser
+			get_key_free(&resp->result);
+			return resp->result.serious_error ? ERROR_GPG : SUCCESS; // success -> error is passed to browser
 		}
-
-		resp->contact.email = key.email;
-		resp->contact.name = key.name;
-		resp->contact.key_fpr = key.full_fpr;
 
 		free(new_key);
 	}
 
 	// update config
+	struct contact contact;
+	contact.name = resp->result.name;
+	contact.email = resp->result.email;
+	contact.key_fpr = resp->result.full_fpr;
+
 	RESULT err;
-	if ((err = config_set_contact(ctx->config, fbid, &resp->contact)) != SUCCESS)
+	if ((err = config_set_contact(ctx->config, fbid, &contact)) != SUCCESS)
 	{
 		free(fbid);
 		return err;

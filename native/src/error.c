@@ -20,6 +20,10 @@ const char *error_get_message(int err)
 			return "Browser IO";
 		case ERROR_GPG:
 			return "GPGme";
+		case ERROR_GPG_INVALID_KEY:
+			return "Key not found in local keyring";
+		case ERROR_GPG_AMBIGUOUS_KEY:
+			return "Ambigious key identifier";
 		default:
 			return "Unknown error code";
 	}
