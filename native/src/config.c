@@ -352,6 +352,29 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	return SUCCESS;
 }
 
+static const char *FBID_PREFIX = "fbid_";
+static const size_t FBID_PREFIX_LEN = 5;
+
+// returns newly allocated string with fbid: prefix
+static char *escape_fbid(char *fbid)
+{
+	char *new_fbid = calloc(strlen(fbid) + FBID_PREFIX_LEN + 1, sizeof(char));
+	if (new_fbid == NULL)
+		return NULL;
+
+	strncpy(new_fbid, FBID_PREFIX, FBID_PREFIX_LEN);
+	strncpy(new_fbid + FBID_PREFIX_LEN, fbid, strlen(fbid));
+	return new_fbid;
+}
+
+// returns a pointer to the existing string without the fbid: prefix
+static char *unescape_fbid(char *fbid)
+{
+	if (strncmp(fbid, FBID_PREFIX, FBID_PREFIX_LEN) == 0)
+		return fbid + FBID_PREFIX_LEN;
+	return fbid;
+}
+
 RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact *out)
 {
 	const char *section_path = get_section(SECTION_CONTACTS);
@@ -359,7 +382,8 @@ RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact
 	if (section == NULL)
 		return ERROR_CONFIG_KEY_MISSING;
 
-	config_setting_t *contact = config_setting_get_member(section, fbid);
+	char *real_fbid = unescape_fbid(fbid);
+	config_setting_t *contact = config_setting_get_member(section, real_fbid);
 	if (contact == NULL)
 		return ERROR_CONFIG_KEY_MISSING;
 
@@ -387,7 +411,7 @@ static config_setting_t *add_field(config_setting_t *parent, const char *name, i
 	return s;
 }
 
-RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *value)
+static RESULT config_set_contact_wrapper(struct config_context *ctx, char *id, struct contact *value)
 {
 	const char *section_path = get_section(SECTION_CONTACTS);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
@@ -435,6 +459,18 @@ RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *
 		return ERROR_CONFIG_WRITE;
 
 	return SUCCESS;
+}
+
+RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *value)
+{
+	char *real_fbid = escape_fbid(id);
+	if (real_fbid == NULL)
+		return ERROR_MEMORY;
+
+	RESULT result = config_set_contact_wrapper(ctx, real_fbid, value);
+	free(real_fbid);
+
+	return result;
 }
 
 int json_value_printer(struct json_out *out, va_list *args)
