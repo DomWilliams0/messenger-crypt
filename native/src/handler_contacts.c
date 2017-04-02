@@ -86,15 +86,13 @@ static int fbid_map_printer(struct json_out *out, va_list *args)
 	struct contact_fbid *curr = resp->contacts;
 
 	unsigned int len = 0;
-	BOOL first = TRUE;
+	BOOL comma = FALSE;
 	len += json_printf(out, "{", 1);
 	while (curr)
 	{
-		if (!first)
-		{
-			first = TRUE;
+		if (comma)
 			len += json_printf(out, ", ");
-		}
+		comma = TRUE;
 
 		len += json_printf(out, "%Q: {key: %Q, name: %Q, email: %Q}",
 				curr->fbid, curr->contact.key_fpr, curr->contact.name, curr->contact.email);
