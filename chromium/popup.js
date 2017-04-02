@@ -6,6 +6,13 @@ var currentTab;
 var unlinkState = false;
 var hotkeyAcc = [];
 
+var InputType  = Object.freeze({
+	TEXT: 1,
+	KEY : 2,
+	BOOL: 3
+});
+
+
 // callback({{fbid0: key, ...}})
 function fetchKeys(fbids, callback) {
 	chrome.runtime.sendMessage({
@@ -78,12 +85,15 @@ function updateConversationSettings(id, enc, sig) {
 
 // callback({thread, participants})
 function fetchState(callback) {
+	chrome.runtime.sendMessage({
+		what: "state",
+		content: {} // TODO hmm
+	}, callback);
 
 	// if (invalid) {
 	// 	setBadgeError();
 	// 	errorConversationTooOld();
 	// }
-
 }
 
 function setBadgeState(msg, colour) {
@@ -199,6 +209,24 @@ function initialiseKeyInputField(keyInput, participant, secretKey) {
 	resetKeyTextbox(keyInput);
 }
 
+function format_user(user) {
+	var first, second;
+
+	if (!user) {
+		first = second = "";
+	}
+	else {
+		var id = user.name + " <" + user.email + ">";
+		first = id;
+		second = id + " " + user.key;
+	}
+
+	return {
+		user_only: first,
+		user_with_key: second
+	};
+}
+
 function onKeyInputChange(element, isFocused, isSecretKey) {
 	unlinkState = false;
 
@@ -214,7 +242,7 @@ function onKeyInputChange(element, isFocused, isSecretKey) {
 			element.classList.add("key-editing");
 			element.classList.remove("key-invalid", "key-success")
 
-			var key = resp.keys[fbid] || {}
+			var key = resp[fbid] || {}
 			var inputState = {
 				currentKey: key.key,
 				currentTooltip: element.title
@@ -236,15 +264,26 @@ function onKeyInputChange(element, isFocused, isSecretKey) {
 			element.value = "Updating...";
 			element.classList.add("key-updating");
 
-			updateKey(fbid, input, isSecretKey, function(resp) {
-				var err = response.error;
-				var key = response.key;
+			updateKey(fbid, input, isSecretKey, function(response) {
+				var textBoxValue;
+				var textBoxTooltip;
+
+				if (response.error) {
+					textBoxValue = null; // "No key"
+					textBoxTooltip = response.error;
+				}
+				else {
+					var formatted = format_user(response)
+					textBoxValue = formatted.user_only;
+					textBoxTooltip = formatted.user_with_key;
+				}
 
 				// update element appropriately
-				resetKeyTextbox(element, err ? null : response.user_id, response.user || err, true);
-				element.classList.add(err ? "key-invalid" : "key-success");
-				if (err)
-					element.value = err;
+				resetKeyTextbox(element, textBoxValue, textBoxTooltip, true);
+
+					element.classList.add(response.error ? "key-invalid" : "key-success");
+				if (response.error)
+					element.value = response.error;
 			});
 		}
 		// no change
@@ -272,7 +311,7 @@ function onKeyInputKeyPress(e) {
 
 		// confirmed
 		else {
-			updateKey(e.target.participant.fbid, false, null);
+			updateKey(e.target.participant.fbid, null, false, null);
 
 			e.target.removeAttribute("placeholder");
 			e.target.blur();
@@ -405,11 +444,12 @@ function populatePopup() {
 
 		// fetch key for each participant
 		fetchKeys(participants.map(function(p) { return p.fbid; }), function(resp) {
-			var keys = resp.keys;
-			Object.keys(keys).forEach(function(fbid) {
-				var key = keys[fbid] || {}
+			debugger;
+			Object.keys(resp).forEach(function(fbid) {
 				var textbox = document.getElementById("key-" + fbid);
-				resetKeyTextbox(textbox, key.key, key.str);
+				var contact = resp[fbid] || {};
+				var formatted = format_user(contact);
+				resetKeyTextbox(textbox, contact.key, formatted.user_with_key);
 			});
 		});
 
@@ -436,7 +476,8 @@ function populatePopup() {
 				initialiseKeyInputField(inputField, dummyFbid, true);
 
 				fetchKeys([dummyFbid], function(resp) {
-					var value = resp.keys[dummyFbid] || {}
+					var value = resp[dummyFbid] || {}
+					// TODO use format_user here
 					resetKeyTextbox(inputField, value.key, value.str);
 				});
 			}

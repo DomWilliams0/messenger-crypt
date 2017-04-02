@@ -221,6 +221,23 @@ function startPolling(pollTime) {
 	}, pollTime);
 };
 
+function fetchCachedState() {
+	var convoId = window.location.pathname.slice(3);
+	var fullState = regenerateState(); // TODO actually cache, you savage
+	var conversation = getConversationState(fullState, convoId);
+
+	// update in background
+	window.postMessage({
+		type: "from-messenger",
+		message: {
+			what: "state",
+			content: conversation
+		}
+	}, "*");
+
+	return conversation;
+};
+
 function patchRequestSending() {
 
 	function overloadOpen() {
@@ -240,9 +257,7 @@ function patchRequestSending() {
 							json['body'] = "";
 						}
 
-						var convoId = window.location.pathname.slice(3);
-						var fullState = regenerateState(); // TODO cache this
-						var conversation = getConversationState(fullState, convoId);
+						var conversation = fetchCachedState();
 
 						var message = {
 							message:    decodeURI(json['body']),
@@ -300,6 +315,7 @@ function patchRequestSending() {
 	addExecutedFunction(overloadOpen);
 	addExecutedFunction(listenForModifiedMessages);
 	addNonExecutedFunctions([
+		fetchCachedState,
 		regenerateState,
 		getConversationState,
 		transmitForEncryption,
@@ -328,6 +344,9 @@ backgroundPort.onMessage.addListener(function(msg) {
 });
 
 window.addEventListener("load", function(e) {
+	// get initial state
+	fetchCachedState();
+
 	// message decrypting
 	startPolling(500);
 

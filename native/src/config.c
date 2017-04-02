@@ -367,23 +367,14 @@ static char *escape_fbid(char *fbid)
 	return new_fbid;
 }
 
-// returns a pointer to the existing string without the fbid: prefix
-static char *unescape_fbid(char *fbid)
-{
-	if (strncmp(fbid, FBID_PREFIX, FBID_PREFIX_LEN) == 0)
-		return fbid + FBID_PREFIX_LEN;
-	return fbid;
-}
-
-RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact *out)
+static RESULT config_get_contact_wrapper(struct config_context *ctx, char *fbid, struct contact *out)
 {
 	const char *section_path = get_section(SECTION_CONTACTS);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 	if (section == NULL)
 		return ERROR_CONFIG_KEY_MISSING;
 
-	char *real_fbid = unescape_fbid(fbid);
-	config_setting_t *contact = config_setting_get_member(section, real_fbid);
+	config_setting_t *contact = config_setting_get_member(section, fbid);
 	if (contact == NULL)
 		return ERROR_CONFIG_KEY_MISSING;
 
@@ -399,6 +390,18 @@ RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact
 		return ERROR_CONFIG_KEY_MISSING;
 
 	return SUCCESS;
+}
+
+RESULT config_get_contact(struct config_context *ctx, char *fbid, struct contact *out)
+{
+	char *real_fbid = escape_fbid(fbid);
+	if (real_fbid == NULL)
+		return ERROR_MEMORY;
+
+	RESULT result = config_get_contact_wrapper(ctx, real_fbid, out);
+	free(real_fbid);
+
+	return result;
 }
 
 // TODO use this in all getters/setters
