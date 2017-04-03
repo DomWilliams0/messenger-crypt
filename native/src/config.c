@@ -21,8 +21,8 @@
 #define RAW_CONFIG_PATH "$HOME/.config/messenger_crypt.conf"
 
 static struct conversation_state default_conversation = {
-	.encryption = 0,
-	.signing = 0
+	.encryption = FALSE,
+	.signing = FALSE
 };
 
 struct config_context
@@ -316,6 +316,10 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	const char *section_path = get_section(SECTION_CONVERSATION);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
 
+	BOOL removing =
+		value->encryption == default_conversation.encryption &&
+		value->signing == default_conversation.signing;
+
 	if (section == NULL)
 	{
 		section = config_setting_add(config_root_setting(&ctx->config), section_path, CONFIG_TYPE_GROUP);
@@ -327,24 +331,36 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	config_setting_t *enc, *sig;
 	if (s == NULL)
 	{
+		// already doesn't exist
+		if (removing)
+			return SUCCESS;
+
 		s = config_setting_add(section, id, CONFIG_TYPE_GROUP);
 		if (s == NULL)
 			return ERROR_CONFIG_KEY_CREATION;
 	}
 
-	enc = config_setting_lookup(s, "encryption");
-	if (enc == NULL)
-		enc = config_setting_add(s, "encryption", CONFIG_TYPE_BOOL);
+	if (removing)
+	{
+		if (config_setting_remove(section, id) != CONFIG_TRUE)
+			return ERROR_CONFIG_KEY_MISSING;
+	}
+	else
+	{
+		enc = config_setting_lookup(s, "encryption");
+		if (enc == NULL)
+			enc = config_setting_add(s, "encryption", CONFIG_TYPE_BOOL);
 
-	sig = config_setting_lookup(s, "signing");
-	if (sig == NULL)
-		sig = config_setting_add(s, "signing", CONFIG_TYPE_BOOL);
+		sig = config_setting_lookup(s, "signing");
+		if (sig == NULL)
+			sig = config_setting_add(s, "signing", CONFIG_TYPE_BOOL);
 
-	int result = config_setting_set_bool(enc, value->encryption) == CONFIG_TRUE &&
-		config_setting_set_bool(sig, value->signing) == CONFIG_TRUE;
+		int result = config_setting_set_bool(enc, value->encryption) == CONFIG_TRUE &&
+			config_setting_set_bool(sig, value->signing) == CONFIG_TRUE;
 
-	if (result != CONFIG_TRUE)
-		return ERROR_CONFIG_KEY_CREATION;
+		if (result != CONFIG_TRUE)
+			return ERROR_CONFIG_KEY_CREATION;
+	}
 
 	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
 		return ERROR_CONFIG_WRITE;
