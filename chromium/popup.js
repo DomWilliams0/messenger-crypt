@@ -96,26 +96,6 @@ function fetchState(callback) {
 	// }
 }
 
-function setBadgeState(msg, colour) {
-	chrome.browserAction.setBadgeText({text: msg});
-	chrome.browserAction.setBadgeBackgroundColor({color: colour});
-}
-
-function setBadgeText(msg) {
-	setBadgeState(msg, "#5289f5");
-}
-
-function setBadgeError() {
-	setBadgeState("ERR", "#f92b2b");
-}
-
-function updateBadge(encrypt, signing) {
-	var badge = "";
-	if (encrypt === "true" || encrypt == true) { badge += "E"; }
-	if (signing === "true" || signing == true) { badge += "S"; }
-	setBadgeText(badge);
-}
-
 function errorConversationTooOld() {
 	// TODO alert
 	console.error("Could not fetch conversation state. This may be because this conversation is too old and does not appear in your top ~20 conversations. To fix this, send a normal message to bump it into your recent conversations, and refresh the page.");
