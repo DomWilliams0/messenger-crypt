@@ -207,74 +207,93 @@ void encrypt_free_extra_allocations(void *data)
 
 }
 
+// lord forgive me
+#define COMMA ,
+#define CREATE_COMMA_DELIMITED_LIST( \
+		init_test,      /* iterate all and increment bad_count */ \
+		initial_prefix, /* the prefix of the error message */ \
+		test,           /* the test for each recipient r if its bad or not */ \
+		foreach_length, /* the length of the individual printed bad recipient */ \
+		foreach_print,  /* the corresponding sprintf format */ \
+		default_message /* the default message to print in case of error */\
+		) \
+		size_t bad_count = 0; \
+		for (size_t i = 0; i < recipient_count; ++i) \
+		{ \
+			init_test; \
+		} \
+		/* success */ \
+		if (bad_count == 0) \
+			return NULL; \
+		const char *prefix = initial_prefix; \
+		size_t required_mem = strlen(prefix); \
+		required_mem += bad_count > 2 ? bad_count - 2 : 0; /* commas */ \
+		required_mem += bad_count > 1 ? bad_count : 0; /* spaces */ \
+		required_mem += bad_count > 1 ? 3 : 0; /* "and" */ \
+		for (size_t i = 0; i < recipient_count; ++i) \
+		{ \
+			struct recipient *r = recipients + i; \
+			if (test) \
+				required_mem += foreach_length; \
+		} \
+		char *out = calloc(required_mem + 1, sizeof(char)); \
+		if (out == NULL) \
+			return error_get_message(ERROR_MEMORY); \
+		/* now to actually write */ \
+		strcpy(out, prefix); \
+		size_t head = strlen(prefix); \
+		for (size_t i = 0; i < recipient_count; ++i) \
+		{ \
+			struct recipient *r = recipients + i; \
+			if (test) \
+			{ \
+				/* and */ \
+				if (bad_count > 1 && i == recipient_count - 1) \
+					head += sprintf(out + head, " and "); \
+				/* comma */ \
+				else if (bad_count > 2 && i > 0) \
+					head += sprintf(out + head, ", "); \
+				head += sprintf(out + head, foreach_print); \
+			} \
+		} \
+		/* uh oh */ \
+		if (head != required_mem) \
+			return default_message; \
+		*free_me = out; \
+		return out;
+
 static const char *check_for_missing_mappings(struct recipient *recipients, size_t recipient_count, char **free_me)
 {
-	size_t missing_count = 0;
-	for (size_t i = 0; i < recipient_count; ++i)
-		if (recipients[i].key_fpr == NULL)
-			missing_count += 1;
-
-	// success
-	if (missing_count == 0)
-		return NULL;
-
-	// create error message
-	const char *prefix = "Missing fbid:pubkey mapping(s) required for encryption from: ";
-
-	// n = 4: a, b, c and d
-	// n = 3: a, b and c
-	// n = 2: a and b
-	// n = 1: a
-	// commas: n > 2 ? n - 2 : 0
-	// spaces: n > 1 ? n : 0
-	// and:    n > 1 ? 1 : 0
-	size_t required_mem = strlen(prefix);
-	required_mem += missing_count > 2 ? missing_count - 2 : 0; // commas
-	required_mem += missing_count > 1 ? missing_count : 0; // spaces
-	required_mem += missing_count > 1 ? 3 : 0; // "and"
-
-	for (size_t i = 0; i < recipient_count; ++i)
-	{
-		struct recipient *r = recipients + i;
-		if (r->key_fpr == NULL)
-			required_mem += strlen(r->name) + 2 + strlen(r->fbid) + 1; // name (fbid)
-	}
-
-	char *out = calloc(required_mem + 1, sizeof(char));
-	if (out == NULL)
-		return error_get_message(ERROR_MEMORY);
-
-	// now to actually write
-	strcpy(out, prefix);
-	size_t head = strlen(prefix);
-	for (size_t i = 0; i < recipient_count; ++i)
-	{
-		struct recipient *r = recipients + i;
-		if (r->key_fpr == NULL)
+	CREATE_COMMA_DELIMITED_LIST(
 		{
-			// and
-			if (missing_count > 1 && i == recipient_count - 1)
-				head += sprintf(out + head, " and ");
-
-			// comma
-			else if (missing_count > 2 && i > 0)
-				head += sprintf(out + head, ", ");
-
-			head += sprintf(out + head, "%s (%s)", r->name, r->fbid);
-		}
-	}
-
-	// uh oh
-	if (head != required_mem)
-		return "Missing fbid:pubkey mappings";
-
-	*free_me = out;
-	return out;
+			if (recipients[i].key_fpr == NULL)
+				bad_count += 1;
+		},
+		"Missing fbid:pubkey mapping(s) required for encryption from: ",
+		r->key_fpr == NULL,
+		strlen(r->name) + 2 + strlen(r->fbid) + 1 /* name (fbid) */,
+		"%s (%s)" COMMA r->name COMMA r->fbid,
+		"Missing fbid:pubkey mappings"
+		);
 }
 
-static char *collect_keys(struct recipient *recipients, size_t recipient_count, gpgme_key_t *pub_keys, char **free_me)
+static const char *collect_keys(struct crypto_context *ctx, struct recipient *recipients, size_t recipient_count, gpgme_key_t *pub_keys, char **free_me)
 {
-	return NULL;
+	CREATE_COMMA_DELIMITED_LIST(
+		{
+			gpgme_error_t err = gpgme_get_key(ctx->gpg, recipients[i].key_fpr, pub_keys + i, FALSE);
+			if (err != GPG_ERR_NO_ERROR)
+			{
+				bad_count += 1;
+				pub_keys[i] = NULL;
+			}
+		},
+		"Missing public key(s) for: ",
+		r->key_fpr != NULL && pub_keys[i] == NULL,
+		strlen(r->key_fpr) + 2 + strlen(r->name) + 1 /* key (name) */,
+		"%s (%s)" COMMA r->key_fpr COMMA r->name,
+		"Missing public keys"
+		);
 }
 
 static void encrypt_wrapper(struct crypto_context *ctx, char *plaintext,
@@ -299,7 +318,7 @@ static void encrypt_wrapper(struct crypto_context *ctx, char *plaintext,
 		if ((result->error = check_for_missing_mappings(recipients, recipient_count, &alloc->error_message)) != NULL)
 			return;
 
-		if ((result->error = collect_keys(recipients, recipient_count, pub_keys, &alloc->error_message)) != NULL)
+		if ((result->error = collect_keys(ctx, recipients, recipient_count, pub_keys, &alloc->error_message)) != NULL)
 			return;
 
 		// neat
