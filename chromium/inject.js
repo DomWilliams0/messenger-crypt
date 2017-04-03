@@ -221,6 +221,30 @@ function startPolling(pollTime) {
 	}, pollTime);
 };
 
+function startConversationPolling(pollTime) {
+	var oldPath = null;
+	function hasPathChanged() {
+		var newPath = window.location.pathname;
+		if (newPath != oldPath) {
+			oldPath = newPath;
+			return true;
+		}
+
+		return false;
+	};
+
+	function intervalCallback() {
+		if (hasPathChanged()) {
+			chrome.runtime.sendMessage({
+				what: "state",
+				content: fetchCachedState()
+			});
+		};
+	};
+
+	setInterval(intervalCallback, pollTime);
+};
+
 function fetchCachedState() {
 	var convoId = window.location.pathname.slice(3);
 	var fullState = regenerateState(); // TODO actually cache, you savage
@@ -352,6 +376,9 @@ window.addEventListener("load", function(e) {
 
 	// sent message interception and encryption
 	patchRequestSending();
+
+	// polling for conversation changes
+	startConversationPolling(500);
 
 }, false);
 

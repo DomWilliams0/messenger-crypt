@@ -87,7 +87,7 @@ function updateConversationSettings(id, enc, sig) {
 function fetchState(callback) {
 	chrome.runtime.sendMessage({
 		what: "state",
-		content: {} // TODO hmm
+		content: null
 	}, callback);
 
 	// if (invalid) {

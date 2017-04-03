@@ -6,7 +6,8 @@
 	"version": "0.2",
 
 	"permissions": [
-		"nativeMessaging"
+		"nativeMessaging",
+		"tabs"
 	],
 
 	"background": {
