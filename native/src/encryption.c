@@ -201,12 +201,143 @@ void decrypt_free_extra_allocations(void *data)
 		gpgme_free(alloc->output_buffer);
 }
 
-void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result)
+void encrypt_free_extra_allocations(void *data)
+{
+	struct encrypt_extra_allocation *alloc = (struct encrypt_extra_allocation *)data;
+
+}
+
+static const char *check_for_missing_mappings(struct recipient *recipients, size_t recipient_count, char **free_me)
+{
+	size_t missing_count = 0;
+	for (size_t i = 0; i < recipient_count; ++i)
+		if (recipients[i].key_fpr == NULL)
+			missing_count += 1;
+
+	// success
+	if (missing_count == 0)
+		return NULL;
+
+	// create error message
+	const char *prefix = "Missing fbid:pubkey mapping(s) required for encryption from: ";
+
+	// n = 4: a, b, c and d
+	// n = 3: a, b and c
+	// n = 2: a and b
+	// n = 1: a
+	// commas: n > 2 ? n - 2 : 0
+	// spaces: n > 1 ? n : 0
+	// and:    n > 1 ? 1 : 0
+	size_t required_mem = strlen(prefix);
+	required_mem += missing_count > 2 ? missing_count - 2 : 0; // commas
+	required_mem += missing_count > 1 ? missing_count : 0; // spaces
+	required_mem += missing_count > 1 ? 3 : 0; // "and"
+
+	for (size_t i = 0; i < recipient_count; ++i)
+	{
+		struct recipient *r = recipients + i;
+		if (r->key_fpr == NULL)
+			required_mem += strlen(r->name) + 2 + strlen(r->fbid) + 1; // name (fbid)
+	}
+
+	char *out = calloc(required_mem + 1, sizeof(char));
+	if (out == NULL)
+		return error_get_message(ERROR_MEMORY);
+
+	// now to actually write
+	strcpy(out, prefix);
+	size_t head = strlen(prefix);
+	for (size_t i = 0; i < recipient_count; ++i)
+	{
+		struct recipient *r = recipients + i;
+		if (r->key_fpr == NULL)
+		{
+			// and
+			if (missing_count > 1 && i == recipient_count - 1)
+				head += sprintf(out + head, " and ");
+
+			// comma
+			else if (missing_count > 2 && i > 0)
+				head += sprintf(out + head, ", ");
+
+			head += sprintf(out + head, "%s (%s)", r->name, r->fbid);
+		}
+	}
+
+	// uh oh
+	if (head != required_mem)
+		return "Missing fbid:pubkey mappings";
+
+	*free_me = out;
+	return out;
+}
+
+static char *collect_keys(struct recipient *recipients, size_t recipient_count, gpgme_key_t *pub_keys, char **free_me)
+{
+	return NULL;
+}
+
+static void encrypt_wrapper(struct crypto_context *ctx, char *plaintext,
+		BOOL encrypt, BOOL sign,
+		struct recipient *recipients, size_t recipient_count,
+		struct encrypt_result *result, struct encrypt_extra_allocation *alloc,
+		gpgme_data_t *buf_i, gpgme_data_t *buf_o,
+		gpgme_key_t *pub_keys, gpgme_key_t *signing_key)
+{
+	// nothing to do
+	if (!encrypt && !sign)
+	{
+		result->ciphertext = plaintext;
+		return;
+	}
+
+	gpgme_error_t err;
+
+	// find public keys for recipients if encrypting
+	if (encrypt)
+	{
+		if ((result->error = check_for_missing_mappings(recipients, recipient_count, &alloc->error_message)) != NULL)
+			return;
+
+		if ((result->error = collect_keys(recipients, recipient_count, pub_keys, &alloc->error_message)) != NULL)
+			return;
+
+		// neat
+	}
+
+}
+
+
+void encrypt(struct crypto_context *ctx, char *plaintext,
+		BOOL encrypt, BOOL sign,
+		struct recipient *recipients, unsigned int recipient_count,
+		struct encrypt_result *result, struct encrypt_extra_allocation *alloc)
 {
 	result->is_signed = FALSE;
 	result->is_encrypted = FALSE;
-	result->ciphertext = "No encrypted message here";
+	result->ciphertext = "";
 	result->error = NULL;
+
+	gpgme_data_t buf_i = NULL, buf_o = NULL;
+	gpgme_key_t signing_key = NULL;
+	gpgme_key_t *enc_keys = calloc(recipient_count + 1, sizeof(gpgme_key_t)); // +1 for self
+
+	if (enc_keys == NULL)
+	{
+		result->error = error_get_message(ERROR_MEMORY);
+		return;
+	}
+
+	// TODO unref keys
+	encrypt_wrapper(ctx, plaintext, encrypt, sign, recipients, recipient_count, result,
+			alloc, &buf_i, &buf_o, enc_keys, &signing_key);
+
+	size_t size_unused;
+	if (buf_i != NULL)
+		alloc->input_buffer = gpgme_data_release_and_get_mem(buf_i, &size_unused);
+
+	if (buf_o != NULL)
+		alloc->output_buffer = gpgme_data_release_and_get_mem(buf_o, &size_unused);
 }
 
 void get_key_free(struct get_key_result *result)

@@ -28,16 +28,25 @@ struct decrypt_extra_allocation
 
 struct encrypt_result
 {
-	char *error;
+	const char *error;
 	char *ciphertext;
 	BOOL is_signed;
 	BOOL is_encrypted;
+};
+
+struct encrypt_extra_allocation
+{
+	char *plaintext;
+	char *error_message;
+	char *input_buffer;
+	char *output_buffer;
 };
 
 struct recipient
 {
 	char *fbid;
 	char *name;
+	const char *key_fpr;
 };
 
 // do not manually free any of these
@@ -57,7 +66,12 @@ void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result
 
 void decrypt_free_extra_allocations(void *);
 
-void encrypt(struct crypto_context *ctx, char *plaintext, struct recipient *recipients, unsigned int recipient_count, struct encrypt_result *result);
+void encrypt(struct crypto_context *ctx, char *plaintext,
+		BOOL encrypt, BOOL sign,
+		struct recipient *recipients, unsigned int recipient_count,
+		struct encrypt_result *result, struct encrypt_extra_allocation *alloc);
+
+void encrypt_free_extra_allocations(void *);
 
 void get_key_free(struct get_key_result *result);
 void get_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result, BOOL ignore_revoked);

@@ -4,6 +4,7 @@
 #include "frozen/frozen.h"
 #include "encryption.h"
 #include "handler.h"
+#include "config.h"
 
 struct encrypt_response
 {
@@ -22,38 +23,42 @@ static int encrypt_response_printer(struct json_out *out, va_list *args)
 }
 
 static RESULT handler_encrypt_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
-		char **plaintext, struct encrypt_response *resp)
+		struct encrypt_extra_allocation *alloc, char **conversation_id, struct recipient **recipients,
+		size_t *recipient_count, struct encrypt_response *resp)
 {
-	uint32_t conversation_id, recipient_count, paused_request_id;
+	uint32_t paused_request_id;
 	if (json_scanf(content->ptr, content->len,
-				"{id: %d, message: %Q, recipient_count: %d, paused_request_id: %d}",
-				&conversation_id, plaintext, &recipient_count, &paused_request_id) != 4)
+				"{id: %Q, message: %Q, recipient_count: %d, paused_request_id: %d}",
+				conversation_id, &alloc->plaintext, recipient_count, &paused_request_id) != 4)
 		return ERROR_BAD_CONTENT;
 
-	struct recipient *recipients = calloc(recipient_count, sizeof(struct recipient));
+	*recipients = calloc(*recipient_count, sizeof(struct recipient));
 	if (recipients == NULL)
 		return ERROR_MEMORY;
 
 	struct json_token token;
 	for (int i = 0; json_scanf_array_elem(content->ptr, content->len, ".recipients", i, &token) > 0; ++i)
 	{
-		if (json_scanf(token.ptr, token.len,
-				"{fbid: %Q, name: %Q}",
-				&recipients[i].fbid, &recipients[i].name) != 2)
+		struct recipient *r = (*recipients) + i;
+		if (json_scanf(token.ptr, token.len, "{fbid: %Q, name: %Q}", &r->fbid, &r->name) != 2)
 			continue;
+
+		struct contact contact;
+		if (config_get_contact(ctx->config, r->fbid, &contact) == SUCCESS)
+			r->key_fpr = contact.key_fpr;
 	}
 
-	encrypt(ctx->crypto, *plaintext, recipients, recipient_count, &resp->result);
-	for (unsigned int i = 0; i < recipient_count; ++i)
-	{
-		free(recipients[i].fbid);
-		free(recipients[i].name);
-	}
-	free(recipients);
+	struct conversation_state conversation;
+	config_get_conversation(ctx->config, *conversation_id, &conversation);
+
+	encrypt(ctx->crypto, alloc->plaintext, conversation.encryption, conversation.signing, *recipients, *recipient_count, &resp->result, alloc);
 
 	resp->paused_request_id = paused_request_id;
 	response->data = resp;
 	response->printer = encrypt_response_printer;
+
+	response->data_allocd = alloc;
+	response->freer = encrypt_free_extra_allocations;
 
 	return SUCCESS;
 
@@ -61,15 +66,38 @@ static RESULT handler_encrypt_wrapper(struct mc_context *ctx, struct json_token 
 
 RESULT handler_encrypt(struct mc_context *ctx, struct json_token *content, struct handler_response *response)
 {
-	struct encrypt_response *resp = calloc(1, sizeof(struct encrypt_response));
-	if (resp == NULL)
+	struct encrypt_extra_allocation *alloc = calloc(1, sizeof(struct encrypt_extra_allocation));
+	if (alloc == NULL)
 		return ERROR_MEMORY;
 
-	char *plaintext = NULL;;
-	RESULT ret = handler_encrypt_wrapper(ctx, content, response, &plaintext, resp);
+	struct encrypt_response *resp = calloc(1, sizeof(struct encrypt_response));
+	if (resp == NULL)
+	{
+		free(alloc);
+		return ERROR_MEMORY;
+	}
 
-	if (plaintext != NULL)
-		free(plaintext);
+   	char *conversation_id = NULL;
+	struct recipient *recipients = NULL;
+	size_t recipient_count = 0;
+
+	RESULT ret = handler_encrypt_wrapper(ctx, content, response, alloc, &conversation_id, &recipients, &recipient_count, resp);
+
+	if (recipients != NULL)
+	{
+		for (size_t i = 0; i < recipient_count; ++i)
+		{
+			if (recipients[i].fbid)
+				free(recipients[i].fbid);
+			if (recipients[i].name)
+				free(recipients[i].name);
+		}
+		free(recipients);
+	}
+
+	if (conversation_id)
+		free(conversation_id);
 
 	return ret;
 }
+
