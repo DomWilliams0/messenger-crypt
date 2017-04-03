@@ -11,6 +11,7 @@ import json
 import tests_protocol
 import tests_settings
 import tests_contacts
+import tests_conversation
 
 failed_suite = False
 
