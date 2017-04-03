@@ -444,7 +444,6 @@ function populatePopup() {
 
 		// fetch key for each participant
 		fetchKeys(participants.map(function(p) { return p.fbid; }), function(resp) {
-			debugger;
 			Object.keys(resp).forEach(function(fbid) {
 				var textbox = document.getElementById("key-" + fbid);
 				var contact = resp[fbid] || {};
