@@ -37,7 +37,7 @@ function updateKey(fbid, newKey, isSecret, callback) {
 	}, callback);
 }
 
-// callback([{type, value, data, description} ...])
+// callback([{type, value, data, description, data} ...])
 function fetchSettings(callback) {
 	chrome.runtime.sendMessage({
 		what: "settings",
@@ -291,7 +291,7 @@ function onKeyInputKeyPress(e) {
 
 		// confirmed
 		else {
-			updateKey(e.target.participant.fbid, null, false, null);
+			updateKey(e.target.participant.fbid, null, false, function(resp) {});
 
 			e.target.removeAttribute("placeholder");
 			e.target.blur();
@@ -451,13 +451,13 @@ function populatePopup() {
 
 			var inputField = element.getElementsByTagName("input")[0];
 			if (type == InputType.KEY) {
-				var dummyFbid = x.data.dummy_id;
-				initialiseKeyInputField(inputField, dummyFbid, true);
+				var dummyFbid = x.data;
+				initialiseKeyInputField(inputField, {fbid: dummyFbid}, true);
 
 				fetchKeys([dummyFbid], function(resp) {
 					var value = resp[dummyFbid] || {}
-					// TODO use format_user here
-					resetKeyTextbox(inputField, value.key, value.str);
+					var formatted = format_user(value);
+					resetKeyTextbox(inputField, value.key, formatted.user_with_key);
 				});
 			}
 

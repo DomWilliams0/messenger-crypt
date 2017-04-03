@@ -14,6 +14,7 @@ enum setting_type
 {
 	SETTING_TEXT = 0,
 	SETTING_BOOL,
+	SETTING_KEY,
 	SETTING_CONTACTS,
 	SETTING_TYPE_LAST,
 };
@@ -34,6 +35,7 @@ enum setting_key
 	SETTING_IGNORE_REVOKED,
 	SETTING_MESSAGE_COLOUR,
 	SETTING_BLOCK_FILES,
+	SETTING_PERSONAL_KEY,
 
 	SETTING_LAST
 };
@@ -45,6 +47,7 @@ struct setting_key_instance
 	const char *description;
 	enum setting_type type;
 	struct setting_value default_value;
+	const char *extra_data;
 };
 
 struct conversation_state

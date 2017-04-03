@@ -7,15 +7,16 @@
 #include "config.h"
 #include "frozen/frozen.h"
 
-#define INIT_SETTING(key, title, desc, type, default_val) do { \
+#define INIT_SETTING(key, title, desc, type, default_val, extra_data) do { \
 	ctx->settings[key] = (struct setting_key_instance) { \
-		key, title, desc, type, default_val \
+		key, title, desc, type, default_val, extra_data \
 	}; \
 	} \
 	while (0)
 
 #define VALUE_BOOL(val) (struct setting_value) { .type = SETTING_BOOL, .value = {.bool = val } }
 #define VALUE_TEXT(val) (struct setting_value) { .type = SETTING_TEXT, .value = {.text = val } }
+#define VALUE_KEY (struct setting_value) { .type = SETTING_KEY, .value = {.text = "" } }
 
 #define MAX_CONFIG_PATH_LEN (256)
 #define RAW_CONFIG_PATH "$HOME/.config/messenger_crypt.conf"
@@ -80,28 +81,35 @@ RESULT config_ctx_create(struct config_context **out)
 			"Ignore revoked keys",
 			"Don't use revoked public keys for encryption",
 			SETTING_BOOL,
-			VALUE_BOOL(TRUE)
+			VALUE_BOOL(TRUE), NULL
 			);
 	INIT_SETTING(
 			SETTING_VERBOSE_HEADER,
 			"Show verbose message status",
 			"Show decryption and signature status above every GPG message",
 			SETTING_BOOL,
-			VALUE_BOOL(TRUE)
+			VALUE_BOOL(TRUE), NULL
 			);
 	INIT_SETTING(
 			SETTING_MESSAGE_COLOUR,
 			"Enable message colours",
 			"Indicate decryption and verification success by changing the colour of PGP messages",
 			SETTING_BOOL,
-			VALUE_BOOL(TRUE)
+			VALUE_BOOL(TRUE), NULL
 			);
 	INIT_SETTING(
 			SETTING_BLOCK_FILES,
 			"Block attachments and images",
 			"Block the sending of attachments and images, as their encryption is not currently supported",
 			SETTING_BOOL,
-			VALUE_BOOL(TRUE)
+			VALUE_BOOL(TRUE), NULL
+			);
+	INIT_SETTING(
+			SETTING_PERSONAL_KEY,
+			"Personal secret key",
+			"Your own secret key to use for signing, self-encryption and decryption",
+			SETTING_KEY,
+			VALUE_KEY, "self"
 			);
 
 	*out = ctx;
@@ -129,6 +137,8 @@ const char *config_get_key_string(enum setting_key key)
 			return "message-colour";
 		case SETTING_BLOCK_FILES:
 			return "block-files";
+		case SETTING_PERSONAL_KEY:
+			return "personal-key";
 		default:
 			return "";
 	}
@@ -142,6 +152,8 @@ const char *config_get_type_string(enum setting_type type)
 			return "TEXT";
 		case SETTING_BOOL:
 			return "BOOL";
+		case SETTING_KEY:
+			return "KEY";
 		default:
 			return "";
 	}
@@ -527,6 +539,7 @@ int json_value_printer(struct json_out *out, va_list *args)
 		case SETTING_BOOL:
 			return json_printf(out, "%B", value->value.bool);
 		case SETTING_TEXT:
+		case SETTING_KEY:
 			return json_printf(out, "%Q", value->value.text);
 		default:
 			return 0;
@@ -542,6 +555,7 @@ void json_value_scanner(const char *str, int len, void *value)
 			json_scanf(str, len, "%B", &v->value.bool);
 			break;
 		case SETTING_TEXT:
+		case SETTING_KEY:
 			json_scanf(str, len, "%Q", &v->value.text);
 			break;
 		default:

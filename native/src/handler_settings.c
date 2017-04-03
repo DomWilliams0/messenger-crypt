@@ -20,9 +20,9 @@ static int setting_printer(struct json_out *out, va_list *args)
 	struct setting_value *value = va_arg(*args, struct setting_value *);
 
 	return json_printf(out,
-			"{key: %Q, title: %Q, description: %Q, type: %Q, value: %M}",
+			"{key: %Q, title: %Q, description: %Q, type: %Q, value: %M, data: %Q}",
 			config_get_key_string(s->key), s->title, s->description,
-			config_get_type_string(value->type), json_value_printer, value);
+			config_get_type_string(value->type), json_value_printer, value, s->extra_data);
 }
 
 static int settings_response_printer(struct json_out *out, va_list *args)
