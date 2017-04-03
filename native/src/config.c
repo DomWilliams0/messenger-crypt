@@ -289,7 +289,23 @@ RESULT config_parse_key(const char *s, enum setting_key *key_out)
 	return 1;
 }
 
-void config_get_conversation(struct config_context *ctx, char *id, struct conversation_state *out)
+static const char *FBID_PREFIX = "fbid_";
+static const size_t FBID_PREFIX_LEN = 5;
+
+// returns newly allocated string with fbid: prefix
+static char *escape_fbid(char *fbid)
+{
+	char *new_fbid = calloc(strlen(fbid) + FBID_PREFIX_LEN + 1, sizeof(char));
+	if (new_fbid == NULL)
+		return NULL;
+
+	strncpy(new_fbid, FBID_PREFIX, FBID_PREFIX_LEN);
+	strncpy(new_fbid + FBID_PREFIX_LEN, fbid, strlen(fbid));
+	return new_fbid;
+}
+
+
+static void config_get_conversation_wrapper(struct config_context *ctx, char *id, struct conversation_state *out)
 {
 	const char *section_path = get_section(SECTION_CONVERSATION);
 	config_setting_t *section = config_lookup(&ctx->config, section_path);
@@ -310,7 +326,7 @@ void config_get_conversation(struct config_context *ctx, char *id, struct conver
 		*out = default_conversation;
 }
 
-RESULT config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value)
+static RESULT config_set_conversation_wrapper(struct config_context *ctx, char *id, struct conversation_state *value)
 {
 	// TODO extract common functionality from {s,g}et_{settings,conversation,key}
 	const char *section_path = get_section(SECTION_CONVERSATION);
@@ -368,19 +384,30 @@ RESULT config_set_conversation(struct config_context *ctx, char *id, struct conv
 	return SUCCESS;
 }
 
-static const char *FBID_PREFIX = "fbid_";
-static const size_t FBID_PREFIX_LEN = 5;
-
-// returns newly allocated string with fbid: prefix
-static char *escape_fbid(char *fbid)
+void config_get_conversation(struct config_context *ctx, char *id, struct conversation_state *out)
 {
-	char *new_fbid = calloc(strlen(fbid) + FBID_PREFIX_LEN + 1, sizeof(char));
-	if (new_fbid == NULL)
-		return NULL;
+	char *real_fbid = escape_fbid(id);
+	if (real_fbid == NULL)
+		real_fbid = id;
 
-	strncpy(new_fbid, FBID_PREFIX, FBID_PREFIX_LEN);
-	strncpy(new_fbid + FBID_PREFIX_LEN, fbid, strlen(fbid));
-	return new_fbid;
+	config_get_conversation_wrapper(ctx, real_fbid, out);
+
+	if (real_fbid != id)
+		free(real_fbid);
+
+}
+
+RESULT config_set_conversation(struct config_context *ctx, char *id, struct conversation_state *value)
+{
+	char *real_fbid = escape_fbid(id);
+	if (real_fbid == NULL)
+		return ERROR_MEMORY;
+
+	RESULT result = config_set_conversation_wrapper(ctx, real_fbid, value);
+	free(real_fbid);
+
+	return result;
+
 }
 
 static RESULT config_get_contact_wrapper(struct config_context *ctx, char *fbid, struct contact *out)
