@@ -5,8 +5,26 @@ var portPopup;
 
 var state;
 
+var responseLookup = {
+	nextID: 0,
+	lookup: {}
+};
+
+
 // response from native -> content
 portNative.onMessage.addListener(function(m) {
+	// get callback
+	var reqID = m.request_id;
+	delete m.request_id;
+	if (!(reqID === undefined)) {
+		var callback = responseLookup.lookup[reqID];
+		delete responseLookup.lookup[reqID];
+		if (callback) {
+			callback(m);
+		}
+	}
+
+	// pass on
 	portContent.postMessage(m);
 });
 
@@ -21,7 +39,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 				state = msg.content;
 			}
 			else {
-				portNative.postMessage(msg);
+				sendNativeMessage(msg);
 			}
 		});
 	}
@@ -34,7 +52,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 				callback(state);
 			}
 			else {
-				portNative.postMessage(msg);
+				sendNativeMessage(msg);
 			}
 		});
 	}
@@ -45,9 +63,13 @@ portNative.onDisconnect.addListener(function(e) {
 });
 
 function sendNativeMessage(msg, callback) {
-	chrome.runtime.sendNativeMessage(name, msg, function(resp) {
-		callback(resp.content);
-	});
+	// assign request id
+	var reqID = responseLookup.nextID;
+	responseLookup.lookup[reqID] = callback;
+	responseLookup.nextID += 1;
+
+	msg.request_id = reqID;
+	portNative.postMessage(msg);
 }
 
 function updateBadgeFromBackground() {

@@ -10,6 +10,8 @@
 
 #define MAX_OUTGOING_SIZE (1024 * 1024)
 
+typedef uint32_t request_id;
+
 static char outgoing_buffer[MAX_OUTGOING_SIZE];
 
 static int error_printer(struct json_out *out, va_list *args)
@@ -18,7 +20,7 @@ static int error_printer(struct json_out *out, va_list *args)
 	return json_printf(out, "{error: %Q}", error_get_message(*r));
 }
 
-static RESULT send_response(RESULT result, char *what, struct handler_response *response)
+static RESULT send_response(RESULT result, char *what, request_id id, struct handler_response *response)
 {
 	BOOL is_success = result == SUCCESS;
 
@@ -39,8 +41,8 @@ static RESULT send_response(RESULT result, char *what, struct handler_response *
 	struct json_out out_to_buffer = JSON_OUT_BUF(outgoing_buffer, MAX_OUTGOING_SIZE);
 
 	// proxy response through buffer to get length first
-	unsigned int real_size = json_printf(&out_to_buffer, "{what: %Q, content: %M}",
-			what, printer, data);
+	unsigned int real_size = json_printf(&out_to_buffer, "{request_id: %d, what: %Q, content: %M}",
+			id, what, printer, data);
 
 	// send size before payload
 	if (fwrite(&real_size, sizeof(real_size), 1, stdout) != 1)
@@ -70,11 +72,12 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 		return ERROR_IO;
 
 	// parse json
+	request_id id;
 	struct json_token content;
 	int parse_result = json_scanf(*buffer, length,
-			"{what: %Q, content: %T}", what, &content);
+			"{request_id: %d, what: %Q, content: %T}", &id, what, &content);
 
-	if (parse_result != 2)
+	if (parse_result != 3)
 		return ERROR_BAD_CONTENT;
 
 	if (content.type != JSON_TYPE_OBJECT_END)
@@ -86,7 +89,7 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 		return ERROR_NOT_IMPLEMENTED;
 
 	RESULT result = handler(ctx, &content, response);
-	return send_response(result, *what, response);
+	return send_response(result, *what, id, response);
 }
 
 RESULT handle_single_message(struct mc_context *ctx)

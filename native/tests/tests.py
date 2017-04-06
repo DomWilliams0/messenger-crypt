@@ -20,6 +20,9 @@ class ProcessInstance(object):
 
     # req is json
     def send_request(self, req):
+        if "request_id" not in req:
+            req["request_id"] = 0;
+
         raw = json.dumps(req)
         out = io.BytesIO()
         out.write(struct.pack("I", len(raw)))
@@ -59,7 +62,12 @@ class ProcessInstance(object):
         if not send_raw and len(resp) > 0:
             resp = json.loads(resp[4:])
 
-        if not predicate(input, resp):
+        try:
+            success = predicate(input, resp)
+        except (RuntimeError, TypeError):
+            success = False
+
+        if not success:
             sys.stdout.write("FAIL\n")
             sys.stdout.flush()
             global failed_suite
