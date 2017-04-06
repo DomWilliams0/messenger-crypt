@@ -1,6 +1,8 @@
 #ifndef MC_CONFIG_H
 #define MC_CONFIG_H
 
+#define SELF_KEY "self"
+
 #include <stdarg.h>
 #include "bool.h"
 #include "error.h"

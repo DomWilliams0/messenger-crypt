@@ -109,7 +109,7 @@ RESULT config_ctx_create(struct config_context **out)
 			"Personal secret key",
 			"Your own secret key to use for signing, self-encryption and decryption",
 			SETTING_KEY,
-			VALUE_KEY, "self"
+			VALUE_KEY, SELF_KEY
 			);
 
 	*out = ctx;

@@ -37,7 +37,7 @@ struct encrypt_result
 struct encrypt_extra_allocation
 {
 	char *plaintext;
-	char *error_message;
+	const char *error_message;
 	char *input_buffer;
 	char *output_buffer;
 };
@@ -69,7 +69,8 @@ void decrypt_free_extra_allocations(void *);
 void encrypt(struct crypto_context *ctx, char *plaintext,
 		BOOL encrypt, BOOL sign,
 		struct recipient *recipients, unsigned int recipient_count,
-		struct encrypt_result *result, struct encrypt_extra_allocation *alloc);
+		struct encrypt_result *result, struct encrypt_extra_allocation *alloc,
+		const char *personal_fpr);
 
 void encrypt_free_extra_allocations(void *);
 

@@ -194,7 +194,7 @@ function listenForModifiedMessages() {
 			else {
 				// replace message body
 				var json = pausedContext.requestBody;
-				json.body = newMessage;
+				json.body = encodeURIComponent(newMessage);
 
 				// flatten json
 				newArgs = [Object.keys(json).map(k => k + '=' + json[k]).join('&')];
