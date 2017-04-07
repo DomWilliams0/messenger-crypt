@@ -1,6 +1,4 @@
-// returns: [ {sender: xxx, message: xxx}, ... ]
-//             ^^^^^^
-//          null for self
+// returns: [ {message, element}, ... ]
 function getAllMessages() {
 
 	var messageBox = document.querySelector("[aria-label=\"Messages\"]");
