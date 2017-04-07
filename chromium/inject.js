@@ -52,6 +52,39 @@ function transmitForDecryption(messages) {
 	}
 }
 
+// element: the message box element
+// status:  {
+// 		status: status message,
+// 		message: decrypted message,
+// 		errored: if there was an error,
+// 		decrypted: if the message was decrypted,
+// 		signed: if the message was signed,
+// 		wellSigned: if the message has a good signature
+// }
+function formatDecryptedMessageElement(element, status) {
+	// simple and ugly
+
+	// change background colour
+	var colour = "#148c29"; // default success green
+
+	if (status.errored)
+		colour = "#c0392b"; // error red
+
+	else if (status.signed && !status.wellSigned)
+		colour = "#e67e22"; // bad signature
+
+	else if (!status.signed && !status.decrypted)
+		colour = null; // no colour change
+
+	if (colour != null) {
+		element.parentNode.parentNode.style.backgroundColor = colour;
+		element.parentNode.parentNode.style.color = "#ecf0f1";
+	}
+
+	// change message content
+	element.innerHTML = "<i>" + status.status + "</i><hr/>" + status.message;
+}
+
 function recvAfterDecryption(message) {
 	// find message element
 	var element = document.getElementById(formatElementID(message['id']))
@@ -69,26 +102,20 @@ function recvAfterDecryption(message) {
 	var decrypted = message.was_decrypted;
 	var messageContent = message.plaintext;
 
-	var colour = null;
-
-	// create "temporarily" incredibly ugly status header
-	var statusElement = "<div>";
+	var statusMessage = "";
 
 	// decryption status
-	statusElement += "<b>";
 	if (error) {
 		// failure
-		statusElement += error;
+		statusMessage += "Error: " + error;
 	}
 	else {
 		var msgDesc = null;
 		if (decrypted) {
 			msgDesc = "Decrypted message";
-			colour  = "#0f844d";
 		}
 		else {
 			msgDesc = "Verified message";
-			colour  = "#0d7d8e";
 		}
 
 		// signing
@@ -96,32 +123,31 @@ function recvAfterDecryption(message) {
 
 			// good signature
 			if (wellSigned) {
-				statusElement += msgDesc + " with good signature from " + signer;
+				statusMessage += msgDesc + " with good signature from " + signer;
 			}
 
 			// badly signed
 			else {
-				statusElement += msgDesc + " with BAD signature from " + signer;
-				colour = null;
+				statusMessage += msgDesc + " with BAD signature from " + signer;
 			}
 		}
 
 		// unsigned
 		else {
-			statusElement += "Decrypted unsigned message";
+			statusMessage += "Decrypted unsigned message";
 		}
 	}
-	statusElement += "</b></div>";
 
-	// error colour
-	if (colour == null) {
-		colour = "#bd0e0e";
-	}
+	var status = {
+		status: statusMessage,
+		message: messageContent,
+		errored: Boolean(error), // if an error occurred
+		decrypted: decrypted,    // if the message was decrypted
+		signed: Boolean(signer), // if the message was signed at all (good or bad)
+		wellSigned: wellSigned   // if the message has a good signature
+	};
 
-	// update message box
-	element.innerHTML = statusElement + messageContent;
-	element.parentNode.parentNode.style.backgroundColor = colour;
-	element.parentNode.parentNode.style.color = "#fff";
+	formatDecryptedMessageElement(element, status);
 }
 
 // runs in context of webpage
