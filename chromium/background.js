@@ -20,7 +20,7 @@ portNative.onMessage.addListener(function(m) {
 		var callback = responseLookup.lookup[reqID];
 		delete responseLookup.lookup[reqID];
 		if (callback) {
-			callback(m);
+			callback(m.content);
 		}
 	}
 
