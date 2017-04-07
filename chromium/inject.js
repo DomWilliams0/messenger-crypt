@@ -120,8 +120,8 @@ function recvAfterDecryption(message) {
 
 	// update message box
 	element.innerHTML = statusElement + messageContent;
-	element.parentNode.style.backgroundColor = colour;
-	element.parentNode.style.color = "#fff";
+	element.parentNode.parentNode.style.backgroundColor = colour;
+	element.parentNode.parentNode.style.color = "#fff";
 }
 
 // runs in context of webpage
