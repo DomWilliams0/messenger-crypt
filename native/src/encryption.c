@@ -132,7 +132,8 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	size_t plaintext_len;
 	*gpg_plaintext = gpgme_data_release_and_get_mem(*buf_o, &plaintext_len);
 	result->plaintext = *gpg_plaintext;
-	result->plaintext[plaintext_len] = '\0';
+	if (plaintext_len > 0)
+		result->plaintext[plaintext_len] = '\0';
 	*buf_o = NULL;
 
 	// validate signatures

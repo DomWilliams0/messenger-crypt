@@ -100,7 +100,7 @@ function recvAfterDecryption(message) {
 	var wellSigned = message.good_sig;
 
 	var decrypted = message.was_decrypted;
-	var messageContent = message.plaintext;
+	var messageContent = message.plaintext || "";
 
 	var statusMessage = "";
 
@@ -302,9 +302,9 @@ function patchRequestSending() {
 					request.send = function(params) {
 						var json = JSON.parse('{"' + params.replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
 
-						// remove undefined messages
+						// forward stickers/likes without touching
 						if (json['has_attachment'] != "false") {
-							json['body'] = "";
+							return sendOrig.apply(this, arguments);
 						}
 
 						var conversation = fetchCachedState();
