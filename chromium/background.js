@@ -73,6 +73,10 @@ function sendNativeMessage(msg, callback) {
 }
 
 function updateBadgeFromBackground() {
+	// no state yet
+	if (!state)
+		return;
+
 	var conversationGetter = {
 		what: "conversation",
 		content: {
