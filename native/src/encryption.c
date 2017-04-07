@@ -207,6 +207,18 @@ void encrypt_free_extra_allocations(void *data)
 {
 	struct encrypt_extra_allocation *alloc = (struct encrypt_extra_allocation *)data;
 
+	if (alloc->error_message != NULL)
+		free((void *)alloc->error_message);
+
+	if (alloc->ciphertext != NULL)
+		gpgme_free(alloc->ciphertext);
+	if (alloc->plaintext != NULL && alloc->plaintext != alloc->ciphertext)
+		gpgme_free(alloc->plaintext);
+
+	if (alloc->input_buffer != NULL)
+		gpgme_free(alloc->input_buffer);
+	if (alloc->output_buffer != NULL)
+		gpgme_free(alloc->output_buffer);
 }
 
 // lord forgive me
@@ -279,6 +291,8 @@ static const char *check_for_missing_mappings(struct recipient *recipients, size
 		);
 }
 
+#define MISSING_PUB_KEY (gpgme_key_t)(1)
+
 static const char *collect_keys(struct crypto_context *ctx, struct recipient *recipients, size_t recipient_count, gpgme_key_t *pub_keys, const char **free_me)
 {
 	CREATE_COMMA_DELIMITED_LIST(
@@ -287,7 +301,7 @@ static const char *collect_keys(struct crypto_context *ctx, struct recipient *re
 			if (err != GPG_ERR_NO_ERROR)
 			{
 				bad_count += 1;
-				pub_keys[i] = NULL;
+				pub_keys[i] = MISSING_PUB_KEY;
 			}
 		},
 		"Missing public key(s) for: ",
@@ -312,43 +326,69 @@ static const char *append_errors(const char *prefix, const char *suffix, BOOL *a
 	return full_err;
 }
 
-static void encrypt_wrapper(struct crypto_context *ctx,
-		char *plaintext,
-		BOOL encrypt, BOOL sign,
-		struct recipient *recipients, size_t recipient_count,
-		struct encrypt_result *result, struct encrypt_extra_allocation *alloc,
-		gpgme_data_t *buf_i, gpgme_data_t *buf_o,
-		gpgme_key_t *pub_keys,
-		gpgme_key_t *personal_pub_key, gpgme_key_t *personal_sign_key,
-		const char *personal_fpr)
+static struct encrypt_params
 {
+	char *plaintext;
+	BOOL encrypt;
+	BOOL sign;
+
+	struct recipient *recipients;
+	size_t recipient_count;
+
+	struct encrypt_result *result;
+	struct encrypt_extra_allocation *alloc;
+
+	gpgme_data_t buf_i;
+	gpgme_data_t buf_o;
+
+	gpgme_key_t *pub_keys;
+	gpgme_key_t personal_pub_key;
+	gpgme_key_t personal_sign_key;
+
+	const char *personal_fpr;
+};
+
+static void encrypt_wrapper(struct crypto_context *ctx, struct encrypt_params *params)
+{
+	struct encrypt_result *result = params->result;
+
 	// nothing to do
-	if (!encrypt && !sign)
+	if (!params->encrypt && !params->sign)
 	{
-		result->ciphertext = plaintext;
+		result->ciphertext = params->plaintext;
 		return;
 	}
 
 	gpgme_error_t err;
 
 	// ensure personal key is provided
-	if (personal_fpr == NULL)
+	if (params->personal_fpr == NULL)
 	{
 		result->error = "Personal public key not specified";
 		return;
 	}
 
 	// find public keys for recipients if encrypting
-	if (encrypt)
+	if (params->encrypt)
 	{
-		if ((result->error = check_for_missing_mappings(recipients, recipient_count, &alloc->error_message)) != NULL)
+		if ((result->error = check_for_missing_mappings(params->recipients, params->recipient_count,
+						&params->alloc->error_message)) != NULL)
 			return;
 
-		if ((result->error = collect_keys(ctx, recipients, recipient_count, pub_keys, &alloc->error_message)) != NULL)
+		params->pub_keys = calloc(params->recipient_count + 2, sizeof(gpgme_key_t)); // +1 for self, +1 for null terminated
+
+		if (params->pub_keys == NULL)
+		{
+			result->error = error_get_message(ERROR_MEMORY);
+			return;
+		}
+
+		if ((result->error = collect_keys(ctx, params->recipients, params->recipient_count,
+						params->pub_keys, &params->alloc->error_message)) != NULL)
 			return;
 
 		// get own public key
-		if ((err = gpgme_get_key(ctx->gpg, personal_fpr, personal_pub_key, FALSE)) != GPG_ERR_NO_ERROR)
+		if ((err = gpgme_get_key(ctx->gpg, params->personal_fpr, &params->personal_pub_key, FALSE)) != GPG_ERR_NO_ERROR)
 		{
 			BOOL allocd;
 			const char *prefix = "Failed to get own public key: ";
@@ -356,20 +396,20 @@ static void encrypt_wrapper(struct crypto_context *ctx,
 			const char *full_err = append_errors(prefix, gpg_err, &allocd);
 
 			if (allocd)
-				alloc->error_message = full_err;
+				params->alloc->error_message = full_err;
 
 			result->error = full_err;
 			return;
 		}
 
-		pub_keys[recipient_count] = *personal_pub_key;
-		pub_keys[recipient_count + 1] = NULL; // null terminated
+		params->pub_keys[params->recipient_count] = params->personal_pub_key;
+		params->pub_keys[params->recipient_count + 1] = NULL; // null terminated
 	}
 
 	// get signing key
-	if (sign)
+	if (params->sign)
 	{
-		if ((err = gpgme_get_key(ctx->gpg, personal_fpr, personal_sign_key, TRUE)) != GPG_ERR_NO_ERROR)
+		if ((err = gpgme_get_key(ctx->gpg, params->personal_fpr, &params->personal_sign_key, TRUE)) != GPG_ERR_NO_ERROR)
 		{
 			BOOL allocd;
 			const char *prefix = "Failed to get own public key: ";
@@ -377,47 +417,47 @@ static void encrypt_wrapper(struct crypto_context *ctx,
 			const char *full_err = append_errors(prefix, gpg_err, &allocd);
 
 			if (allocd)
-				alloc->error_message = full_err;
+				params->alloc->error_message = full_err;
 
 			result->error = full_err;
 			return;
 		}
 
 		gpgme_signers_clear(ctx->gpg);
-		DO_SAFE(gpgme_signers_add(ctx->gpg, *personal_sign_key));
+		DO_SAFE(gpgme_signers_add(ctx->gpg, params->personal_sign_key));
 	}
 
 	// create buffers
-	DO_SAFE(gpgme_data_new_from_mem(buf_i, plaintext, strlen(plaintext), 0));
-	DO_SAFE(gpgme_data_new(buf_o));
+	DO_SAFE(gpgme_data_new_from_mem(&params->buf_i, params->plaintext, strlen(params->plaintext), 0));
+	DO_SAFE(gpgme_data_new(&params->buf_o));
 
 	gpgme_sign_result_t sign_result = NULL;
 	gpgme_encrypt_result_t encrypt_result = NULL;
 
 	// let's get crypting
-	if (encrypt)
+	if (params->encrypt)
 	{
 		// also do some signing
-		if (sign)
+		if (params->sign)
 		{
-			DO_SAFE(gpgme_op_encrypt_sign(ctx->gpg, pub_keys, 0, *buf_i, *buf_o));
+			DO_SAFE(gpgme_op_encrypt_sign(ctx->gpg, params->pub_keys, 0, params->buf_i, params->buf_o));
 			sign_result = gpgme_op_sign_result(ctx->gpg);
 		}
 		else
 		{
-			DO_SAFE(gpgme_op_encrypt(ctx->gpg, pub_keys, 0, *buf_i, *buf_o));
+			DO_SAFE(gpgme_op_encrypt(ctx->gpg, params->pub_keys, 0, params->buf_i, params->buf_o));
 		}
 
 		encrypt_result = gpgme_op_encrypt_result(ctx->gpg);
 	}
 	else
 	{
-		DO_SAFE(gpgme_op_sign(ctx->gpg, *buf_i, *buf_o, GPGME_SIG_MODE_CLEAR));
+		DO_SAFE(gpgme_op_sign(ctx->gpg, params->buf_i, params->buf_o, GPGME_SIG_MODE_CLEAR));
 		sign_result = gpgme_op_sign_result(ctx->gpg);
 	}
 
 	// catch errors
-	if (encrypt)
+	if (params->encrypt)
 	{
 		if (encrypt_result == NULL)
 		{
@@ -431,10 +471,9 @@ static void encrypt_wrapper(struct crypto_context *ctx,
 			result->error = "Failed to encrypt message for certain recipients for an unknown reason - oh dear";
 			return;
 		}
-
 	}
 
-	if (sign)
+	if (params->sign)
 	{
 		if (sign_result == NULL)
 		{
@@ -449,14 +488,15 @@ static void encrypt_wrapper(struct crypto_context *ctx,
 		}
 	}
 
-	result->is_signed = sign;
-	result->is_encrypted = encrypt;
+	result->is_signed = params->sign;
+	result->is_encrypted = params->encrypt;
 
 	// copy plaintext
-	size_t ciphertet_len;
-	result->ciphertext = gpgme_data_release_and_get_mem(*buf_o, &ciphertet_len);
-	result->ciphertext[ciphertet_len] = '\0';
-	*buf_o = NULL;
+	size_t ciphertext_len;
+	result->ciphertext = gpgme_data_release_and_get_mem(params->buf_o, &ciphertext_len);
+	result->ciphertext[ciphertext_len - 1] = '\0';
+	params->alloc->ciphertext = result->ciphertext;
+	params->buf_o = NULL;
 }
 
 
@@ -471,34 +511,42 @@ void encrypt(struct crypto_context *ctx, char *plaintext,
 	result->ciphertext = "";
 	result->error = NULL;
 
-	gpgme_data_t buf_i = NULL, buf_o = NULL;
-	gpgme_key_t personal_sign_key = NULL, personal_pub_key = NULL;
-
-	// TODO allocate up above
-	gpgme_key_t *enc_keys = calloc(recipient_count + 2, sizeof(gpgme_key_t)); // +1 for self, +1 for null terminated
-
-	if (enc_keys == NULL)
-	{
-		result->error = error_get_message(ERROR_MEMORY);
-		return;
-	}
+	struct encrypt_params params = {0};
+	params.encrypt = encrypt;
+	params.sign = sign;
+	params.plaintext = plaintext;
+	params.recipients = recipients;
+	params.recipient_count = recipient_count;
+	params.result = result;
+	params.alloc = alloc;
+	params.personal_fpr = personal_fpr;
 
 	// TODO unref keys
-	encrypt_wrapper(ctx,
-			plaintext,
-			encrypt, sign,
-			recipients, recipient_count,
-			result, alloc,
-			&buf_i, &buf_o,
-			enc_keys, &personal_sign_key,
-			&personal_pub_key, personal_fpr);
+	encrypt_wrapper(ctx, &params);
 
 	size_t size_unused;
-	if (buf_i != NULL)
-		alloc->input_buffer = gpgme_data_release_and_get_mem(buf_i, &size_unused);
+	if (params.buf_i != NULL)
+		alloc->input_buffer = gpgme_data_release_and_get_mem(params.buf_i, &size_unused);
 
-	if (buf_o != NULL)
-		alloc->output_buffer = gpgme_data_release_and_get_mem(buf_o, &size_unused);
+	if (params.buf_o != NULL)
+		alloc->output_buffer = gpgme_data_release_and_get_mem(params.buf_o, &size_unused);
+
+	if (params.personal_pub_key != NULL)
+		gpgme_key_unref(params.personal_pub_key);
+
+	if (params.personal_sign_key != NULL)
+		gpgme_key_unref(params.personal_sign_key);
+
+	if (params.pub_keys != NULL)
+	{
+		for (gpgme_key_t *k = params.pub_keys; *k != NULL; k++)
+		{
+			if (*k != MISSING_PUB_KEY && (params.personal_pub_key == NULL || *k != params.personal_pub_key))
+				gpgme_key_unref(*k);
+			k += 1;
+		}
+		free(params.pub_keys);
+	}
 }
 
 void get_key_free(struct get_key_result *result)

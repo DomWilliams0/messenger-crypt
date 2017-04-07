@@ -37,6 +37,7 @@ struct encrypt_result
 struct encrypt_extra_allocation
 {
 	char *plaintext;
+	char *ciphertext; // may == plaintext
 	const char *error_message;
 	char *input_buffer;
 	char *output_buffer;
