@@ -13,7 +13,7 @@ function decryptMessages() {
 
 	// find encrypted messages
 	var encryptedMessages = [];
-	for (var i = 0; i < messages.length; i++) {
+	for (var i = messages.length - 1; i >= 0; i--) {
 		var msg = messages[i];
 
 		// ensure this message hasn't already been processed
