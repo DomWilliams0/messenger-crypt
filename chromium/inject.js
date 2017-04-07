@@ -284,7 +284,7 @@ function patchRequestSending() {
 						var conversation = fetchCachedState();
 
 						var message = {
-							message:    decodeURI(json['body']),
+							message:    decodeURIComponent(json['body']),
 							recipients: conversation['participants'],
 							id:         conversation['thread']['id']
 						};
