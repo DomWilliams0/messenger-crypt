@@ -87,7 +87,13 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 		// dummy message in case of failure
 		result->plaintext = dummy_signed;
 
-		DO_SAFE(gpgme_op_verify(ctx->gpg, *buf_i, NULL, *buf_o));
+		// allow bad signature errors to fall through
+		err = gpgme_op_verify(ctx->gpg, *buf_i, NULL, *buf_o);
+		if (err != GPG_ERR_NO_ERROR)
+		{
+			result->error = gpgme_strerror(err);
+			return;
+		}
 
 		gpgme_verify_result_t verify = gpgme_op_verify_result(ctx->gpg);
 
@@ -158,14 +164,25 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 
 		gpgme_key_unref(signing_key);
 
-		// bad
-		if (sig->status != GPG_ERR_NO_ERROR)
+		// bad signature
+		if (gpgme_err_code(sig->status) == GPG_ERR_BAD_SIGNATURE)
+		{
+			result->good_sig = FALSE;
+		}
+
+		// other failure
+		// TODO change good_sig to status message (i.e. revoked/expired signing key)
+		else if (sig->status != GPG_ERR_NO_ERROR)
 		{
 			result->error = gpgme_strerror(sig->status);
 			return;
 		}
 
-		result->good_sig = TRUE;
+		// good signature
+		else
+		{
+			result->good_sig = TRUE;
+		}
 	}
 }
 
@@ -326,7 +343,7 @@ static const char *append_errors(const char *prefix, const char *suffix, BOOL *a
 	return full_err;
 }
 
-static struct encrypt_params
+struct encrypt_params
 {
 	char *plaintext;
 	BOOL encrypt;
