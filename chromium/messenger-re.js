@@ -149,9 +149,9 @@ function getConversationState(globalState, convo) {
 		image: fullThread['image_src'] || participants[0]['image']
 	};
 
-	// you no longer appear in the participants list
-	// how dare facebook change their private api >:(
-	// if (participants.length > 1) { participants.pop(); }
+	// pop self from end of participants list
+	if (participants.length > 1) { participants.pop(); }
+
 	return {
 		thread:       thread,
 		participants: participants

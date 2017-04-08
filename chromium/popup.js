@@ -402,11 +402,6 @@ function populatePopup() {
 	fetchState(function(state) {
 		var participants = state.participants;
 
-		// remove self from end
-		if (participants.length > 1) {
-			participants.pop();
-		}
-
 		// add names to list
 		var list = document.getElementById("participants-list");
 		for (var i = 0; i < participants.length; i++) {
