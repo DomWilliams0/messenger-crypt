@@ -16,8 +16,8 @@ static int decrypt_response_printer(struct json_out *out, va_list *args)
 	struct decrypt_result *result = &response->result;
 
 	return json_printf(out,
-			"{id: %d, error: %Q, signer: %Q, good_sig: %B, was_decrypted: %B, plaintext: %Q}",
-			response->msg_id, result->error, result->signer, result->good_sig, result->was_decrypted, result->plaintext);
+			"{id: %d, error: %Q, signer: %Q, good_sig: %B, was_decrypted: %B, plaintext: %Q, ciphertext: %Q}",
+			response->msg_id, result->error, result->signer, result->good_sig, result->was_decrypted, result->plaintext, result->ciphertext);
 }
 
 static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,

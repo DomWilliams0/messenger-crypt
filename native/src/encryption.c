@@ -204,6 +204,7 @@ void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result
 	result->was_decrypted = FALSE;
 	result->signer = "";
 	result->plaintext = "";
+	result->ciphertext = ciphertext;
 	result->error = NULL;
 
 	struct decrypt_params params = {0};
@@ -229,7 +230,7 @@ void decrypt_free_extra_allocations(void *data)
 
 	if (alloc->input_buffer != NULL)
 		gpgme_free(alloc->input_buffer);
-	if (alloc->gpg_plaintext != NULL)
+	if (alloc->gpg_plaintext != NULL && alloc->gpg_plaintext != dummy_signed && alloc->gpg_plaintext != dummy_encrypted)
 		gpgme_free(alloc->gpg_plaintext);
 	if (alloc->who_formatted != NULL)
 		gpgme_free(alloc->who_formatted);

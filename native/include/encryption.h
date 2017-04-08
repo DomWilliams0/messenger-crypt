@@ -16,6 +16,7 @@ struct decrypt_result
 	BOOL good_sig;
 	BOOL was_decrypted;
 	char *plaintext;
+	char *ciphertext;
 };
 
 struct decrypt_extra_allocation
