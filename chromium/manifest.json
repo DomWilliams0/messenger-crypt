@@ -17,7 +17,7 @@
 	"content_scripts": [
 		{
 			"matches": ["*://*.messenger.com/*"],
-			"js": ["messenger-re.js", "inject.js"]
+			"js": ["messenger-re.js", "lib/JavaScript-MD5/js/md5.min.js", "inject.js"]
 		}
 	],
 

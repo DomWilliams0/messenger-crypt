@@ -1,6 +1,20 @@
 var nextMessageID = 0;
 var backgroundPort;
 
+var decryptCache = {
+	cache: {},
+
+	put: function(ciphertext, toCache) {
+		var hash = md5(ciphertext);
+		this.cache[hash] = toCache;
+	},
+
+	lookup: function(msg) {
+		var hash = md5(msg);
+		return this.cache[hash];
+	}
+};
+
 function formatElementID(id) {
 	return "pgp-msg-" + id;
 }
@@ -23,6 +37,18 @@ function decryptMessages() {
 
 		// pgp message found
 		if (msg.message.startsWith("-----BEGIN PGP ")) {
+
+			var msgID;
+			var cached;
+
+			// lookup in cache
+			cached = decryptCache.lookup(msg.message);
+			if (cached) {
+				msg.element.id = formatElementID(cached.id);
+				recvAfterDecryption(cached);
+				continue;
+			}
+
 			// generate unique id
 			var msgID = nextMessageID;
 			nextMessageID += 1;
@@ -86,6 +112,9 @@ function formatDecryptedMessageElement(element, status) {
 }
 
 function recvAfterDecryption(message) {
+	// add to cache
+	decryptCache.put(message.ciphertext, message);
+
 	// find message element
 	var element = document.getElementById(formatElementID(message['id']))
 
