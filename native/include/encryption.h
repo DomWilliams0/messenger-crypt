@@ -23,6 +23,7 @@ struct decrypt_extra_allocation
 	char *input_buffer;
 	char *output_buffer;
 	char *gpg_plaintext;
+	char *ciphertext;
 	char *who_formatted;
 };
 

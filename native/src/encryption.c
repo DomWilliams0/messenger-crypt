@@ -63,12 +63,22 @@ static void detect_message(const char *msg, BOOL *is_just_signed, BOOL *is_encry
 	*is_encrypted = enc;
 }
 
-static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result,
-		gpgme_data_t *buf_i, gpgme_data_t *buf_o, char **gpg_plaintext, char **who_formatted)
+struct decrypt_params
+{
+	char *ciphertext;
+	struct decrypt_result *result;
+
+	gpgme_data_t buf_i;
+	gpgme_data_t buf_o;
+
+	char **who_formatted;
+};
+
+static void decrypt_wrapper(struct crypto_context *ctx, struct decrypt_params *params)
 {
 	// what do
 	BOOL is_just_signed, is_encrypted;
-	detect_message(ciphertext, &is_just_signed, &is_encrypted);
+	detect_message(params->ciphertext, &is_just_signed, &is_encrypted);
 
 	// nothing to do
 	if (!is_just_signed && !is_encrypted)
@@ -77,9 +87,11 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	gpgme_error_t err;
 	gpgme_signature_t sigs = NULL;
 
+	struct decrypt_result *result = params->result;
+
 	// create buffers
-	DO_SAFE(gpgme_data_new_from_mem(buf_i, ciphertext, strlen(ciphertext), 0));
-	DO_SAFE(gpgme_data_new(buf_o));
+	DO_SAFE(gpgme_data_new_from_mem(&params->buf_i, params->ciphertext, strlen(params->ciphertext), 0));
+	DO_SAFE(gpgme_data_new(&params->buf_o));
 
 	// just verify
 	if (is_just_signed)
@@ -88,7 +100,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 		result->plaintext = dummy_signed;
 
 		// allow bad signature errors to fall through
-		err = gpgme_op_verify(ctx->gpg, *buf_i, NULL, *buf_o);
+		err = gpgme_op_verify(ctx->gpg, params->buf_i, NULL, params->buf_o);
 		if (err != GPG_ERR_NO_ERROR)
 		{
 			result->error = gpgme_strerror(err);
@@ -111,7 +123,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 	else
 	{
 		result->plaintext = dummy_encrypted;
-		DO_SAFE(gpgme_op_decrypt_verify(ctx->gpg, *buf_i, *buf_o));
+		DO_SAFE(gpgme_op_decrypt_verify(ctx->gpg, params->buf_i, params->buf_o));
 
 		gpgme_decrypt_result_t decrypt = gpgme_op_decrypt_result(ctx->gpg);
 		gpgme_verify_result_t verify = gpgme_op_verify_result(ctx->gpg);
@@ -130,11 +142,10 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 
 	// copy plaintext
 	size_t plaintext_len;
-	*gpg_plaintext = gpgme_data_release_and_get_mem(*buf_o, &plaintext_len);
-	result->plaintext = *gpg_plaintext;
+	result->plaintext = gpgme_data_release_and_get_mem(params->buf_o, &plaintext_len);
 	if (plaintext_len > 0)
 		result->plaintext[plaintext_len] = '\0';
-	*buf_o = NULL;
+	params->buf_o = NULL;
 
 	// validate signatures
 	if (sigs != NULL)
@@ -160,8 +171,8 @@ static void decrypt_wrapper(struct crypto_context *ctx, char *ciphertext, struct
 			}
 		}
 
-		gpgrt_asprintf(who_formatted, "%s (%s)", who_name, who_fpr);
-		result->signer = *who_formatted;
+		gpgrt_asprintf(params->who_formatted, "%s (%s)", who_name, who_fpr);
+		result->signer = *params->who_formatted;
 
 		gpgme_key_unref(signing_key);
 
@@ -195,16 +206,21 @@ void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result
 	result->plaintext = "";
 	result->error = NULL;
 
-	gpgme_data_t buf_i, buf_o;
+	struct decrypt_params params = {0};
+	params.ciphertext = ciphertext;
+	params.result = result;
+	params.who_formatted = &alloc->who_formatted;
 
-	decrypt_wrapper(ctx, ciphertext, result, &buf_i, &buf_o, &alloc->gpg_plaintext, &alloc->who_formatted);
+	decrypt_wrapper(ctx, &params);
+
+	alloc->gpg_plaintext = result->plaintext;
 
 	size_t size_unused;
-	if (buf_i != NULL)
-		alloc->input_buffer = gpgme_data_release_and_get_mem(buf_i, &size_unused);
+	if (params.buf_i != NULL)
+		alloc->input_buffer = gpgme_data_release_and_get_mem(params.buf_i, &size_unused);
 
-	if (buf_o != NULL)
-		alloc->output_buffer = gpgme_data_release_and_get_mem(buf_o, &size_unused);
+	if (params.buf_o != NULL)
+		alloc->output_buffer = gpgme_data_release_and_get_mem(params.buf_o, &size_unused);
 }
 
 void decrypt_free_extra_allocations(void *data)
@@ -219,6 +235,8 @@ void decrypt_free_extra_allocations(void *data)
 		gpgme_free(alloc->who_formatted);
 	if (alloc->output_buffer != NULL)
 		gpgme_free(alloc->output_buffer);
+	if (alloc->ciphertext != NULL)
+		free(alloc->ciphertext);
 }
 
 void encrypt_free_extra_allocations(void *data)
@@ -509,10 +527,11 @@ static void encrypt_wrapper(struct crypto_context *ctx, struct encrypt_params *p
 	result->is_signed = params->sign;
 	result->is_encrypted = params->encrypt;
 
-	// copy plaintext
+	// copy ciphertext
 	size_t ciphertext_len;
 	result->ciphertext = gpgme_data_release_and_get_mem(params->buf_o, &ciphertext_len);
-	result->ciphertext[ciphertext_len - 1] = '\0';
+	if (ciphertext_len > 0)
+		result->ciphertext[ciphertext_len - 1] = '\0';
 	params->alloc->ciphertext = result->ciphertext;
 	params->buf_o = NULL;
 }

@@ -21,14 +21,14 @@ static int decrypt_response_printer(struct json_out *out, va_list *args)
 }
 
 static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
-		struct decrypt_response *resp, struct decrypt_extra_allocation *alloc, char **msg)
+		struct decrypt_response *resp, struct decrypt_extra_allocation *alloc)
 {
 	uint32_t msg_id;
 	if (json_scanf(content->ptr, content->len,
-				"{id: %d, message: %Q}", &msg_id, msg) != 2)
+				"{id: %d, message: %Q}", &msg_id, &alloc->ciphertext) != 2)
 		return ERROR_BAD_CONTENT;
 
-	decrypt(ctx->crypto, *msg, &resp->result, alloc);
+	decrypt(ctx->crypto, alloc->ciphertext, &resp->result, alloc);
 
 	resp->msg_id = msg_id;
 	response->data = resp;
@@ -53,12 +53,9 @@ RESULT handler_decrypt(struct mc_context *ctx, struct json_token *content, struc
 		return ERROR_MEMORY;
 	}
 
-	char *msg;
-	RESULT ret = handler_decrypt_wrapper(ctx, content, response, resp, alloc, &msg);
+	RESULT ret = handler_decrypt_wrapper(ctx, content, response, resp, alloc);
 
-	if (msg != NULL)
-		free(msg);
-	if (ret != 0)
+	if (ret != SUCCESS)
 		free(resp);
 
 	return ret;
