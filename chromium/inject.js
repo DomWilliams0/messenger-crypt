@@ -19,63 +19,46 @@ function formatElementID(id) {
 	return "pgp-msg-" + id;
 }
 
-function decryptMessages() {
-	var messages = getAllMessages();
-	if (!messages || messages.length == 0) {
-		return;
-	}
+// {message: ..., isMe: boolean, element})
+function decryptSingleMessage(msg) {
 
-	// find encrypted messages
-	var encryptedMessages = [];
-	for (var i = messages.length - 1; i >= 0; i--) {
-		var msg = messages[i];
+	// ensure this message hasn't already been processed
+	if (msg.element.id && msg.element.id.startsWith("pgp-msg-")) { return; }
 
-		// ensure this message hasn't already been processed
-		if (msg.element.id && msg.element.id.startsWith("pgp-msg-")) {
-			continue;
+	// pgp message found
+	if (msg.message.startsWith("-----BEGIN PGP ")) {
+
+		var msgID;
+		var cached;
+
+		// lookup in cache
+		// TODO limit cache size?
+		cached = decryptCache.lookup(msg.message);
+		if (cached) {
+			msg.element.id = formatElementID(cached.id);
+			recvAfterDecryption(cached);
+			return;
 		}
 
-		// pgp message found
-		if (msg.message.startsWith("-----BEGIN PGP ")) {
+		// generate unique id
+		var msgID = nextMessageID;
+		nextMessageID += 1;
 
-			var msgID;
-			var cached;
+		// mark element with id
+		msg.id = msgID;
+		msg.element.id = formatElementID(msgID);
+		delete msg.element;
 
-			// lookup in cache
-			cached = decryptCache.lookup(msg.message);
-			if (cached) {
-				msg.element.id = formatElementID(cached.id);
-				recvAfterDecryption(cached);
-				continue;
-			}
-
-			// generate unique id
-			var msgID = nextMessageID;
-			nextMessageID += 1;
-
-			// mark element with id
-			msg["id"] = msgID;
-			msg.element.id = formatElementID(msgID);
-			delete msg.element;
-
-			encryptedMessages.push(msg);
-		}
+		transmitForDecryption(msg);
 	}
-
-	if (encryptedMessages.length > 0) {
-		transmitForDecryption(encryptedMessages);
-	}
-};
+}
 
 // runs in context of content script
-function transmitForDecryption(messages) {
-	// send directly to background
-	for (var i = 0; i < messages.length; i++) {
-		backgroundPort.postMessage({
-			what: "decrypt",
-			content: messages[i]
-		});
-	}
+function transmitForDecryption(msg) {
+	backgroundPort.postMessage({
+		what: "decrypt",
+		content: msg
+	});
 }
 
 // element: the message box element
@@ -296,7 +279,7 @@ function startConversationPolling(pollTime) {
 			watchForNewMessages(console.log);
 
 			// decrypt existing messages
-			findMessages(console.log);
+			findMessages(decryptSingleMessage);
 
 			chrome.runtime.sendMessage({
 				what: "state",

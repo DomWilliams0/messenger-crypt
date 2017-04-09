@@ -30,10 +30,12 @@ function watchForNewMessages(callback) {
 
 		var observer = new MutationObserver(function(mutations) {
 			mutations.forEach(function(m) {
-				if (m.addedNodes.length == 0)
+				if (m.removedNodes > 0 || m.addedNodes.length == 0)
 					return;
 
-				m.addedNodes.forEach(function(n) { findMessagesInNode(n, callback); });
+				m.addedNodes.forEach(function(n) {
+					if (n.nodeType == 1) { findMessagesInNode(n, callback); }
+				});
 			});
 		});
 
