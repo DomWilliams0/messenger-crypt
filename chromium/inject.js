@@ -290,6 +290,7 @@ function startConversationPolling(pollTime) {
 
 	function intervalCallback() {
 		if (hasPathChanged()) {
+			watchForMessages();
 			chrome.runtime.sendMessage({
 				what: "state",
 				content: fetchCachedState()
@@ -497,7 +498,7 @@ window.addEventListener("load", function(e) {
 	patchRequestSending();
 
 	// polling for conversation changes
-	// startConversationPolling(500);
+	startConversationPolling(200);
 
 }, false);
 
