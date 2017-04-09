@@ -261,6 +261,7 @@ function listenForModifiedMessages() {
 	}, false);
 }
 
+// deprecated
 function startPolling(pollTime) {
 	var running = false;
 
@@ -290,7 +291,13 @@ function startConversationPolling(pollTime) {
 
 	function intervalCallback() {
 		if (hasPathChanged()) {
-			watchForMessages();
+
+			// messagebox is replaced
+			watchForNewMessages(console.log);
+
+			// decrypt existing messages
+			findMessages(console.log);
+
 			chrome.runtime.sendMessage({
 				what: "state",
 				content: fetchCachedState()
@@ -423,76 +430,10 @@ backgroundPort.onMessage.addListener(function(msg) {
 		recvAfterEncryption(msg.content)
 });
 
-function watchForMessages() {
-
-	function findMessages(node) {
-		var msgs = node.querySelectorAll("._3oh-._58nk");
-		for (var i = 0; i < msgs.length; i++) {
-			var m = msgs[i];
-			var isMe = m.parentNode.parentNode.classList.contains("_43by");
-			var content = m.innerText;
-
-			var message = {
-				message: content,
-				isMe: isMe,
-				element: m
-			};
-
-			console.log(message);
-		}
-	}
-
-	function watch(element) {
-		var observer = new MutationObserver(function(mutations) {
-			mutations.forEach(function(m) {
-				if (m.addedNodes.length == 0)
-					return;
-
-				m.addedNodes.forEach(findMessages);
-			});
-		});
-
-		var conf = {
-			childList: true,
-			subtree: true
-
-		};
-		observer.observe(element, conf);
-	}
-
-	function waitForElement(id, callback) {
-		var observer = new MutationObserver(function(mutations) {
-			var result = document.getElementById(id);
-			if (result) {
-				this.disconnect();
-				callback(result);
-			}
-		});
-
-		var conf = {
-			childList: true,
-			subtree: true
-		};
-		observer.observe(document, conf);
-	}
-
-	// wait for messagebox
-	waitForElement("js_1", function(e) {
-		findMessages(e);
-		watch(e);
-	});
-}
-
 
 window.addEventListener("load", function(e) {
 	// get initial state
 	fetchCachedState();
-
-	// TODO call on conversation change
-	watchForMessages();
-
-	// message decrypting
-	// startPolling(500);
 
 	// sent message interception and encryption
 	patchRequestSending();

@@ -1,30 +1,73 @@
-// returns: [ {message, element}, ... ]
-function getAllMessages() {
+function waitForMessageBox(callback) {
+	_waitForElement("js_1", callback);
+}
 
-	var messageBox = document.querySelector("[aria-label=\"Messages\"]");
-	if (!messageBox) {
-		return [];
-	}
+// callback(single message {message: ..., isMe: boolean, element})
+function findMessagesInNode(node, callback) {
+	var msgs = node.querySelectorAll("._3oh-._58nk");
+	for (var i = 0; i < msgs.length; i++) {
+		var m = msgs[i];
+		var isMe = m.parentNode.parentNode.classList.contains("_43by");
+		var content = m.innerText;
 
-	var messageList = [];
-	var rawMessages = messageBox.getElementsByClassName("_3oh-")
-	for (var i = 0; i < rawMessages.length; i++) {
-		var m = rawMessages[i];
-
-		// ensure this is an actual message
-		if (m.parentNode.tagName != "DIV" || m.tagName != "SPAN") {
-			continue;
-		}
-
-		// add to returned array
-		messageList.push({
-			message: m.innerText,
+		var message = {
+			message: content,
+			isMe: isMe,
 			element: m
+		};
+
+		callback(message);
+	}
+}
+
+function findMessages(callback) {
+	waitForMessageBox(function(msgBox) { findMessagesInNode(msgBox, callback); });
+}
+
+// see findMessages
+function watchForNewMessages(callback) {
+	waitForMessageBox(function(msgBox) {
+
+		var observer = new MutationObserver(function(mutations) {
+			mutations.forEach(function(m) {
+				if (m.addedNodes.length == 0)
+					return;
+
+				m.addedNodes.forEach(function(n) { findMessagesInNode(n, callback); });
+			});
 		});
+
+		var conf = {
+			childList: true,
+			subtree: true
+		};
+
+		observer.observe(msgBox, conf);
+	});
+
+}
+
+function _waitForElement(id, callback) {
+	function check() { return document.getElementById(id); }
+
+	// already exists
+	var checkBefore = check();
+	if (checkBefore) {
+		callback(checkBefore);
+		return;
 	}
 
-	return messageList;
-};
+	var observer = new MutationObserver(function(mutations) {
+		var result = check();
+		if (result) {
+			this.disconnect();
+			callback(result);
+		}
+	});
+
+	observer.observe(document, { childList: true, subtree: true });
+}
+
 
 function regenerateState() {
 
