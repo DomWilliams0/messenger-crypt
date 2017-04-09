@@ -166,7 +166,7 @@ function recvAfterDecryption(message) {
 function pausedStateInsert(pausedContext) {
 	// allocate id
 	var id = pausedStateInsert.nextID || 0;
-	pausedStateInsert.id += 1;
+	pausedStateInsert.nextID = id + 1;
 
 	// store in lookup
 	if (!pausedStateInsert.lookup)

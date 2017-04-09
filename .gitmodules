@@ -4,3 +4,6 @@
 [submodule "chromium/lib/JavaScript-MD5"]
 	path = chromium/lib/JavaScript-MD5
 	url = https://github.com/blueimp/JavaScript-MD5
+[submodule "chromium/lib/jQuery-MD5"]
+	path = chromium/lib/jQuery-MD5
+	url = https://github.com/placemarker/jQuery-MD5
