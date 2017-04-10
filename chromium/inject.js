@@ -280,7 +280,7 @@ function startConversationPolling(pollTime) {
 		if (hasPathChanged()) {
 
 			// messagebox is replaced
-			watchForNewMessages(console.log);
+			watchForNewMessages(decryptSingleMessage);
 
 			// decrypt existing messages
 			findMessages(decryptSingleMessage);
