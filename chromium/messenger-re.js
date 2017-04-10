@@ -5,7 +5,7 @@ function waitForMessageBox(callback) {
 // callback(single message {message: ..., isMe: boolean, element})
 function findMessagesInNode(node, callback) {
 	var msgs = node.querySelectorAll("._3oh-._58nk");
-	for (var i = 0; i < msgs.length; i++) {
+	for (var i = msgs.length - 1; i >= 0; i--) {
 		var m = msgs[i];
 		var isMe = m.parentNode.parentNode.classList.contains("_43by");
 		var content = m.innerText;
