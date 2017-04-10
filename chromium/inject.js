@@ -47,18 +47,22 @@ function decryptSingleMessage(msg) {
 		// mark element with id
 		msg.id = msgID;
 		msg.element.id = formatElementID(msgID);
+
+		// placeholder message bubble
+		formatDecryptionInProgressMessageElement(msg.element);
 		delete msg.element;
 
-		transmitForDecryption(msg);
+
+		backgroundPort.postMessage({
+			what: "decrypt",
+			content: msg
+		});
 	}
 }
-
-// runs in context of content script
-function transmitForDecryption(msg) {
-	backgroundPort.postMessage({
-		what: "decrypt",
-		content: msg
-	});
+function formatDecryptionInProgressMessageElement(element) {
+	element.innerText = "Decrypting...";
+	element.parentNode.parentNode.style.backgroundColor = "#bbb";
+	element.parentNode.parentNode.style.color = "#666";
 }
 
 // element: the message box element
