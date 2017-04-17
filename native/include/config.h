@@ -71,6 +71,8 @@ struct contact
 	const char *key_fpr;
 };
 
+RESULT config_save(struct config_context *ctx);
+
 const char *config_get_key_string(enum setting_key key);
 
 const char *config_get_type_string(enum setting_type type);

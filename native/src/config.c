@@ -144,6 +144,14 @@ void config_ctx_destroy(struct config_context *ctx)
 	free(ctx);
 }
 
+RESULT config_save(struct config_context *ctx)
+{
+	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
+		return ERROR_CONFIG_WRITE;
+
+	return SUCCESS;
+}
+
 const char *config_get_key_string(enum setting_key key)
 {
 	switch(key)
@@ -294,8 +302,8 @@ RESULT config_set_setting(struct config_context *ctx, enum setting_key key, stru
 	if (result != CONFIG_TRUE)
 		return ERROR_CONFIG_KEY_CREATION;
 
-	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
-		return ERROR_CONFIG_WRITE;
+	if ((result = config_save(ctx)) != SUCCESS)
+		return result;
 
 	return SUCCESS;
 }
@@ -409,8 +417,9 @@ static RESULT config_set_conversation_wrapper(struct config_context *ctx, char *
 			return ERROR_CONFIG_KEY_CREATION;
 	}
 
-	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
-		return ERROR_CONFIG_WRITE;
+	RESULT res;
+	if ((res = config_save(ctx)) != SUCCESS)
+		return res;
 
 	return SUCCESS;
 }
@@ -532,8 +541,9 @@ static RESULT config_set_contact_wrapper(struct config_context *ctx, char *id, s
 			return ERROR_CONFIG_KEY_CREATION;
 	}
 
-	if (config_write_file(&ctx->config, ctx->path) != CONFIG_TRUE)
-		return ERROR_CONFIG_WRITE;
+	RESULT res;
+	if ((res = config_save(ctx)) != SUCCESS)
+		return res;
 
 	return SUCCESS;
 }
