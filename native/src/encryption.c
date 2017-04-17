@@ -24,13 +24,19 @@ struct crypto_context
 	gpgme_ctx_t gpg;
 };
 
-RESULT crypto_ctx_create(struct crypto_context **out)
+RESULT crypto_ctx_create(struct crypto_context **out, struct crypto_config *config)
 {
 	struct crypto_context *ctx = calloc(1, sizeof(struct crypto_context));
 	if (ctx == NULL)
 		return ERROR_MEMORY;
 
 	gpgme_check_version(NULL);
+
+	if (config != NULL)
+	{
+		if (gpgme_set_engine_info(GPGME_PROTOCOL_OPENPGP, config->gpg_exe, config->home_dir) != GPG_ERR_NO_ERROR)
+			return ERROR_GPG;
+	}
 
 	if (gpgme_new(&ctx->gpg) != GPG_ERR_NO_ERROR)
 	{

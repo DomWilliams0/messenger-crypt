@@ -9,7 +9,11 @@ struct mc_context
 	struct crypto_context *crypto;
 };
 
-RESULT context_init(struct mc_context *ctx);
+
+enum config_path;
+struct crypto_config;
+
+RESULT context_init(struct mc_context *ctx, enum config_path *config_path, struct crypto_config *crypto_config);
 void context_destroy(struct mc_context *ctx);
 
 #endif

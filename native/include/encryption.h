@@ -6,7 +6,13 @@
 
 struct crypto_context;
 
-RESULT crypto_ctx_create(struct crypto_context **out);
+struct crypto_config
+{
+	char *gpg_exe;
+	char *home_dir;
+};
+
+RESULT crypto_ctx_create(struct crypto_context **out, struct crypto_config *config);
 void crypto_ctx_destroy(struct crypto_context *ctx);
 
 struct decrypt_result

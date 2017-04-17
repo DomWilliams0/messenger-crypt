@@ -4,13 +4,13 @@
 #include "config.h"
 #include "encryption.h"
 
-RESULT context_init(struct mc_context *ctx)
+RESULT context_init(struct mc_context *ctx, enum config_path *config_path, struct crypto_config *crypto_config)
 {
 	int err;
-	if ((err = config_ctx_create(&ctx->config, APP_DATA)) != SUCCESS)
+	if ((err = config_ctx_create(&ctx->config, *config_path)) != SUCCESS)
 		return err;
 
-	if ((err = crypto_ctx_create(&ctx->crypto)) != SUCCESS)
+	if ((err = crypto_ctx_create(&ctx->crypto, crypto_config)) != SUCCESS)
 	{
 		config_ctx_destroy(ctx->config);
 		return err;
@@ -27,8 +27,11 @@ void context_destroy(struct mc_context *ctx)
 
 int main(void)
 {
+	enum config_path conf = APP_DATA;
+	struct crypto_config crypto = {0};
+
 	struct mc_context ctx;
-	RESULT init_result = context_init(&ctx);
+	RESULT init_result = context_init(&ctx, &conf, &crypto);
 	if (init_result != SUCCESS)
 		return init_result;
 
