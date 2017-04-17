@@ -19,7 +19,6 @@
 #define VALUE_KEY (struct setting_value) { .type = SETTING_KEY, .value = {.text = "" } }
 
 #define MAX_CONFIG_PATH_LEN (256)
-#define RAW_CONFIG_PATH "$HOME/.config/messenger_crypt.conf"
 
 static struct conversation_state default_conversation = {
 	.encryption = FALSE,
@@ -29,8 +28,7 @@ static struct conversation_state default_conversation = {
 struct config_context
 {
 	config_t config;
-	const char *path;
-	wordexp_t path_exp;
+	char *path;
 	struct setting_key_instance settings[SETTING_LAST];
 };
 
@@ -41,25 +39,46 @@ enum config_section
 	SECTION_CONTACTS
 };
 
-static void parse_path(wordexp_t *exp, const char **out)
+static RESULT find_path(enum config_path path, char **out)
 {
-	// TODO WARNING: not fully tested, only currently works with a single expansion
-	wordexp_t wexp;
-	int result = wordexp(RAW_CONFIG_PATH, &wexp, 0);
+	char *dir = NULL;
+	char *suffix = NULL;
+	char *filename = "messenger_crypt.conf";
 
-	// uh oh
-	if (result != 0 || wexp.we_wordc != 1)
+	switch(path)
 	{
-		*out = "/tmp/messenger_crypt.conf";
-		return;
+		case APP_DATA:
+			dir = getenv("HOME");
+			suffix = "/.config/";
+			break;
+		case TMP:
+			dir = "/tmp/";
+			suffix = "";
+			// TODO include username
+			break;
+
+			// TODO windows
 	}
 
-	// freed at the end with wordfree
-	*out = wexp.we_wordv[0];
-	*exp = wexp;
+	if (dir == NULL || strlen(dir) == 0)
+		return ERROR_ENVIRONMENT;
+
+	*out = calloc(
+			strlen(dir) +
+			strlen(suffix) +
+			strlen(filename) + 1,
+			sizeof(char));
+
+	if (*out == NULL)
+		return ERROR_MEMORY;
+
+	strcpy(*out + strlen(*out), dir);
+	strcpy(*out + strlen(*out), suffix);
+	strcpy(*out + strlen(*out), filename);
+	return SUCCESS;
 }
 
-RESULT config_ctx_create(struct config_context **out)
+RESULT config_ctx_create(struct config_context **out, enum config_path path)
 {
 	struct config_context *ctx = calloc(1, sizeof(struct config_context));
 	if (ctx == NULL)
@@ -71,7 +90,9 @@ RESULT config_ctx_create(struct config_context **out)
 			CONFIG_OPTION_COLON_ASSIGNMENT_FOR_GROUPS |
 			CONFIG_OPTION_COLON_ASSIGNMENT_FOR_NON_GROUPS);
 
-	parse_path(&ctx->path_exp, &ctx->path);
+	RESULT res;
+	if ((res = find_path(path, &ctx->path)) != SUCCESS)
+		return res;
 
 	// failure ignored, defaults will be used
 	config_read_file(&ctx->config, ctx->path);
@@ -118,9 +139,7 @@ RESULT config_ctx_create(struct config_context **out)
 
 void config_ctx_destroy(struct config_context *ctx)
 {
-	if (ctx->path_exp.we_wordc > 0)
-		wordfree(&ctx->path_exp);
-
+	free(ctx->path);
 	config_destroy(&ctx->config);
 	free(ctx);
 }

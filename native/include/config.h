@@ -9,7 +9,13 @@
 
 struct config_context;
 
-RESULT config_ctx_create(struct config_context **out);
+enum config_path
+{
+	APP_DATA,
+	TMP
+};
+
+RESULT config_ctx_create(struct config_context **out, enum config_path path);
 void config_ctx_destroy(struct config_context *ctx);
 
 enum setting_type

@@ -14,6 +14,7 @@ typedef int RESULT;
 #define ERROR_GPG                 (0x1007)
 #define ERROR_GPG_INVALID_KEY     (0x1008)
 #define ERROR_GPG_AMBIGUOUS_KEY   (0x1009)
+#define ERROR_ENVIRONMENT         (0x1010)
 
 const char *error_get_message(int err);
 

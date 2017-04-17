@@ -24,6 +24,8 @@ const char *error_get_message(int err)
 			return "Key not found in local keyring";
 		case ERROR_GPG_AMBIGUOUS_KEY:
 			return "Ambigious key identifier";
+		case ERROR_ENVIRONMENT:
+			return "Program environment";
 		default:
 			return "Unknown error code";
 	}

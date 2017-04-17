@@ -7,7 +7,7 @@
 RESULT context_init(struct mc_context *ctx)
 {
 	int err;
-	if ((err = config_ctx_create(&ctx->config)) != SUCCESS)
+	if ((err = config_ctx_create(&ctx->config, APP_DATA)) != SUCCESS)
 		return err;
 
 	if ((err = crypto_ctx_create(&ctx->crypto)) != SUCCESS)
