@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include "error.h"
+#include "config.h"
 
 struct mc_context
 {
@@ -14,7 +15,6 @@ struct mc_context
 };
 
 
-enum config_path;
 struct crypto_config;
 
 RESULT context_init(struct mc_context *ctx, enum config_path *config_path, struct crypto_config *crypto_config);

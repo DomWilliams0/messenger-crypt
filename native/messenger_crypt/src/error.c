@@ -26,6 +26,8 @@ const char *error_get_message(int err)
 			return "Ambigious key identifier";
 		case ERROR_ENVIRONMENT:
 			return "Program environment";
+		case ERROR_UNEXPECTED_NULL:
+			return "Unexpected null pointer";
 		default:
 			return "Unknown error code";
 	}

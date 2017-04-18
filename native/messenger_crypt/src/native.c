@@ -6,6 +6,9 @@
 
 RESULT context_init(struct mc_context *ctx, enum config_path *config_path, struct crypto_config *crypto_config)
 {
+	if (ctx == NULL || config_path == NULL)
+		return ERROR_UNEXPECTED_NULL;
+
 	int err;
 	if ((err = config_ctx_create(&ctx->config, *config_path)) != SUCCESS)
 		return err;

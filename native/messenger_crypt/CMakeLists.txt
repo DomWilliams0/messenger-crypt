@@ -7,7 +7,7 @@ FILE(GLOB SRCS src/*.c)
 
 # compiler flags
 execute_process(COMMAND gpgme-config --cflags OUTPUT_VARIABLE GPG_FLAGS )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11 -Werror ${GPG_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11 -Wall -Wextra -Werror ${GPG_FLAGS}")
 
 # create as shared library
 add_library(${PROJECT_NAME} SHARED ${SRCS})

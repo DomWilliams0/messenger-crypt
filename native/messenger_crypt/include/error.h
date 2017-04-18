@@ -19,6 +19,7 @@ typedef int RESULT;
 #define ERROR_GPG_INVALID_KEY     (0x1008)
 #define ERROR_GPG_AMBIGUOUS_KEY   (0x1009)
 #define ERROR_ENVIRONMENT         (0x1010)
+#define ERROR_UNEXPECTED_NULL     (0x1011)
 
 #ifdef __cplusplus
 extern "C" {
