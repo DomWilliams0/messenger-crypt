@@ -28,7 +28,7 @@ static RESULT handler_decrypt_wrapper(struct mc_context *ctx, struct json_token 
 				"{id: %d, message: %Q}", &msg_id, &alloc->ciphertext) != 2)
 		return ERROR_BAD_CONTENT;
 
-	decrypt(ctx->crypto, alloc->ciphertext, &resp->result, alloc);
+	decrypt_message(ctx->crypto, alloc->ciphertext, &resp->result, alloc);
 
 	resp->msg_id = msg_id;
 	response->data = resp;

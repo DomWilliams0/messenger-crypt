@@ -75,11 +75,11 @@ struct get_key_result
 	void *extra_allocs;
 };
 
-void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc);
+void decrypt_message(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc);
 
 void decrypt_free_extra_allocations(void *);
 
-void encrypt(struct crypto_context *ctx, char *plaintext,
+void encrypt_message(struct crypto_context *ctx, char *plaintext,
 		BOOL encrypt, BOOL sign,
 		struct recipient *recipients, unsigned int recipient_count,
 		struct encrypt_result *result, struct encrypt_extra_allocation *alloc,

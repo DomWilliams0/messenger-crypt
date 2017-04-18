@@ -204,7 +204,7 @@ static void decrypt_wrapper(struct crypto_context *ctx, struct decrypt_params *p
 	}
 }
 
-void decrypt(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc)
+void decrypt_message(struct crypto_context *ctx, char *ciphertext, struct decrypt_result *result, struct decrypt_extra_allocation *alloc)
 {
 	result->good_sig = FALSE;
 	result->was_decrypted = FALSE;
@@ -544,7 +544,7 @@ static void encrypt_wrapper(struct crypto_context *ctx, struct encrypt_params *p
 }
 
 
-void encrypt(struct crypto_context *ctx, char *plaintext,
+void encrypt_message(struct crypto_context *ctx, char *plaintext,
 		BOOL encrypt, BOOL sign,
 		struct recipient *recipients, unsigned int recipient_count,
 		struct encrypt_result *result, struct encrypt_extra_allocation *alloc,

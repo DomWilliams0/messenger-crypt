@@ -55,7 +55,7 @@ static RESULT handler_encrypt_wrapper(struct mc_context *ctx, struct json_token 
 	if (config_get_contact(ctx->config, SELF_KEY, &self) != SUCCESS)
 		self.key_fpr = NULL;
 
-	encrypt(ctx->crypto,
+	encrypt_message(ctx->crypto,
 			alloc->plaintext,
 			conversation.encryption, conversation.signing,
 			*recipients, *recipient_count,
