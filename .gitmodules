@@ -1,9 +1,9 @@
-[submodule "native/lib/frozen"]
-	path = native/lib/frozen
-	url = https://github.com/cesanta/frozen
 [submodule "chromium/lib/JavaScript-MD5"]
 	path = chromium/lib/JavaScript-MD5
 	url = https://github.com/blueimp/JavaScript-MD5
-[submodule "native/tests/googletest"]
-	path = native/tests/googletest
+[submodule "native/messenger_crypt/lib/frozen/frozen"]
+	path = native/messenger_crypt/lib/frozen/frozen
+	url = https://github.com/cesanta/frozen
+[submodule "native/messenger_crypt_tests/lib/googletest"]
+	path = native/messenger_crypt_tests/lib/googletest
 	url = https://github.com/google/googletest
