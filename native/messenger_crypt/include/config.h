@@ -1,6 +1,10 @@
 #ifndef MC_CONFIG_H
 #define MC_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SELF_KEY "self"
 
 #include <stdarg.h>
@@ -98,5 +102,10 @@ RESULT config_set_contact(struct config_context *ctx, char *id, struct contact *
 struct json_out;
 int json_value_printer(struct json_out *out, va_list *args);
 void json_value_scanner(const char *str, int len, void *value);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

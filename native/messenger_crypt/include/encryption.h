@@ -1,6 +1,10 @@
 #ifndef MC_ENCRYPTION_H
 #define MC_ENCRYPTION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "bool.h"
 #include "error.h"
 
@@ -85,5 +89,10 @@ void encrypt_free_extra_allocations(void *);
 
 void get_key_free(struct get_key_result *result);
 void get_key(struct crypto_context *ctx, char *key, BOOL secret, struct get_key_result *result, BOOL ignore_revoked);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

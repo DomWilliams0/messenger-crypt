@@ -1,6 +1,10 @@
 #ifndef MC_HANDLER_H
 #define MC_HANDLER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdarg.h>
 #include "native.h"
 #include "bool.h"
@@ -41,5 +45,10 @@ RESULT handler_settings(struct mc_context *ctx, struct json_token *content, stru
 RESULT handler_conversation(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 RESULT handler_contacts(struct mc_context *ctx, struct json_token *content, struct handler_response *response);
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

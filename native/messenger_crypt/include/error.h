@@ -1,6 +1,10 @@
 #ifndef MC_ERROR_H
 #define MC_ERROR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SUCCESS (0)
 typedef int RESULT;
 
@@ -16,7 +20,19 @@ typedef int RESULT;
 #define ERROR_GPG_AMBIGUOUS_KEY   (0x1009)
 #define ERROR_ENVIRONMENT         (0x1010)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const char *error_get_message(int err);
 
+#ifdef __cplusplus
+}
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

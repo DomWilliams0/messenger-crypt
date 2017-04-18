@@ -13,9 +13,8 @@ set(EXE ${PROJECT_NAME}_native)
 add_executable(${EXE} ${PROJECT_NAME}/src/native.c)
 include_directories(${PROJECT_NAME}/include)
 
-# sub-targets
 add_subdirectory(${PROJECT_NAME})
-add_subdirectory(${TESTS})
-
-# link to lib
 target_link_libraries(${EXE} ${PROJECT_NAME})
+
+enable_testing()
+add_subdirectory(${TESTS})
