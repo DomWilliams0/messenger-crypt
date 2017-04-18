@@ -50,7 +50,7 @@ static RESULT update_contact(struct mc_context *ctx, struct json_token *content,
 	{
 		struct setting_value ignore_revoked;
 		config_get_setting(ctx->config, SETTING_IGNORE_REVOKED, &ignore_revoked);
-		get_key(ctx->crypto, new_key, secret, &resp->result, ignore_revoked.value.bool);
+		get_key(ctx->crypto, new_key, secret, &resp->result, ignore_revoked.value.boolean);
 		if (resp->result.error != NULL)
 		{
 			resp->error = resp->result.error;

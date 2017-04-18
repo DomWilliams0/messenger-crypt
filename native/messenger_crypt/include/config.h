@@ -33,7 +33,7 @@ struct setting_value
 	union
 	{
 		const char *text;
-		BOOL bool;
+		BOOL boolean;
 	} value;
 };
 

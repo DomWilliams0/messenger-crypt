@@ -14,7 +14,7 @@
 	} \
 	while (0)
 
-#define VALUE_BOOL(val) (struct setting_value) { .type = SETTING_BOOL, .value = {.bool = val } }
+#define VALUE_BOOL(val) (struct setting_value) { .type = SETTING_BOOL, .value = {.boolean = val } }
 #define VALUE_TEXT(val) (struct setting_value) { .type = SETTING_TEXT, .value = {.text = val } }
 #define VALUE_KEY (struct setting_value) { .type = SETTING_KEY, .value = {.text = "" } }
 
@@ -226,7 +226,7 @@ static int populate_value(struct config_setting_t *s, struct setting_value *valu
 				success = CONFIG_FALSE;
 			break;
 		case SETTING_BOOL:
-			value->value.bool = config_setting_get_bool(s);
+			value->value.boolean = config_setting_get_bool(s);
 			break;
 		default:
 			success = CONFIG_FALSE;
@@ -290,7 +290,7 @@ RESULT config_set_setting(struct config_context *ctx, enum setting_key key, stru
 	switch(instance->type)
 	{
 		case SETTING_BOOL:
-			result = config_setting_set_bool(s, value->value.bool);
+			result = config_setting_set_bool(s, value->value.boolean);
 			break;
 		case SETTING_TEXT:
 			result = config_setting_set_string(s, value->value.text);
@@ -566,7 +566,7 @@ int json_value_printer(struct json_out *out, va_list *args)
 	switch(value->type)
 	{
 		case SETTING_BOOL:
-			return json_printf(out, "%B", value->value.bool);
+			return json_printf(out, "%B", value->value.boolean);
 		case SETTING_TEXT:
 		case SETTING_KEY:
 			return json_printf(out, "%Q", value->value.text);
@@ -581,7 +581,7 @@ void json_value_scanner(const char *str, int len, void *value)
 	switch(v->type)
 	{
 		case SETTING_BOOL:
-			json_scanf(str, len, "%B", &v->value.bool);
+			json_scanf(str, len, "%B", &v->value.boolean);
 			break;
 		case SETTING_TEXT:
 		case SETTING_KEY:
