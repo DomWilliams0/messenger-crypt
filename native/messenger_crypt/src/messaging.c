@@ -54,12 +54,18 @@ static RESULT send_response(FILE *out, RESULT result, char *what, request_id id,
 	return SUCCESS;
 }
 
-static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffer, char **what, struct handler_response *response)
+static RESULT handle_single_message_wrapped(struct mc_context *ctx, uint32_t *length_in, char **buffer, char **what, struct handler_response *response)
 {
-	// read length
 	uint32_t length;
-	if (fread(&length, sizeof(length), 1, ctx->in) != 1)
-		return ERROR_IO;
+	if (length_in == NULL)
+	{
+		if (fread(&length, sizeof(length), 1, ctx->in) != 1)
+			return ERROR_IO;
+	}
+	else
+	{
+		length = *length_in;
+	}
 
 	// allocate buffer
 	*buffer = calloc(length + 1, sizeof(char));
@@ -68,6 +74,10 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 
 	// read rest of message
 	if (fread(*buffer, length, 1, ctx->in) != 1)
+		return ERROR_IO;
+
+	// ensure message is the correct length
+	if (strlen(*buffer) != length)
 		return ERROR_IO;
 
 	// parse json
@@ -91,11 +101,11 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 	return send_response(ctx->out, result, *what, id, response);
 }
 
-RESULT handle_single_message(struct mc_context *ctx)
+static RESULT common_handler(struct mc_context *ctx, uint32_t *length)
 {
 	char *what = NULL, *buffer = NULL;
 	struct handler_response response = {0};
-	RESULT ret = handle_single_message_wrapped(ctx, &what, &buffer, &response);
+	RESULT ret = handle_single_message_wrapped(ctx, length, &what, &buffer, &response);
 
 	if (what != NULL)
 		free(what);
@@ -113,4 +123,14 @@ RESULT handle_single_message(struct mc_context *ctx)
 	}
 
 	return ret;
+}
+
+RESULT handle_single_message_with_length(struct mc_context *ctx, uint32_t length)
+{
+	return common_handler(ctx, &length);
+}
+
+RESULT handle_single_message(struct mc_context *ctx)
+{
+	return common_handler(ctx, NULL);
 }

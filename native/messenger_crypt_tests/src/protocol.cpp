@@ -63,7 +63,7 @@ class Protocol : public ::testing::Test
 			ASSERT_NE(ctx.in, nullptr);
 			ASSERT_NE(ctx.out, nullptr);
 
-			result = handle_single_message(&ctx);
+			result = handle_single_message_with_length(&ctx, len);
 		}
 
 		void send_message(char *msg)
@@ -78,5 +78,37 @@ TEST_F(Protocol, EmptyMessage)
 	send_message("");
 
 	EXPECT_EQ(result, ERROR_IO);
+	EXPECT_EQ(response_len, 0);
+}
+
+TEST_F(Protocol, BadLengthTooLong)
+{
+	send_raw_message("", 5000);
+
+	EXPECT_EQ(result, ERROR_IO);
+	EXPECT_EQ(response_len, 0);
+}
+
+TEST_F(Protocol, BadLengthTooShort)
+{
+	send_raw_message("{}", 1);
+
+	EXPECT_EQ(result, ERROR_BAD_CONTENT);
+	EXPECT_EQ(response_len, 0);
+}
+
+TEST_F(Protocol, NonJSONNonsense)
+{
+	send_message("This is not JSON");
+
+	EXPECT_EQ(result, ERROR_BAD_CONTENT);
+	EXPECT_EQ(response_len, 0);
+}
+
+TEST_F(Protocol, InvalidJSON)
+{
+	send_message("{\"hobbies\": [\"trail off and not finish my sentences");
+
+	EXPECT_EQ(result, ERROR_BAD_CONTENT);
 	EXPECT_EQ(response_len, 0);
 }
