@@ -11,7 +11,7 @@ include_directories(SYSTEM ${GTEST_DIR}/include)
 include_directories(${MESSENGER_CRYPT_SOURCE_DIR}/include)
 add_executable(${PROJECT_NAME} ${SRCS})
 
-target_link_libraries(${PROJECT_NAME} gtest_main)
+target_link_libraries(${PROJECT_NAME} gtest)
 target_link_libraries(${PROJECT_NAME} messenger_crypt)
 
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
