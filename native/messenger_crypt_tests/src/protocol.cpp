@@ -112,3 +112,24 @@ TEST_F(Protocol, InvalidJSON)
 	EXPECT_EQ(result, ERROR_BAD_CONTENT);
 	EXPECT_EQ(response_len, 0);
 }
+
+TEST_F(Protocol, BadContent)
+{
+	send_message("{\"request_id\": 0, \"what\": \"anything\", \"content\": []");
+
+	EXPECT_EQ(result, ERROR_BAD_CONTENT);
+	EXPECT_EQ(response_len, 0);
+
+	send_message("{\"request_id\": 0, \"what\": \"anything\", \"content\": 5");
+
+	EXPECT_EQ(result, ERROR_BAD_CONTENT);
+	EXPECT_EQ(response_len, 0);
+}
+
+TEST_F(Protocol, UnknownMethod)
+{
+	send_message("{\"request_id\": 0, \"what\": \"definitely not implemented\", \"content\": {}");
+
+	EXPECT_EQ(result, ERROR_NOT_IMPLEMENTED);
+	EXPECT_EQ(response_len, 0);
+}
