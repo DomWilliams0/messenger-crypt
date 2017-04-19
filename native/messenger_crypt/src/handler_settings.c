@@ -69,7 +69,7 @@ static enum setting_type to_setting_type(enum json_token_type type)
 static RESULT handler_settings_wrapper(struct mc_context *ctx, struct json_token *content, struct handler_response *response,
 		char **key, struct setting_value *value)
 {
-	BOOL get;
+	BOOL get = FALSE;
 	if (json_scanf(content->ptr, content->len,"{get: %B}", &get) != 1)
 		return ERROR_BAD_CONTENT;
 

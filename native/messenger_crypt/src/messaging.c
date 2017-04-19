@@ -15,8 +15,8 @@ static char outgoing_buffer[MAX_OUTGOING_SIZE];
 
 static int error_printer(struct json_out *out, va_list *args)
 {
-	RESULT *r = va_arg(*args, RESULT *);
-	return json_printf(out, "{error: %Q}", error_get_message(*r));
+	RESULT r = *va_arg(*args, RESULT *);
+	return json_printf(out, "{error_code: %d, error: %Q}", r, error_get_message(r));
 }
 
 static RESULT send_response(FILE *out, RESULT result, char *what, request_id id, struct handler_response *response)

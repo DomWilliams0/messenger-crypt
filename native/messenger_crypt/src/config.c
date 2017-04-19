@@ -325,7 +325,7 @@ RESULT config_parse_key(const char *s, enum setting_key *key_out)
 		}
 	}
 
-	return 1;
+	return ERROR_CONFIG_INVALID_KEY;
 }
 
 static const char *FBID_PREFIX = "fbid_";

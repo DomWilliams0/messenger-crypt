@@ -5,6 +5,9 @@
 #include "gtest/gtest.h"
 #include "error.h"
 
+#define REQUEST(what, content) \
+	"{\"request_id\": 0, \"what\": \"" what "\", \"content\": {" content "}}"
+
 extern struct mc_context ctx;
 
 class BaseTest : public ::testing::Test
@@ -25,6 +28,10 @@ class BaseTest : public ::testing::Test
 		void send_raw_message(char *msg, size_t len);
 		void send_message(char *msg);
 
+		RESULT get_error_code() const;
+
+	private:
+		char *raw_response;
 };
 
 

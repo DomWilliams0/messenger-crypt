@@ -8,6 +8,8 @@ const char *error_get_message(int err)
 			return "Memory allocation";
 		case ERROR_CONFIG_WRITE:
 			return "Saving config to file";
+		case ERROR_CONFIG_INVALID_KEY:
+			return "Unrecognised config key";
 		case ERROR_CONFIG_KEY_CREATION:
 			return "Config key creation";
 		case ERROR_CONFIG_KEY_MISSING:
