@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
 #include "error.h"
 #include "config.h"
 
@@ -12,6 +13,9 @@ struct mc_context
 {
 	struct config_context *config;
 	struct crypto_context *crypto;
+
+	FILE *in;
+	FILE *out;
 };
 
 

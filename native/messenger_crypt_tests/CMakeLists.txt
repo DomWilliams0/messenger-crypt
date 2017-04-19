@@ -7,7 +7,7 @@ add_subdirectory(${GTEST_DIR})
 
 FILE(GLOB SRCS src/*.cpp)
 
-include_directories(${GTEST_DIR}/include)
+include_directories(SYSTEM ${GTEST_DIR}/include)
 include_directories(${MESSENGER_CRYPT_SOURCE_DIR}/include)
 add_executable(${PROJECT_NAME} ${SRCS})
 

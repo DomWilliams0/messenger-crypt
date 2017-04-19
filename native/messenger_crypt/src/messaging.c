@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -20,7 +19,7 @@ static int error_printer(struct json_out *out, va_list *args)
 	return json_printf(out, "{error: %Q}", error_get_message(*r));
 }
 
-static RESULT send_response(RESULT result, char *what, request_id id, struct handler_response *response)
+static RESULT send_response(FILE *out, RESULT result, char *what, request_id id, struct handler_response *response)
 {
 	BOOL is_success = result == SUCCESS;
 
@@ -45,13 +44,13 @@ static RESULT send_response(RESULT result, char *what, request_id id, struct han
 			id, what, printer, data);
 
 	// send size before payload
-	if (fwrite(&real_size, sizeof(real_size), 1, stdout) != 1)
+	if (fwrite(&real_size, sizeof(real_size), 1, out) != 1)
 		return ERROR_IO;
 
-	if (fwrite(outgoing_buffer, real_size, 1, stdout) != 1)
+	if (fwrite(outgoing_buffer, real_size, 1, out) != 1)
 		return ERROR_IO;
 
-	fflush(stdout);
+	fflush(out);
 	return SUCCESS;
 }
 
@@ -59,7 +58,7 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 {
 	// read length
 	uint32_t length;
-	if (fread(&length, sizeof(length), 1, stdin) != 1)
+	if (fread(&length, sizeof(length), 1, ctx->in) != 1)
 		return ERROR_IO;
 
 	// allocate buffer
@@ -68,7 +67,7 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 		return ERROR_IO;
 
 	// read rest of message
-	if (fread(*buffer, length, 1, stdin) != 1)
+	if (fread(*buffer, length, 1, ctx->in) != 1)
 		return ERROR_IO;
 
 	// parse json
@@ -89,7 +88,7 @@ static RESULT handle_single_message_wrapped(struct mc_context *ctx, char **buffe
 		return ERROR_NOT_IMPLEMENTED;
 
 	RESULT result = handler(ctx, &content, response);
-	return send_response(result, *what, id, response);
+	return send_response(ctx->out, result, *what, id, response);
 }
 
 RESULT handle_single_message(struct mc_context *ctx)

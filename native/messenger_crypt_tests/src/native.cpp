@@ -21,5 +21,7 @@ TEST(NativeContext, NullSettings)
 
 	EXPECT_EQ(context_init(NULL, &conf, &crypto), ERROR_UNEXPECTED_NULL);
 	EXPECT_EQ(context_init(&ctx, NULL, &crypto), ERROR_UNEXPECTED_NULL);
-	EXPECT_EQ(context_init(&ctx, &conf, NULL), SUCCESS);
+
+	ASSERT_EQ(context_init(&ctx, &conf, NULL), SUCCESS);
+	context_destroy(&ctx);
 }

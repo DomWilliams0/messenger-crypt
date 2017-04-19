@@ -9,6 +9,11 @@ RESULT context_init(struct mc_context *ctx, enum config_path *config_path, struc
 	if (ctx == NULL || config_path == NULL)
 		return ERROR_UNEXPECTED_NULL;
 
+	if (ctx->in == NULL)
+		ctx->in = stdin;
+	if (ctx->out == NULL)
+		ctx->out = stdout;
+
 	int err;
 	if ((err = config_ctx_create(&ctx->config, *config_path)) != SUCCESS)
 		return err;
