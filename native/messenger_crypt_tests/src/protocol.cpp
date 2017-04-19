@@ -7,17 +7,16 @@
 class Protocol : public ::testing::Test
 {
 	protected:
-		struct mc_context ctx;
+		static struct mc_context ctx;
 		char *response;
 		size_t response_len;
 		RESULT result;
 
 		Protocol() : response(nullptr), response_len(0), result(SUCCESS)
 		{
-			ctx.in = ctx.out = nullptr;
 		}
 
-		void SetUp()
+		static void SetUpTestCase()
 		{
 			enum config_path conf = TMP;
 			ASSERT_EQ(context_init(&ctx, &conf, nullptr), SUCCESS);
@@ -26,10 +25,21 @@ class Protocol : public ::testing::Test
 			ctx.out = nullptr;
 		}
 
+		static void TearDownTestCase()
+		{
+			context_destroy(&ctx);
+		}
+
+		void SetUp()
+		{
+			result = SUCCESS;
+			response = nullptr;
+			response_len = 0;
+		}
+
 		void TearDown()
 		{
 			cleanup_streams();
-			context_destroy(&ctx);
 		}
 
 		void cleanup_streams()
@@ -53,10 +63,6 @@ class Protocol : public ::testing::Test
 		// TODO unix only
 		void send_raw_message(char *msg, size_t len)
 		{
-			// clear up from last call
-			cleanup_streams();
-			result = SUCCESS;
-
 			// create streams
 			ctx.in = fmemopen(msg, len, "r");
 			ctx.out = open_memstream(&response, &response_len);
@@ -72,6 +78,8 @@ class Protocol : public ::testing::Test
 		}
 
 };
+
+struct mc_context Protocol::ctx;
 
 TEST_F(Protocol, EmptyMessage)
 {
