@@ -7,7 +7,7 @@ DIR=$(pwd)
 
 MANIFEST_PATH="$DIR/native/manifest.json"
 BINARY_DIR="$DIR/native"
-BINARY_PATH="$BINARY_DIR/bin/messenger_crypt_native"
+BINARY_PATH="$BINARY_DIR/build/messenger_crypt_native"
 
 # where
 # TODO other browsers and os than linux/chromium
