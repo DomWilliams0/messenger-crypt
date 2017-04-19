@@ -36,10 +36,9 @@ void context_destroy(struct mc_context *ctx)
 int main(void)
 {
 	enum config_path conf = APP_DATA;
-	struct crypto_config crypto = {0};
 
-	struct mc_context ctx;
-	RESULT init_result = context_init(&ctx, &conf, &crypto);
+	struct mc_context ctx = {0};
+	RESULT init_result = context_init(&ctx, &conf, NULL);
 	if (init_result != SUCCESS)
 		return init_result;
 
