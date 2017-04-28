@@ -12,10 +12,16 @@ var InputType  = Object.freeze({
 	BOOL: 3
 });
 
+function sendRuntimeMessage(msg, callback) {
+	if (!callback)
+		callback = function() {};
+
+	chrome.runtime.sendMessage(msg, callback);
+}
 
 // callback({{fbid0: key, ...}})
 function fetchKeys(fbids, callback) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "contacts",
 		content: {
 			get: true,
@@ -26,7 +32,7 @@ function fetchKeys(fbids, callback) {
 
 // callback({error, key, name, email})
 function updateKey(fbid, newKey, isSecret, callback) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "contacts",
 		content: {
 			get: false,
@@ -39,7 +45,7 @@ function updateKey(fbid, newKey, isSecret, callback) {
 
 // callback([{type, value, data, description, data} ...])
 function fetchSettings(callback) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "settings",
 		content: {
 			get: true,
@@ -48,7 +54,7 @@ function fetchSettings(callback) {
 }
 
 function updateSetting(key, value) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "settings",
 		content: {
 			get: false,
@@ -60,7 +66,7 @@ function updateSetting(key, value) {
 
 // callback({encryption, signing})
 function fetchConversationSettings(id, callback) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "conversation",
 		content: {
 			get: true,
@@ -70,7 +76,7 @@ function fetchConversationSettings(id, callback) {
 }
 
 function updateConversationSettings(id, enc, sig) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "conversation",
 		content: {
 			get: false,
@@ -85,7 +91,7 @@ function updateConversationSettings(id, enc, sig) {
 
 // callback({thread, participants})
 function fetchState(callback) {
-	chrome.runtime.sendMessage({
+	sendRuntimeMessage({
 		what: "state",
 		content: null
 	}, callback);
