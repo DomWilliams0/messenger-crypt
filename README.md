@@ -6,11 +6,7 @@ A chromium plugin to add transparent PGP to Facebook Messenger.
 # Screenshots
 
 ## Popup window
-![Conversation](screenshots/conversation.png)
-
-![Participants](screenshots/participants.png)
-
-![Settings](screenshots/settings.png)
+<img src="screenshots/settings.png" width="32%"/><img src="screenshots/participants.png" width="32%"/><img src="screenshots/conversation.png" width="32%"/>
 
 ## Encrypted messages
 
