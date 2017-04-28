@@ -2,7 +2,7 @@
 TOKEN = $(shell cat .coveralls-repo-token)
 
 .PHONY: default
-default: tests
+default: build
 
 .PHONY: build
 .ONESHELL:
