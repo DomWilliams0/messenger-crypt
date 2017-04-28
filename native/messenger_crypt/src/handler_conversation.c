@@ -41,7 +41,7 @@ static RESULT handler_conversation_wrapper(struct mc_context *ctx, struct json_t
 	}
 	else
 	{
-		struct conversation_state new_state;
+		struct conversation_state new_state = {0};
 		if (json_scanf(content->ptr, content->len,
 					"{state: {encryption: %B, signing: %B}}",
 					&new_state.encryption, &new_state.signing) != 2)
