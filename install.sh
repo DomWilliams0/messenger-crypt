@@ -7,7 +7,8 @@ DIR=$(pwd)
 
 MANIFEST_PATH="$DIR/native/manifest.json"
 BINARY_DIR="$DIR/native"
-BINARY_PATH="$BINARY_DIR/build/messenger_crypt_native"
+BUILD_DIR="$BINARY_DIR/build"
+BINARY_PATH="$BUILD_DIR/messenger_crypt_native"
 
 # where
 # TODO other browsers and os than linux/chromium
@@ -22,7 +23,7 @@ MANIFEST=$MANIFEST_DIR/$NAME.json
 # what do
 if [[ "$1" = "uninstall" ]]; then
 	rm -f $MANIFEST
-	make -C $BINARY_DIR clean
+	rm -rf $BUILD_DIR
 	echo Uninstalled from $MANIFEST
 else
 	make -C $BINARY_DIR
